@@ -25,6 +25,8 @@ app.use(cors({
     'http://localhost:5173', // Main app (development)
     'http://localhost:8080', // Admin app (development)
     'http://localhost:8081', // Alternative admin port (development)
+    'https://skillyme-app.vercel.app', // Production main app
+    'https://skillyme-admin.vercel.app', // Production admin dashboard
     process.env.FRONTEND_URL, // Production frontend
     process.env.ADMIN_URL     // Production admin
   ].filter(Boolean), // Remove undefined values
