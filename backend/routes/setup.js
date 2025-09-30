@@ -339,4 +339,40 @@ router.post('/setup-database', async (req, res) => {
   }
 });
 
+// Test admin login endpoint
+router.get('/test-admin-login', async (req, res) => {
+  try {
+    // Find admin
+    const query = 'SELECT * FROM admins WHERE username = $1';
+    const result = await pool.query(query, ['admin']);
+    
+    if (!result.rows || result.rows.length === 0) {
+      return res.json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    const admin = result.rows[0];
+    
+    res.json({
+      success: true,
+      message: 'Admin found',
+      admin: {
+        id: admin.id,
+        username: admin.username,
+        created_at: admin.created_at
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Test admin login failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Test admin login failed',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
