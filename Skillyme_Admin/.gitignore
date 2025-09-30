@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+dist
 dist-ssr
 *.local
 
@@ -21,9 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-./backend/node_modules
-./backend/.env
-
-# Admin Dashboard (Separate Application) - REMOVED FROM GITIGNORE
-# Skillyme_Admin/ - This needs to be in the repository for Vercel deployment
