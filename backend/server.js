@@ -11,6 +11,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy for rate limiting (required for Render)
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(httpsRedirect);
 app.use(securityHeaders);
@@ -66,6 +69,7 @@ app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/admin', adminLimiter, require('./routes/admin'));
 app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/setup', require('./routes/setup'));
 app.use('/secure-access', require('./routes/secureAccess'));
 
 // Health check endpoint
