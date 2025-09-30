@@ -1,0 +1,25 @@
+# Fly.io Configuration for Skillyme MySQL Database
+app = "skillyme-mysql"
+primary_region = "iad"
+
+[build]
+
+[env]
+  MYSQL_ROOT_PASSWORD = "SkillymeRoot2025!"
+  MYSQL_DATABASE = "skillyme_production"
+  MYSQL_USER = "skillyme_user"
+  MYSQL_PASSWORD = "SkillymeUser2025!"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 3306
+
+  [[services.ports]]
+    port = 3306
+    handlers = ["tcp"]
+    force_https = false
+
+  [[services.tcp_checks]]
+    interval = "10s"
+    timeout = "5s"
+    grace_period = "5s"

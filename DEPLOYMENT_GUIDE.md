@@ -5,25 +5,54 @@ This guide covers deploying the Skillyme application to production:
 - **Frontend (Main App)**: Vercel
 - **Frontend (Admin Dashboard)**: Vercel (separate deployment)
 - **Backend API**: Render
+- **Database**: Render (MySQL)
 
 ## Prerequisites
 1. GitHub repository with your code
 2. Vercel account
 3. Render account
-4. Production database (MySQL)
-5. Gmail account for email service
+4. Gmail account for email service
 
-## Step 1: Prepare Backend for Render
+## Step 1: Create Database on Render
 
-### 1.1 Environment Variables for Render
-Set these environment variables in your Render dashboard:
+### 1.1 Create MySQL Database
+1. **Login to Render Dashboard**
+2. **Click "New +"** → **"PostgreSQL"** (or MySQL if available)
+3. **Configure Database**:
+   - **Name**: `skillyme-database`
+   - **Database**: `skillyme_production`
+   - **User**: `skillyme_user`
+   - **Region**: Choose closest to your users
+   - **Plan**: Start with Free tier (upgrade as needed)
+
+### 1.2 Get Database Connection Details
+After creation, Render will provide:
+- **Internal Database URL**: `postgresql://user:password@host:port/database`
+- **External Database URL**: For external connections
+- **Database Host, Port, User, Password, Database Name**
+
+## Step 2: Deploy Backend to Render
+
+### 2.1 Create Web Service
+1. **Click "New +"** → **"Web Service"**
+2. **Connect GitHub Repository**
+3. **Configure Service**:
+   - **Name**: `skillyme-backend`
+   - **Root Directory**: `backend`
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server.js`
+   - **Node Version**: 18.x or 20.x
+
+### 2.2 Environment Variables
+Set these in your Render web service:
 
 ```
-# Database Configuration
-DB_HOST=your-production-db-host
-DB_USER=your-production-db-user
-DB_PASSWORD=your-production-db-password
+# Database Configuration (Use Render's internal database URL)
+DB_HOST=your-render-db-host
+DB_USER=your-render-db-user
+DB_PASSWORD=your-render-db-password
 DB_NAME=skillyme_production
+DB_PORT=5432
 
 # JWT Configuration
 JWT_SECRET=your-super-secure-jwt-secret-key-for-production
@@ -35,7 +64,7 @@ EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
 EMAIL_FROM=your-email@gmail.com
 
-# Application URLs (Update after deployment)
+# Application URLs (Update after frontend deployment)
 FRONTEND_URL=https://your-frontend-domain.vercel.app
 ADMIN_URL=https://your-admin-domain.vercel.app
 ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app,https://your-admin-domain.vercel.app
@@ -48,18 +77,10 @@ NODE_ENV=production
 BCRYPT_ROUNDS=12
 ```
 
-### 1.2 Render Deployment Settings
-- **Build Command**: `npm install`
-- **Start Command**: `node server.js`
-- **Node Version**: 18.x or 20.x
-
-## Step 2: Deploy Backend to Render
-
-1. Connect your GitHub repository to Render
-2. Create a new Web Service
-3. Set the root directory to `backend`
-4. Configure environment variables
-5. Deploy
+### 2.3 Deploy
+1. **Click "Create Web Service"**
+2. **Wait for deployment** (5-10 minutes)
+3. **Note the service URL** (e.g., `https://skillyme-backend.onrender.com`)
 
 ## Step 3: Prepare Frontend for Vercel
 
