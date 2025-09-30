@@ -11,3 +11,9 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /api/test
+
+databases:
+  - name: skillyme-database
+    plan: starter
+    databaseName: skillyme_production
+    user: skillyme_user
