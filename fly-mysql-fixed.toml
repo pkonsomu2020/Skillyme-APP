@@ -1,9 +1,9 @@
-# Fly.io Configuration for Skillyme MySQL Database
+# Fixed Fly.io Configuration for Skillyme MySQL Database
 app = "skillyme-mysql"
 primary_region = "iad"
 
 [build]
-  dockerfile = "backend/Dockerfile.mysql"
+  dockerfile = "Dockerfile.mysql"
 
 [env]
   MYSQL_ROOT_PASSWORD = "ponsomu756@"
@@ -22,8 +22,8 @@ primary_region = "iad"
 
   [[services.tcp_checks]]
     interval = "30s"
-    timeout = "15s"
-    grace_period = "60s"
+    timeout = "10s"
+    grace_period = "30s"
 
 [mounts]
   source = "skillyme_data"
