@@ -202,9 +202,7 @@ app.get('/check-env', async (req, res) => {
       env: {
         NODE_ENV: process.env.NODE_ENV,
         SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-        RESEND_API_KEY: process.env.RESEND_API_KEY ? 'SET' : 'NOT SET',
-        RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'NOT SET'
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET'
       }
     });
   } catch (error) {
@@ -220,9 +218,7 @@ app.get('/diagnostic-email', async (req, res) => {
       environment: {
         NODE_ENV: process.env.NODE_ENV,
         SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-        RESEND_API_KEY: process.env.RESEND_API_KEY ? 'SET' : 'NOT SET',
-        RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'NOT SET'
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET'
       },
       database: {},
       secureAccess: {},
@@ -251,13 +247,13 @@ app.get('/diagnostic-email', async (req, res) => {
     // Test email service
     try {
       const emailService = require('./services/emailService');
-      // Test if email service is properly configured
-      if (process.env.SENDGRID_API_KEY || process.env.RESEND_API_KEY) {
+      // Test if SendGrid is properly configured
+      if (process.env.SENDGRID_API_KEY) {
         diagnostic.emailService.connection = 'SUCCESS';
-        diagnostic.emailService.provider = process.env.RESEND_API_KEY ? 'Resend' : 'SendGrid';
+        diagnostic.emailService.provider = 'SendGrid';
       } else {
         diagnostic.emailService.connection = 'FAILED';
-        diagnostic.emailService.error = 'No email service API keys configured';
+        diagnostic.emailService.error = 'SendGrid API key not configured';
       }
     } catch (error) {
       diagnostic.emailService.connection = 'FAILED';

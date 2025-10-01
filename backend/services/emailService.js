@@ -1,18 +1,9 @@
 const sgMail = require('@sendgrid/mail');
-const { Resend } = require('resend');
 require('dotenv').config();
 
 class EmailService {
   constructor() {
-    // Initialize Resend if API key is provided (most reliable for cloud platforms)
-    if (process.env.RESEND_API_KEY) {
-      this.resend = new Resend(process.env.RESEND_API_KEY);
-      console.log('📧 Resend initialized successfully');
-    } else {
-      console.log('📧 Resend API key not found');
-    }
-
-    // Initialize SendGrid if API key is provided
+    // Initialize SendGrid
     if (process.env.SENDGRID_API_KEY) {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       console.log('📧 SendGrid initialized successfully');
@@ -37,26 +28,7 @@ class EmailService {
     console.log(`   Subject: ${subject}`);
     console.log(`   Secure Access Link: ${html.includes('secure-access') ? 'INCLUDED' : 'NOT FOUND'}`);
 
-    // Try Resend first (most reliable for cloud platforms)
-    if (this.resend && process.env.RESEND_API_KEY) {
-      console.log('📧 [RESEND] Attempting to send via Resend...');
-      try {
-        const result = await this.resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'Skillyme <noreply@skillyme.com>',
-          to: [to],
-          subject: subject,
-          html: html,
-          text: text || html.replace(/<[^>]*>/g, '') // Strip HTML for text version
-        });
-        console.log('✅ Email sent successfully via Resend:', result.data?.id);
-        return { success: true, messageId: result.data?.id || 'resend-' + Date.now() };
-      } catch (error) {
-        console.error('❌ Resend failed:', error.message);
-        console.log('📧 [FALLBACK] Trying SendGrid...');
-      }
-    }
-
-    // Try SendGrid second
+    // Send via SendGrid
     if (process.env.SENDGRID_API_KEY) {
       console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
       try {
