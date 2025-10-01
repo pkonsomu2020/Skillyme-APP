@@ -202,7 +202,9 @@ app.get('/check-env', async (req, res) => {
       env: {
         NODE_ENV: process.env.NODE_ENV,
         SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET'
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+        GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
+        GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
       }
     });
   } catch (error) {
@@ -218,7 +220,9 @@ app.get('/diagnostic-email', async (req, res) => {
       environment: {
         NODE_ENV: process.env.NODE_ENV,
         SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET'
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+        GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
+        GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
       },
       database: {},
       secureAccess: {},

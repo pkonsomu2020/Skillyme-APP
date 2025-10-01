@@ -1,4 +1,5 @@
 const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 class EmailService {
@@ -9,6 +10,19 @@ class EmailService {
       console.log('📧 SendGrid initialized successfully');
     } else {
       console.log('📧 SendGrid API key not found');
+    }
+
+    // Initialize Nodemailer as fallback
+    this.nodemailerTransporter = null;
+    if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
+      this.nodemailerTransporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS
+        }
+      });
+      console.log('📧 Gmail SMTP fallback initialized');
     }
   }
 
@@ -32,10 +46,13 @@ class EmailService {
     if (process.env.SENDGRID_API_KEY) {
       console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
       try {
+        // Use a verified sender email or fallback to a default
+        const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com';
+        
         const msg = {
           to: to,
           from: {
-            email: process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com',
+            email: fromEmail,
             name: 'Skillyme'
           },
           subject: subject,
@@ -43,11 +60,56 @@ class EmailService {
           html: html
         };
 
+        console.log('📧 [SENDGRID] Sending with from email:', fromEmail);
+        
         const result = await sgMail.send(msg);
         console.log('✅ Email sent successfully via SendGrid:', result[0].headers['x-message-id']);
         return { success: true, messageId: result[0].headers['x-message-id'] };
       } catch (error) {
         console.error('❌ SendGrid failed:', error.message);
+        console.error('❌ SendGrid error details:', error.response?.body);
+        
+        // If it's a forbidden error, try with a different approach
+        if (error.message.includes('Forbidden') || error.response?.statusCode === 403) {
+          console.log('📧 [SENDGRID] Forbidden error - trying with different sender configuration...');
+          
+          try {
+            // Try with a simpler configuration
+            const simpleMsg = {
+              to: to,
+              from: 'noreply@skillyme.com', // Use string format instead of object
+              subject: subject,
+              text: text || html.replace(/<[^>]*>/g, ''),
+              html: html
+            };
+            
+            const result = await sgMail.send(simpleMsg);
+            console.log('✅ Email sent successfully via SendGrid (fallback):', result[0].headers['x-message-id']);
+            return { success: true, messageId: result[0].headers['x-message-id'] };
+          } catch (fallbackError) {
+            console.error('❌ SendGrid fallback also failed:', fallbackError.message);
+          }
+        }
+      }
+    }
+
+    // Try Gmail SMTP as fallback
+    if (this.nodemailerTransporter) {
+      console.log('📧 [GMAIL SMTP] Attempting to send via Gmail SMTP...');
+      try {
+        const mailOptions = {
+          from: process.env.GMAIL_USER,
+          to: to,
+          subject: subject,
+          text: text || html.replace(/<[^>]*>/g, ''),
+          html: html
+        };
+
+        const result = await this.nodemailerTransporter.sendMail(mailOptions);
+        console.log('✅ Email sent successfully via Gmail SMTP:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.error('❌ Gmail SMTP failed:', error.message);
       }
     }
 
