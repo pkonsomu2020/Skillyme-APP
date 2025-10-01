@@ -41,6 +41,8 @@ class Payment {
     const query = `
       SELECT 
         p.payment_id,
+        p.user_id,
+        p.session_id,
         p.mpesa_code,
         p.amount,
         p.actual_amount,

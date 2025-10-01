@@ -204,6 +204,12 @@ const updatePaymentStatus = async (req, res) => {
             if (status === 'paid') {
               // Create secure access for the user
               try {
+                console.log('Creating secure access for:', {
+                  userId: payment.user_id,
+                  sessionId: payment.session_id,
+                  userEmail: payment.user_email
+                });
+                
                 const accessToken = await SecureAccess.createSecureAccess(
                   payment.user_id,
                   payment.session_id
@@ -213,25 +219,29 @@ const updatePaymentStatus = async (req, res) => {
                 const secureAccessLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/secure-access/${accessToken}`;
                 
                 // Send confirmation email with secure access link
-                await emailService.sendPaymentStatusUpdate(
+                console.log('Attempting to send payment confirmation email to:', payment.user_email);
+                const emailResult = await emailService.sendPaymentStatusUpdate(
                   payment.user_email,
                   payment.user_name,
                   sessionName,
                   status,
                   secureAccessLink
                 );
+                console.log('Payment confirmation email result:', emailResult);
                 console.log('Payment confirmation email with secure access sent to:', payment.user_email);
                 console.log('Secure access token created:', accessToken);
               } catch (accessError) {
                 console.error('Failed to create secure access:', accessError);
                 // Fallback to regular Google Meet link
-                await emailService.sendPaymentStatusUpdate(
+                console.log('Attempting to send fallback payment confirmation email to:', payment.user_email);
+                const fallbackEmailResult = await emailService.sendPaymentStatusUpdate(
                   payment.user_email,
                   payment.user_name,
                   sessionName,
                   status,
                   googleMeetLink
                 );
+                console.log('Fallback payment confirmation email result:', fallbackEmailResult);
                 console.log('Payment confirmation email sent to:', payment.user_email);
               }
             } else if (status === 'pending') {
