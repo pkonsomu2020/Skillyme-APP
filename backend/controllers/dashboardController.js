@@ -69,7 +69,7 @@ const getUserSessions = async (req, res) => {
         s.price,
         s.is_active as session_status,
         p.status as payment_status,
-        p.created_at as joined_at
+        p.submitted_at as joined_at
       FROM sessions s
       LEFT JOIN payments p ON s.id = p.session_id AND p.user_id = ?
       WHERE s.is_active = 1
