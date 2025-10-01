@@ -58,10 +58,7 @@ class EmailService {
         
         const msg = {
           to: to,
-          from: {
-            email: fromEmail,
-            name: 'Skillyme'
-          },
+          from: fromEmail, // Use simple string format to avoid "via sendgrid.net"
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
           html: html
@@ -84,7 +81,7 @@ class EmailService {
             // Try with a simpler configuration
             const simpleMsg = {
               to: to,
-              from: 'noreply@skillyme.com', // Use string format instead of object
+              from: fromEmail, // Use the same from email
               subject: subject,
               text: text || html.replace(/<[^>]*>/g, ''),
               html: html
