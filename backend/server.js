@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const { generalLimiter, authLimiter, paymentLimiter, adminLimiter } = require('./middleware/rateLimiting');
 const { securityHeaders, httpsRedirect, corsSecurity } = require('./middleware/securityHeaders');
 const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware/csrfProtection');
+const pool = require('./config/database');
 require('dotenv').config();
 
 const app = express();
@@ -95,6 +96,124 @@ app.use((err, req, res, next) => {
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
+});
+
+// Quick fix endpoint for secure_access table
+app.get('/fix-secure-access', async (req, res) => {
+  try {
+    console.log('🔧 Quick fix of secure_access table...');
+    
+    await pool.execute('DROP TABLE IF EXISTS secure_access');
+    console.log('✅ Dropped table');
+    
+    await pool.execute(`
+      CREATE TABLE secure_access (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        session_id INT NOT NULL,
+        access_token VARCHAR(255) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('✅ Created new table');
+    
+    res.json({ success: true, message: 'Secure access table fixed' });
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Check secure_access table structure
+app.get('/check-secure-access', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('DESCRIBE secure_access');
+    res.json({
+      success: true,
+      message: 'Secure access table structure',
+      columns: rows.map(r => ({ Field: r.Field, Type: r.Type }))
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Test secure access creation
+app.get('/test-secure-access', async (req, res) => {
+  try {
+    const SecureAccess = require('./models/SecureAccess');
+    
+    // Test creating secure access
+    const token = await SecureAccess.createSecureAccess(1, 1);
+    
+    res.json({
+      success: true,
+      message: 'Secure access test successful',
+      token: token
+    });
+  } catch (error) {
+    console.error('❌ Secure access test failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Test email sending
+app.get('/test-email', async (req, res) => {
+  try {
+    const emailService = require('./services/emailService');
+    
+    // Test sending email
+    const result = await emailService.sendPaymentStatusUpdate(
+      'test@example.com',
+      'Test User',
+      'Test Session',
+      'paid',
+      'https://meet.google.com/test'
+    );
+    
+    res.json({
+      success: true,
+      message: 'Email test completed',
+      result: result
+    });
+  } catch (error) {
+    console.error('❌ Email test failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Check environment variables
+app.get('/check-env', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Environment variables check',
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        EMAIL_USER: process.env.EMAIL_USER ? 'SET' : 'NOT SET',
+        EMAIL_PASS: process.env.EMAIL_PASS ? 'SET' : 'NOT SET',
+        EMAIL_HOST: process.env.EMAIL_HOST || 'NOT SET',
+        EMAIL_PORT: process.env.EMAIL_PORT || 'NOT SET',
+        SMTP_USER: process.env.SMTP_USER ? 'SET' : 'NOT SET',
+        SMTP_PASS: process.env.SMTP_PASS ? 'SET' : 'NOT SET',
+        SMTP_HOST: process.env.SMTP_HOST || 'NOT SET',
+        SMTP_PORT: process.env.SMTP_PORT || 'NOT SET'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // 404 handler

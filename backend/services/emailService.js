@@ -11,13 +11,17 @@ class EmailService {
         user: process.env.EMAIL_USER || process.env.SMTP_USER,
         pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
       },
-      connectionTimeout: 30000, // 30 seconds
-      greetingTimeout: 15000, // 15 seconds
-      socketTimeout: 30000, // 30 seconds
-      pool: false, // Disable connection pooling for now
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 5000, // 5 seconds
+      socketTimeout: 10000, // 10 seconds
+      pool: false, // Disable connection pooling
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      // Additional options for better reliability
+      requireTLS: true,
+      debug: false,
+      logger: false
     });
   }
 
@@ -29,6 +33,15 @@ class EmailService {
       console.log(`   Subject: ${subject}`);
       console.log(`   Content: ${text || html.substring(0, 100)}...`);
       return { success: true, messageId: 'dev-mode-' + Date.now() };
+    }
+
+    // Check if email service is configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log('📧 [NO EMAIL CONFIG] Email would be sent:');
+      console.log(`   To: ${to}`);
+      console.log(`   Subject: ${subject}`);
+      console.log(`   Content: ${text || html.substring(0, 100)}...`);
+      return { success: true, messageId: 'no-config-' + Date.now() };
     }
 
     for (let attempt = 1; attempt <= retries; attempt++) {

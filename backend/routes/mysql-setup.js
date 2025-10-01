@@ -216,4 +216,75 @@ router.get('/check-secure-access-table', async (req, res) => {
   }
 });
 
+// Fix secure_access table structure
+router.get('/fix-secure-access-table', async (req, res) => {
+  try {
+    console.log('🔧 Fixing secure_access table structure...');
+    
+    // Drop the existing table
+    await pool.execute('DROP TABLE IF EXISTS secure_access');
+    console.log('✅ Dropped existing secure_access table');
+    
+    // Create the correct table structure
+    await pool.execute(`
+      CREATE TABLE secure_access (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        session_id INT NOT NULL,
+        access_token VARCHAR(255) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+        INDEX idx_user_session (user_id, session_id),
+        INDEX idx_token (access_token),
+        INDEX idx_expires (expires_at)
+      )
+    `);
+    console.log('✅ Created new secure_access table with correct structure');
+    
+    // Verify the new structure
+    const [rows] = await pool.execute('DESCRIBE secure_access');
+    console.log('📋 New table structure:', rows);
+    
+    res.json({
+      success: true,
+      message: 'Secure access table structure fixed successfully',
+      newStructure: rows
+    });
+  } catch (error) {
+    console.error('❌ Fix secure_access table failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fix secure_access table failed',
+      error: error.message
+    });
+  }
+});
+
+// Simple fix endpoint
+router.get('/fix-table', async (req, res) => {
+  try {
+    console.log('🔧 Quick fix of secure_access table...');
+    
+    await pool.execute('DROP TABLE IF EXISTS secure_access');
+    await pool.execute(`
+      CREATE TABLE secure_access (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        session_id INT NOT NULL,
+        access_token VARCHAR(255) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      )
+    `);
+    
+    res.json({ success: true, message: 'Table fixed' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
