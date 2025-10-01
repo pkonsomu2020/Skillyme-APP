@@ -6,6 +6,9 @@ const User = require('../models/User');
 const emailService = require('../services/emailService');
 const SecureAccess = require('../models/SecureAccess');
 
+// In-memory cache to prevent duplicate requests
+const requestCache = new Map();
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
 
@@ -140,6 +143,32 @@ const updatePaymentStatus = async (req, res) => {
       });
     }
 
+    // Create a unique request key to prevent duplicates
+    const requestKey = `${paymentId}-${status}-${Date.now()}`;
+    const cacheKey = `payment-${paymentId}-${status}`;
+    
+    // Check if this exact request was made recently (within 5 seconds)
+    if (requestCache.has(cacheKey)) {
+      const lastRequest = requestCache.get(cacheKey);
+      if (Date.now() - lastRequest < 5000) { // 5 seconds
+        console.log('Duplicate payment status update request detected, ignoring');
+        return res.json({
+          success: true,
+          message: 'Payment status already updated recently'
+        });
+      }
+    }
+    
+    // Store this request in cache
+    requestCache.set(cacheKey, Date.now());
+    
+    // Clean up old cache entries (older than 30 seconds)
+    for (const [key, timestamp] of requestCache.entries()) {
+      if (Date.now() - timestamp > 30000) {
+        requestCache.delete(key);
+      }
+    }
+
     const updated = await Payment.updateStatus(paymentId, status, adminNotes);
     
     if (updated) {
@@ -166,58 +195,69 @@ const updatePaymentStatus = async (req, res) => {
             }
           }
           
-          // Send appropriate email based on status
-          if (status === 'paid') {
-            // Create secure access for the user
-            try {
-              const accessToken = await SecureAccess.createSecureAccess(
-                payment.user_id,
-                payment.session_id
+          // Send appropriate email based on status (with rate limiting)
+          const emailCacheKey = `email-${payment.user_email}-${status}`;
+          const lastEmailSent = requestCache.get(emailCacheKey);
+          
+          // Only send email if not sent recently (within 30 seconds)
+          if (!lastEmailSent || Date.now() - lastEmailSent > 30000) {
+            if (status === 'paid') {
+              // Create secure access for the user
+              try {
+                const accessToken = await SecureAccess.createSecureAccess(
+                  payment.user_id,
+                  payment.session_id
+                );
+                
+                // Create secure access link
+                const secureAccessLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/secure-access/${accessToken}`;
+                
+                // Send confirmation email with secure access link
+                await emailService.sendPaymentStatusUpdate(
+                  payment.user_email,
+                  payment.user_name,
+                  sessionName,
+                  status,
+                  secureAccessLink
+                );
+                console.log('Payment confirmation email with secure access sent to:', payment.user_email);
+                console.log('Secure access token created:', accessToken);
+              } catch (accessError) {
+                console.error('Failed to create secure access:', accessError);
+                // Fallback to regular Google Meet link
+                await emailService.sendPaymentStatusUpdate(
+                  payment.user_email,
+                  payment.user_name,
+                  sessionName,
+                  status,
+                  googleMeetLink
+                );
+                console.log('Payment confirmation email sent to:', payment.user_email);
+              }
+            } else if (status === 'pending') {
+              // Send submission confirmation email
+              await emailService.sendPaymentSubmissionConfirmation(
+                payment.user_email,
+                payment.user_name,
+                sessionName
               );
-              
-              // Create secure access link
-              const secureAccessLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/secure-access/${accessToken}`;
-              
-              // Send confirmation email with secure access link
+              console.log('Payment submission confirmation email sent to:', payment.user_email);
+            } else {
+              // Send status update email for other statuses
               await emailService.sendPaymentStatusUpdate(
                 payment.user_email,
                 payment.user_name,
                 sessionName,
                 status,
-                secureAccessLink
+                null
               );
-              console.log('Payment confirmation email with secure access sent to:', payment.user_email);
-              console.log('Secure access token created:', accessToken);
-            } catch (accessError) {
-              console.error('Failed to create secure access:', accessError);
-              // Fallback to regular Google Meet link
-              await emailService.sendPaymentStatusUpdate(
-                payment.user_email,
-                payment.user_name,
-                sessionName,
-                status,
-                googleMeetLink
-              );
-              console.log('Payment confirmation email sent to:', payment.user_email);
+              console.log('Payment status update email sent to:', payment.user_email);
             }
-          } else if (status === 'pending') {
-            // Send submission confirmation email
-            await emailService.sendPaymentSubmissionConfirmation(
-              payment.user_email,
-              payment.user_name,
-              sessionName
-            );
-            console.log('Payment submission confirmation email sent to:', payment.user_email);
+            
+            // Cache this email send
+            requestCache.set(emailCacheKey, Date.now());
           } else {
-            // Send status update email for other statuses
-            await emailService.sendPaymentStatusUpdate(
-              payment.user_email,
-              payment.user_name,
-              sessionName,
-              status,
-              null
-            );
-            console.log('Payment status update email sent to:', payment.user_email);
+            console.log('Email already sent recently for this user and status, skipping');
           }
         }
       } catch (emailError) {

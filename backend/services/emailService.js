@@ -10,26 +10,45 @@ class EmailService {
       auth: {
         user: process.env.EMAIL_USER || process.env.SMTP_USER,
         pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
-      }
+      },
+      connectionTimeout: 60000, // 60 seconds
+      greetingTimeout: 30000, // 30 seconds
+      socketTimeout: 60000, // 60 seconds
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 3,
+      rateDelta: 20000, // 20 seconds
+      rateLimit: 5 // max 5 emails per rateDelta
     });
   }
 
-  async sendEmail(to, subject, html, text = '') {
-    try {
-      const mailOptions = {
-        from: `"Skillyme" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
-        to: to,
-        subject: subject,
-        text: text,
-        html: html
-      };
+  async sendEmail(to, subject, html, text = '', retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const mailOptions = {
+          from: `"Skillyme" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
+          to: to,
+          subject: subject,
+          text: text,
+          html: html
+        };
 
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      return { success: false, error: error.message };
+        const result = await this.transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.error(`Email sending failed (attempt ${attempt}/${retries}):`, error.message);
+        
+        if (attempt === retries) {
+          console.error('Email sending failed after all retries:', error);
+          return { success: false, error: error.message };
+        }
+        
+        // Wait before retry (exponential backoff)
+        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        console.log(`Retrying email in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
   }
 
