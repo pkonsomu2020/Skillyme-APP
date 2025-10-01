@@ -216,7 +216,8 @@ const updatePaymentStatus = async (req, res) => {
                 );
                 
                 // Create secure access link
-                const secureAccessLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/secure-access/${accessToken}`;
+                const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:8080').replace(/\/$/, '');
+                const secureAccessLink = `${frontendUrl}/secure-access/${accessToken}`;
                 
                 // Send confirmation email with secure access link
                 console.log('Attempting to send payment confirmation email to:', payment.user_email);

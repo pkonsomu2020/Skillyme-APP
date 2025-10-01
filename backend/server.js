@@ -201,14 +201,10 @@ app.get('/check-env', async (req, res) => {
       message: 'Environment variables check',
       env: {
         NODE_ENV: process.env.NODE_ENV,
-        EMAIL_USER: process.env.EMAIL_USER ? 'SET' : 'NOT SET',
-        EMAIL_PASS: process.env.EMAIL_PASS ? 'SET' : 'NOT SET',
-        EMAIL_HOST: process.env.EMAIL_HOST || 'NOT SET',
-        EMAIL_PORT: process.env.EMAIL_PORT || 'NOT SET',
-        SMTP_USER: process.env.SMTP_USER ? 'SET' : 'NOT SET',
-        SMTP_PASS: process.env.SMTP_PASS ? 'SET' : 'NOT SET',
-        SMTP_HOST: process.env.SMTP_HOST || 'NOT SET',
-        SMTP_PORT: process.env.SMTP_PORT || 'NOT SET'
+        SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+        RESEND_API_KEY: process.env.RESEND_API_KEY ? 'SET' : 'NOT SET',
+        RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'NOT SET'
       }
     });
   } catch (error) {
@@ -223,14 +219,10 @@ app.get('/diagnostic-email', async (req, res) => {
       timestamp: new Date().toISOString(),
       environment: {
         NODE_ENV: process.env.NODE_ENV,
-        EMAIL_USER: process.env.EMAIL_USER ? 'SET' : 'NOT SET',
-        EMAIL_PASS: process.env.EMAIL_PASS ? 'SET' : 'NOT SET',
-        EMAIL_HOST: process.env.EMAIL_HOST || 'NOT SET',
-        EMAIL_PORT: process.env.EMAIL_PORT || 'NOT SET',
-        SMTP_USER: process.env.SMTP_USER ? 'SET' : 'NOT SET',
-        SMTP_PASS: process.env.SMTP_PASS ? 'SET' : 'NOT SET',
-        SMTP_HOST: process.env.SMTP_HOST || 'NOT SET',
-        SMTP_PORT: process.env.SMTP_PORT || 'NOT SET'
+        SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+        RESEND_API_KEY: process.env.RESEND_API_KEY ? 'SET' : 'NOT SET',
+        RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'NOT SET'
       },
       database: {},
       secureAccess: {},
@@ -258,24 +250,15 @@ app.get('/diagnostic-email', async (req, res) => {
     
     // Test email service
     try {
-      const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: process.env.EMAIL_PORT || process.env.SMTP_PORT || 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER || process.env.SMTP_USER,
-          pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 5000,
-        socketTimeout: 10000,
-        pool: false,
-        tls: { rejectUnauthorized: false }
-      });
-      
-      await transporter.verify();
-      diagnostic.emailService.connection = 'SUCCESS';
+      const emailService = require('./services/emailService');
+      // Test if email service is properly configured
+      if (process.env.SENDGRID_API_KEY || process.env.RESEND_API_KEY) {
+        diagnostic.emailService.connection = 'SUCCESS';
+        diagnostic.emailService.provider = process.env.RESEND_API_KEY ? 'Resend' : 'SendGrid';
+      } else {
+        diagnostic.emailService.connection = 'FAILED';
+        diagnostic.emailService.error = 'No email service API keys configured';
+      }
     } catch (error) {
       diagnostic.emailService.connection = 'FAILED';
       diagnostic.emailService.error = error.message;

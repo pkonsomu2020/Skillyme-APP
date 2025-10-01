@@ -1,35 +1,27 @@
-const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
+const { Resend } = require('resend');
 require('dotenv').config();
 
 class EmailService {
   constructor() {
+    // Initialize Resend if API key is provided (most reliable for cloud platforms)
+    if (process.env.RESEND_API_KEY) {
+      this.resend = new Resend(process.env.RESEND_API_KEY);
+      console.log('📧 Resend initialized successfully');
+    } else {
+      console.log('📧 Resend API key not found');
+    }
+
     // Initialize SendGrid if API key is provided
     if (process.env.SENDGRID_API_KEY) {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       console.log('📧 SendGrid initialized successfully');
     } else {
-      console.log('📧 SendGrid API key not found, will use SMTP fallback');
+      console.log('📧 SendGrid API key not found');
     }
-
-    // SMTP transporter as fallback
-    this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.EMAIL_PORT || process.env.SMTP_PORT || 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER || process.env.SMTP_USER,
-        pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
-      },
-      connectionTimeout: 30000,
-      greetingTimeout: 10000,
-      socketTimeout: 30000,
-      pool: false,
-      tls: { rejectUnauthorized: false }
-    });
   }
 
-  async sendEmail(to, subject, html, text = '', retries = 3) {
+  async sendEmail(to, subject, html, text = '') {
     // For development/testing, log email instead of sending
     if (process.env.NODE_ENV === 'development') {
       console.log('📧 [DEV MODE] Email would be sent:');
@@ -45,14 +37,33 @@ class EmailService {
     console.log(`   Subject: ${subject}`);
     console.log(`   Secure Access Link: ${html.includes('secure-access') ? 'INCLUDED' : 'NOT FOUND'}`);
 
-    // Try SendGrid first (most reliable for cloud platforms)
+    // Try Resend first (most reliable for cloud platforms)
+    if (this.resend && process.env.RESEND_API_KEY) {
+      console.log('📧 [RESEND] Attempting to send via Resend...');
+      try {
+        const result = await this.resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'Skillyme <noreply@skillyme.com>',
+          to: [to],
+          subject: subject,
+          html: html,
+          text: text || html.replace(/<[^>]*>/g, '') // Strip HTML for text version
+        });
+        console.log('✅ Email sent successfully via Resend:', result.data?.id);
+        return { success: true, messageId: result.data?.id || 'resend-' + Date.now() };
+      } catch (error) {
+        console.error('❌ Resend failed:', error.message);
+        console.log('📧 [FALLBACK] Trying SendGrid...');
+      }
+    }
+
+    // Try SendGrid second
     if (process.env.SENDGRID_API_KEY) {
       console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
       try {
         const msg = {
           to: to,
           from: {
-            email: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USER || 'noreply@skillyme.com',
+            email: process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com',
             name: 'Skillyme'
           },
           subject: subject,
@@ -65,27 +76,6 @@ class EmailService {
         return { success: true, messageId: result[0].headers['x-message-id'] };
       } catch (error) {
         console.error('❌ SendGrid failed:', error.message);
-        console.log('📧 [FALLBACK] Trying SMTP...');
-      }
-    }
-
-    // Fallback to SMTP if SendGrid fails or is not configured
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      console.log('📧 [SMTP FALLBACK] Attempting to send via SMTP...');
-      try {
-        const mailOptions = {
-          from: `"Skillyme" <${process.env.EMAIL_USER}>`,
-          to: to,
-          subject: subject,
-          text: text,
-          html: html
-        };
-
-        const result = await this.transporter.sendMail(mailOptions);
-        console.log('✅ Email sent successfully via SMTP:', result.messageId);
-        return { success: true, messageId: result.messageId };
-      } catch (error) {
-        console.error('❌ SMTP failed:', error.message);
       }
     }
 
@@ -337,20 +327,7 @@ class EmailService {
       </div>
     `;
 
-    try {
-      await this.transporter.sendMail({
-        from: `"Skillyme" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
-        to: userEmail,
-        subject: subject,
-        html: html
-      });
-      
-      console.log(`Password reset email sent to ${userEmail}`);
-      return true;
-    } catch (error) {
-      console.error('Error sending password reset email:', error);
-      throw error;
-    }
+    return await this.sendEmail(userEmail, subject, html);
   }
 }
 

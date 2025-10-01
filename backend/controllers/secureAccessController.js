@@ -139,7 +139,7 @@ const getSecureAccessPage = async (req, res) => {
             const token = '${token}';
             
             try {
-              const response = await fetch(\`/api/secure-access/\${token}?email=\${encodeURIComponent(email)}\`);
+              const response = await fetch('/api/secure-access/' + token + '?email=' + encodeURIComponent(email));
               const data = await response.json();
               
               if (data.success) {
