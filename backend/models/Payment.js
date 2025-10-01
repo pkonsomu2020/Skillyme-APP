@@ -40,7 +40,7 @@ class Payment {
   static async getAllPayments() {
     const query = `
       SELECT 
-        p.id AS payment_id,
+        p.payment_id,
         p.mpesa_code,
         p.amount,
         p.actual_amount,

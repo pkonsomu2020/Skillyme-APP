@@ -73,7 +73,6 @@ router.get('/setup-mysql-database', async (req, res) => {
       CREATE TABLE IF NOT EXISTS admins (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -126,8 +125,8 @@ router.get('/setup-mysql-database', async (req, res) => {
     // Insert default admin user
     const hashedPassword = await bcrypt.hash('Skillyme@2025', 12);
     await pool.execute(
-      'INSERT IGNORE INTO admins (username, email, password) VALUES (?, ?, ?)',
-      ['admin', 'admin@skillyme.com', hashedPassword]
+      'INSERT IGNORE INTO admins (username, password) VALUES (?, ?)',
+      ['admin', hashedPassword]
     );
     console.log('✅ Default admin user created');
 

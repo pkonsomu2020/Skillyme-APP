@@ -7,7 +7,7 @@ const getDashboardStats = async (req, res) => {
 
     // Get available sessions count
     const [sessionsResult] = await pool.execute(
-      'SELECT COUNT(*) as count FROM sessions WHERE status = "active"'
+      'SELECT COUNT(*) as count FROM sessions WHERE is_active = 1'
     );
     const availableSessions = sessionsResult[0].count;
 
@@ -20,13 +20,13 @@ const getDashboardStats = async (req, res) => {
 
     // Get session cost (from sessions table)
     const [costResult] = await pool.execute(
-      'SELECT price FROM sessions WHERE status = "active" LIMIT 1'
+      'SELECT price FROM sessions WHERE is_active = 1 LIMIT 1'
     );
     const sessionCost = costResult[0]?.price || 200;
 
     // Get recruiters count (this could be from a recruiters table or sessions)
     const [recruitersResult] = await pool.execute(
-      'SELECT COUNT(DISTINCT recruiter_name) as count FROM sessions WHERE status = "active"'
+      'SELECT COUNT(DISTINCT recruiter) as count FROM sessions WHERE is_active = 1'
     );
     const recruiters = recruitersResult[0].count;
 
