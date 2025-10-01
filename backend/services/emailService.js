@@ -15,7 +15,7 @@ class EmailService {
     // Initialize Nodemailer as fallback
     this.nodemailerTransporter = null;
     if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
-      this.nodemailerTransporter = nodemailer.createTransporter({
+      this.nodemailerTransporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
