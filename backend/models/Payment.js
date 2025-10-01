@@ -18,8 +18,8 @@ class Payment {
       INSERT INTO payments (
         user_id, session_id, mpesa_code, amount, 
         expected_amount, actual_amount, amount_mismatch, 
-        full_mpesa_message, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        full_mpesa_message, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const values = [
@@ -73,7 +73,7 @@ class Payment {
     const query = `
       UPDATE payments 
       SET status = ?, admin_notes = ?, updated_at = NOW() 
-      WHERE id = ?
+      WHERE payment_id = ?
     `;
     
     try {
