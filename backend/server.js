@@ -72,6 +72,7 @@ app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/admin', adminLimiter, require('./routes/admin'));
 app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/mysql-setup', require('./routes/mysql-setup'));
 app.use('/api/diagnostic', require('./routes/diagnostic'));
 app.use('/secure-access', require('./routes/secureAccess'));

@@ -126,6 +126,15 @@ class ApiService {
     return this.request('/dashboard/sessions');
   }
 
+  // Sessions methods
+  async getAllSessions() {
+    return this.request('/sessions');
+  }
+
+  async getSessionById(id) {
+    return this.request(`/sessions/${id}`);
+  }
+
   // Password reset methods
   async forgotPassword(email) {
     return this.request('/auth/forgot-password', {

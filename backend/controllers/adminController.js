@@ -186,10 +186,10 @@ const updatePaymentStatus = async (req, res) => {
           if (status === 'paid') {
             googleMeetLink = payment.session_google_meet_link;
             
-            // Fallback to generated link if database link is not available
+            // Fallback to the actual Google Meet link if database link is not available
             if (!googleMeetLink) {
-              googleMeetLink = `https://meet.google.com/skillyme-${paymentId}-${Date.now()}`;
-              console.log('No Google Meet link found in database, using generated link:', googleMeetLink);
+              googleMeetLink = 'https://meet.google.com/nmh-nfxk-oao';
+              console.log('No Google Meet link found in database, using default link:', googleMeetLink);
             } else {
               console.log('Using Google Meet link from database:', googleMeetLink);
             }
@@ -202,49 +202,17 @@ const updatePaymentStatus = async (req, res) => {
           // Only send email if not sent recently (within 30 seconds)
           if (!lastEmailSent || Date.now() - lastEmailSent > 30000) {
             if (status === 'paid') {
-              // Create secure access for the user
-              try {
-                console.log('Creating secure access for:', {
-                  userId: payment.user_id,
-                  sessionId: payment.session_id,
-                  userEmail: payment.user_email
-                });
-                
-                const accessToken = await SecureAccess.createSecureAccess(
-                  payment.user_id,
-                  payment.session_id
-                );
-                
-                // Create secure access link
-                const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:8080').replace(/\/$/, '');
-                const secureAccessLink = `${frontendUrl}/secure-access/${accessToken}`;
-                
-                // Send confirmation email with secure access link
-                console.log('Attempting to send payment confirmation email to:', payment.user_email);
-                const emailResult = await emailService.sendPaymentStatusUpdate(
-                  payment.user_email,
-                  payment.user_name,
-                  sessionName,
-                  status,
-                  secureAccessLink
-                );
-                console.log('Payment confirmation email result:', emailResult);
-                console.log('Payment confirmation email with secure access sent to:', payment.user_email);
-                console.log('Secure access token created:', accessToken);
-              } catch (accessError) {
-                console.error('Failed to create secure access:', accessError);
-                // Fallback to regular Google Meet link
-                console.log('Attempting to send fallback payment confirmation email to:', payment.user_email);
-                const fallbackEmailResult = await emailService.sendPaymentStatusUpdate(
-                  payment.user_email,
-                  payment.user_name,
-                  sessionName,
-                  status,
-                  googleMeetLink
-                );
-                console.log('Fallback payment confirmation email result:', fallbackEmailResult);
-                console.log('Payment confirmation email sent to:', payment.user_email);
-              }
+              // Send confirmation email with Google Meet link
+              console.log('Attempting to send payment confirmation email to:', payment.user_email);
+              const emailResult = await emailService.sendPaymentStatusUpdate(
+                payment.user_email,
+                payment.user_name,
+                sessionName,
+                status,
+                googleMeetLink
+              );
+              console.log('Payment confirmation email result:', emailResult);
+              console.log('Payment confirmation email with Google Meet link sent to:', payment.user_email);
             } else if (status === 'pending') {
               // Send submission confirmation email
               await emailService.sendPaymentSubmissionConfirmation(

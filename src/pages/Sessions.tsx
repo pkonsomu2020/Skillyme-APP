@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,23 +23,47 @@ interface Session {
 
 const Sessions = () => {
   const { user, isAuthenticated } = useAuth(); // Get user and auth status from context
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [fullMpesaMessage, setFullMpesaMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const sessions: Session[] = [
-    {
-      id: 1,
-      title: "Are you curious about building a career in law? 🎓⚖️",
-      recruiter: "Legal Professionals",
-      company: "Law Career Session",
-      date: "2025-10-09",
-      time: "14:00",
-      duration: "90 minutes",
-      description: "Join us for an engaging session designed for high school and university students to learn from experienced legal professionals."
-    }
-  ];
+  // Fetch sessions from database
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiService.getAllSessions();
+        
+        if (response.success) {
+          // Transform the data to match the expected format
+          const transformedSessions = response.data.map((session: any) => ({
+            id: session.id,
+            title: session.title,
+            recruiter: session.recruiter_name || 'Legal Professionals',
+            company: session.company || 'Law Career Session',
+            date: session.date,
+            time: session.time,
+            duration: `${session.duration || 90} minutes`,
+            description: session.description || 'Join us for an engaging session designed for high school and university students to learn from experienced legal professionals.'
+          }));
+          
+          setSessions(transformedSessions);
+        } else {
+          toast.error('Failed to fetch sessions');
+        }
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+        toast.error('Failed to fetch sessions');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, []);
 
   const handleJoinSession = (session: Session) => {
     if (!isAuthenticated) {
@@ -100,7 +124,17 @@ const Sessions = () => {
       </div>
 
       <div className="grid gap-6 max-w-2xl">
-        {sessions.map((session) => (
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading sessions...</p>
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No sessions available at the moment.</p>
+          </div>
+        ) : (
+          sessions.map((session) => (
           <Card key={session.id} className="hover:shadow-elegant transition-smooth">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -140,7 +174,8 @@ const Sessions = () => {
               </Button>
             </CardContent>
           </Card>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Payment Dialog */}

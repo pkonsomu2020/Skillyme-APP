@@ -207,14 +207,23 @@ class EmailService {
               Great news! Your payment has been confirmed and you now have access to the <strong>${sessionName}</strong> session.
             </p>
             
-            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
-              <h3 style="margin: 0 0 15px 0; color: #2e7d32;">🔗 Session Access</h3>
+            <div style="background: #e8f5e8; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
+              <h3 style="margin: 0 0 15px 0; color: #2e7d32; font-size: 18px;">🔗 Session Access</h3>
               <p style="margin: 0 0 15px 0; color: #2e7d32; font-weight: 500;">
-                Click the link below to join your session:
+                Your session is confirmed! Click the link below to join:
               </p>
-              <a href="${googleMeetLink}" style="display: inline-block; background: #4caf50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
-                Join Session Now
-              </a>
+              <div style="background: white; padding: 15px; border-radius: 6px; margin: 15px 0; border: 1px solid #c8e6c9;">
+                <p style="margin: 0 0 10px 0; color: #2e7d32; font-weight: 600; font-size: 14px;">📅 Session Details:</p>
+                <p style="margin: 0 0 5px 0; color: #2e7d32; font-size: 14px;"><strong>Date:</strong> Friday, October 10th, 2025</p>
+                <p style="margin: 0 0 5px 0; color: #2e7d32; font-size: 14px;"><strong>Time:</strong> 7:30 PM EAT</p>
+                <p style="margin: 0 0 10px 0; color: #2e7d32; font-size: 14px;"><strong>Duration:</strong> 90 minutes</p>
+                <a href="${googleMeetLink}" style="display: inline-block; background: #4caf50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; margin-top: 10px;">
+                  🎯 Join Session Now
+                </a>
+              </div>
+              <p style="margin: 0; color: #2e7d32; font-size: 12px; font-style: italic;">
+                💡 Tip: Join a few minutes early to test your audio and video
+              </p>
             </div>
             
             <p style="color: #666; font-size: 16px; line-height: 1.6;">
