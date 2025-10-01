@@ -72,6 +72,7 @@ app.use('/api/admin', adminLimiter, require('./routes/admin'));
 app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/setup', require('./routes/setup'));
+app.use('/api/mysql-setup', require('./routes/mysql-setup'));
 app.use('/secure-access', require('./routes/secureAccess'));
 
 // Health check endpoint

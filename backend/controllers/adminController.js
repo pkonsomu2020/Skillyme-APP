@@ -22,17 +22,18 @@ const adminLogin = async (req, res) => {
     }
 
     // Find admin
-    const query = 'SELECT * FROM admins WHERE username = $1';
-    const result = await pool.query(query, [username]);
+    const query = 'SELECT * FROM admins WHERE username = ?';
+    const result = await pool.execute(query, [username]);
+    const rows = result[0];
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!rows || rows.length === 0) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    const admin = result.rows[0];
+    const admin = rows[0];
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, admin.password);
