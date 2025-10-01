@@ -47,7 +47,7 @@ class Payment {
         p.amount_mismatch,
         p.status,
         p.full_mpesa_message,
-        p.created_at AS submission_date,
+        p.submitted_at AS submission_date,
         u.name AS user_name,
         u.email AS user_email,
         s.title AS session_title,
@@ -55,7 +55,7 @@ class Payment {
       FROM payments p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN sessions s ON p.session_id = s.id
-      ORDER BY p.created_at DESC
+      ORDER BY p.submitted_at DESC
     `;
     
     try {
