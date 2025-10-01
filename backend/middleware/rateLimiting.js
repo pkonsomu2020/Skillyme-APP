@@ -24,10 +24,10 @@ const generalLimiter = rateLimit({
   }
 });
 
-// Rate limiting for auth endpoints (development-friendly)
+// Rate limiting for auth endpoints (very lenient for performance)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 200 : 50, // Very lenient in development, reasonable in production
+  max: isDevelopment ? 1000 : 200, // Very lenient in both development and production
   message: {
     success: false,
     message: 'Too many authentication attempts, please try again later.',
@@ -44,10 +44,10 @@ const authLimiter = rateLimit({
   }
 });
 
-// Payment rate limiting (development-friendly)
+// Payment rate limiting (very lenient for performance)
 const paymentLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: isDevelopment ? 20 : 3, // Very lenient in development, strict in production
+  max: isDevelopment ? 100 : 20, // Very lenient in both development and production
   message: {
     success: false,
     message: 'Too many payment attempts, please try again later.',

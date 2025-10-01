@@ -28,16 +28,16 @@ class ApiService {
     console.log(`API Request: ${options.method || 'GET'} ${endpoint}`);
     console.log('Token available:', token ? 'YES' : 'NO');
 
-    // Get CSRF token for state-changing operations
+    // CSRF token fetching disabled for performance
     let csrfToken = null;
-    if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
-      try {
-        csrfToken = await this.getCSRFToken();
-        console.log('CSRF token obtained:', csrfToken ? 'YES' : 'NO');
-      } catch (error) {
-        console.warn('Failed to get CSRF token:', error);
-      }
-    }
+    // if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+    //   try {
+    //     csrfToken = await this.getCSRFToken();
+    //     console.log('CSRF token obtained:', csrfToken ? 'YES' : 'NO');
+    //   } catch (error) {
+    //     console.warn('Failed to get CSRF token:', error);
+    //   }
+    // }
 
     const config = {
       headers: {

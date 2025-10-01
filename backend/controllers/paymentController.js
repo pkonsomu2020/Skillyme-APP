@@ -116,31 +116,33 @@ const submitMpesaCode = async (req, res) => {
 
     const payment = await Payment.create(paymentData);
 
-    // Send immediate confirmation email to user
-    try {
-      // Get user details for email
-      const user = await User.findById(userId);
-      if (user) {
-        // Get session details for email
-        const pool = require('../config/database');
-        const [sessionResult] = await pool.execute(
-          'SELECT title FROM sessions WHERE id = ?',
-          [sessionId || 1]
-        );
-        const sessionName = sessionResult[0]?.title || 'Career Session';
-        
-        // Send payment submission confirmation email
-        await emailService.sendPaymentSubmissionConfirmation(
-          user.email,
-          user.name,
-          sessionName
-        );
-        console.log('Payment submission confirmation email sent to:', user.email);
+    // Send immediate confirmation email to user (asynchronously to avoid delays)
+    setImmediate(async () => {
+      try {
+        // Get user details for email
+        const user = await User.findById(userId);
+        if (user) {
+          // Get session details for email
+          const pool = require('../config/database');
+          const [sessionResult] = await pool.execute(
+            'SELECT title FROM sessions WHERE id = ?',
+            [sessionId || 1]
+          );
+          const sessionName = sessionResult[0]?.title || 'Career Session';
+          
+          // Send payment submission confirmation email
+          await emailService.sendPaymentSubmissionConfirmation(
+            user.email,
+            user.name,
+            sessionName
+          );
+          console.log('Payment submission confirmation email sent to:', user.email);
+        }
+      } catch (emailError) {
+        console.error('Error sending payment confirmation email:', emailError);
+        // Don't fail the payment submission if email fails
       }
-    } catch (emailError) {
-      console.error('Error sending payment confirmation email:', emailError);
-      // Don't fail the payment submission if email fails
-    }
+    });
 
     // Prepare response message
     let responseMessage = 'M-Pesa code submitted successfully';

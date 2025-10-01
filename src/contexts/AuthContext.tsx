@@ -54,26 +54,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(response.data.user);
         } else {
           console.log('AuthContext: Profile fetch failed:', response);
-          // Don't clear user state if we already have a user (e.g., from registration)
+          // Only clear user state if we don't have a user already
           if (!user) {
             setUser(null);
           }
         }
       } else {
         console.log('AuthContext: No token found');
-        // Don't clear user state if we already have a user (e.g., from registration)
+        // Only clear user state if we don't have a user already
         if (!user) {
           setUser(null);
         }
       }
     } catch (error) {
       console.error('AuthContext: Failed to fetch user profile:', error);
-      // If token is invalid, clear it
-      apiService.logout();
-      // Don't clear user state if we already have a user (e.g., from registration)
-      if (!user) {
+      // Only clear authentication if it's a 401/403 error
+      if (error.message.includes('401') || error.message.includes('403') || error.message.includes('Invalid')) {
+        apiService.logout();
         setUser(null);
       }
+      // For other errors, keep the user state
     } finally {
       setIsLoading(false);
     }

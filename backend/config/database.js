@@ -9,11 +9,16 @@ const dbConfig = {
   port: process.env.DB_PORT || 3306,
   ssl: false, // Disable SSL for Fly.io MySQL
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 20, // Increased for better performance
   queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  acquireTimeout: 10000, // Reduced from 60s to 10s
+  timeout: 10000, // Reduced from 60s to 10s
+  reconnect: true,
+  // Performance optimizations
+  multipleStatements: false,
+  dateStrings: true,
+  supportBigNumbers: true,
+  bigNumberStrings: true
 };
 
 const pool = mysql.createPool(dbConfig);
