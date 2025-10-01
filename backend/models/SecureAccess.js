@@ -14,8 +14,8 @@ class SecureAccess {
       const token = `skillyme_${userId}_${sessionId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Store token in database
-      await pool.query(
-        'INSERT INTO secure_access (user_id, session_id, access_token, created_at, expires_at) VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL \'7 days\')',
+      await pool.execute(
+        'INSERT INTO secure_access (user_id, session_id, access_token, created_at, expires_at) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))',
         [userId, sessionId, token]
       );
       
@@ -31,14 +31,13 @@ class SecureAccess {
    */
   static async verifyAccessToken(token, userEmail) {
     try {
-      const result = await pool.query(`
+      const [rows] = await pool.execute(`
         SELECT sa.*, u.email, u.name, s.title as session_title, s.google_meet_link
         FROM secure_access sa
         JOIN users u ON sa.user_id = u.id
         JOIN sessions s ON sa.session_id = s.id
-        WHERE sa.access_token = $1 AND u.email = $2 AND sa.expires_at > NOW()
+        WHERE sa.access_token = ? AND u.email = ? AND sa.expires_at > NOW()
       `, [token, userEmail]);
-      const rows = result.rows;
       
       if (rows.length === 0) {
         return { valid: false, message: 'Invalid or expired access token' };
@@ -63,11 +62,10 @@ class SecureAccess {
    */
   static async getUserAccessToken(userId, sessionId) {
     try {
-      const result = await pool.query(
-        'SELECT access_token FROM secure_access WHERE user_id = $1 AND session_id = $2 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
+      const [rows] = await pool.execute(
+        'SELECT access_token FROM secure_access WHERE user_id = ? AND session_id = ? AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
         [userId, sessionId]
       );
-      const rows = result.rows;
       
       return rows.length > 0 ? rows[0].access_token : null;
     } catch (error) {
@@ -103,14 +101,13 @@ class SecureAccess {
    */
   static async getSessionAccessList(sessionId) {
     try {
-      const result = await pool.query(`
+      const [rows] = await pool.execute(`
         SELECT sa.*, u.name, u.email, sa.created_at as access_granted_at
         FROM secure_access sa
         JOIN users u ON sa.user_id = u.id
-        WHERE sa.session_id = $1 AND sa.expires_at > NOW()
+        WHERE sa.session_id = ? AND sa.expires_at > NOW()
         ORDER BY sa.created_at DESC
       `, [sessionId]);
-      const rows = result.rows;
       
       return rows;
     } catch (error) {
@@ -124,8 +121,8 @@ class SecureAccess {
    */
   static async revokeAccess(userId, sessionId) {
     try {
-      await pool.query(
-        'UPDATE secure_access SET expires_at = NOW() WHERE user_id = $1 AND session_id = $2',
+      await pool.execute(
+        'UPDATE secure_access SET expires_at = NOW() WHERE user_id = ? AND session_id = ?',
         [userId, sessionId]
       );
       

@@ -5,13 +5,12 @@ class PasswordReset {
   static async create(userId, token, expiresAt) {
     const query = `
       INSERT INTO password_resets (user_id, token, expires_at) 
-      VALUES ($1, $2, $3)
-      RETURNING id
+      VALUES (?, ?, ?)
     `;
     
     try {
-      const result = await pool.query(query, [userId, token, expiresAt]);
-      return { id: result.rows[0].id, userId, token, expiresAt };
+      const result = await pool.execute(query, [userId, token, expiresAt]);
+      return { id: result[0].insertId, userId, token, expiresAt };
     } catch (error) {
       console.error('Error creating password reset:', error);
       throw error;
@@ -23,12 +22,12 @@ class PasswordReset {
       SELECT pr.*, u.email, u.name 
       FROM password_resets pr 
       JOIN users u ON pr.user_id = u.id 
-      WHERE pr.token = $1 AND pr.expires_at > NOW()
+      WHERE pr.token = ? AND pr.expires_at > NOW()
     `;
     
     try {
-      const result = await pool.query(query, [token]);
-      return result.rows[0] || null;
+      const [rows] = await pool.execute(query, [token]);
+      return rows[0] || null;
     } catch (error) {
       console.error('Error finding password reset:', error);
       throw error;
@@ -36,11 +35,11 @@ class PasswordReset {
   }
 
   static async deleteByToken(token) {
-    const query = 'DELETE FROM password_resets WHERE token = $1';
+    const query = 'DELETE FROM password_resets WHERE token = ?';
     
     try {
-      const result = await pool.query(query, [token]);
-      return result.rowCount > 0;
+      const result = await pool.execute(query, [token]);
+      return result[0].affectedRows > 0;
     } catch (error) {
       console.error('Error deleting password reset:', error);
       throw error;
@@ -48,11 +47,11 @@ class PasswordReset {
   }
 
   static async deleteByUserId(userId) {
-    const query = 'DELETE FROM password_resets WHERE user_id = $1';
+    const query = 'DELETE FROM password_resets WHERE user_id = ?';
     
     try {
-      const result = await pool.query(query, [userId]);
-      return result.rowCount > 0;
+      const result = await pool.execute(query, [userId]);
+      return result[0].affectedRows > 0;
     } catch (error) {
       console.error('Error deleting password resets for user:', error);
       throw error;
@@ -63,8 +62,8 @@ class PasswordReset {
     const query = 'DELETE FROM password_resets WHERE expires_at < NOW()';
     
     try {
-      const result = await pool.query(query);
-      return result.rowCount;
+      const result = await pool.execute(query);
+      return result[0].affectedRows;
     } catch (error) {
       console.error('Error cleaning up expired password resets:', error);
       throw error;
