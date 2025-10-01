@@ -42,11 +42,11 @@ const Sessions = () => {
           const transformedSessions = response.data.map((session: any) => ({
             id: session.id,
             title: session.title,
-            recruiter: session.recruiter_name || 'Legal Professionals',
+            recruiter: session.recruiter || 'Legal Professionals',
             company: session.company || 'Law Career Session',
             date: session.date,
             time: session.time,
-            duration: `${session.duration || 90} minutes`,
+            duration: '90 minutes', // Default duration since it's not in the database
             description: session.description || 'Join us for an engaging session designed for high school and university students to learn from experienced legal professionals.'
           }));
           

@@ -11,19 +11,18 @@ const getAllSessions = async (req, res) => {
         id,
         title,
         description,
-        session_date as date,
-        session_time as time,
-        duration,
+        date,
+        time,
         google_meet_link,
-        recruiter_name,
+        recruiter,
         company,
         price,
-        status,
+        is_active,
         created_at,
         updated_at
       FROM sessions 
-      WHERE status = 'upcoming'
-      ORDER BY session_date ASC, session_time ASC
+      WHERE is_active = 1
+      ORDER BY date ASC, time ASC
     `);
 
     console.log(`✅ Found ${sessions.length} sessions`);
