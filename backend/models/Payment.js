@@ -19,8 +19,7 @@ class Payment {
         user_id, session_id, mpesa_code, amount, 
         expected_amount, actual_amount, amount_mismatch, 
         full_mpesa_message, status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-      RETURNING id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `;
     
     const values = [
@@ -30,8 +29,8 @@ class Payment {
     ];
     
     try {
-      const result = await pool.query(query, values);
-      return { id: result.rows[0].id, ...paymentData };
+      const result = await pool.execute(query, values);
+      return { id: result[0].insertId, ...paymentData };
     } catch (error) {
       console.error('Error creating payment:', error);
       throw error;
@@ -60,8 +59,8 @@ class Payment {
     `;
     
     try {
-      const result = await pool.query(query);
-      const rows = result.rows;
+      const result = await pool.execute(query);
+      const rows = result[0];
       console.log(`Found ${rows.length} payments`);
       return rows;
     } catch (error) {
@@ -73,13 +72,13 @@ class Payment {
   static async updateStatus(paymentId, status, adminNotes = null) {
     const query = `
       UPDATE payments 
-      SET status = $1, admin_notes = $2, updated_at = NOW() 
-      WHERE id = $3
+      SET status = ?, admin_notes = ?, updated_at = NOW() 
+      WHERE id = ?
     `;
     
     try {
-      const result = await pool.query(query, [status, adminNotes, paymentId]);
-      return result.rowCount > 0;
+      const result = await pool.execute(query, [status, adminNotes, paymentId]);
+      return result[0].affectedRows > 0;
     } catch (error) {
       console.error('Error updating payment status:', error);
       throw error;
