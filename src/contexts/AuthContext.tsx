@@ -54,15 +54,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(response.data.user);
         } else {
           console.log('AuthContext: Profile fetch failed:', response);
+          // Don't clear user state if we already have a user (e.g., from registration)
+          if (!user) {
+            setUser(null);
+          }
         }
       } else {
         console.log('AuthContext: No token found');
+        // Don't clear user state if we already have a user (e.g., from registration)
+        if (!user) {
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('AuthContext: Failed to fetch user profile:', error);
       // If token is invalid, clear it
       apiService.logout();
-      setUser(null);
+      // Don't clear user state if we already have a user (e.g., from registration)
+      if (!user) {
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +114,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Verify token is stored
         const token = apiService.getAuthToken();
         console.log('AuthContext: Token stored after registration:', token ? 'YES' : 'NO');
+        
+        // Don't call fetchUserProfile here as it might override the user state
+        // The user is already set from the registration response
+        setIsLoading(false);
         
         return true;
       }

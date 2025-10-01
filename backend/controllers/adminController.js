@@ -147,7 +147,7 @@ const updatePaymentStatus = async (req, res) => {
       try {
         // Get payment details with user information
         const payments = await Payment.getAllPayments();
-        const payment = payments.find(p => p.payment_id == paymentId);
+        const payment = payments.find(p => p.id == paymentId);
         
         if (payment && payment.user_email) {
           const sessionName = payment.session_title || "Law Career Session";
