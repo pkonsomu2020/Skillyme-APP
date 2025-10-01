@@ -49,7 +49,7 @@ router.get('/setup-mysql-database', async (req, res) => {
     // Create payments table
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS payments (
-        payment_id INT AUTO_INCREMENT PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         session_id INT NOT NULL,
         mpesa_code VARCHAR(50),
@@ -58,9 +58,9 @@ router.get('/setup-mysql-database', async (req, res) => {
         expected_amount DECIMAL(10,2) NOT NULL,
         actual_amount DECIMAL(10,2),
         amount_mismatch BOOLEAN DEFAULT FALSE,
-        status ENUM('pending', 'paid', 'rejected') DEFAULT 'pending',
+        status VARCHAR(20) DEFAULT 'pending',
         admin_notes TEXT,
-        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
@@ -73,6 +73,7 @@ router.get('/setup-mysql-database', async (req, res) => {
       CREATE TABLE IF NOT EXISTS admins (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -99,7 +100,7 @@ router.get('/setup-mysql-database', async (req, res) => {
       CREATE TABLE IF NOT EXISTS password_resets (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
-        token VARCHAR(255) UNIQUE NOT NULL,
+        token VARCHAR(255) NOT NULL,
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -111,42 +112,37 @@ router.get('/setup-mysql-database', async (req, res) => {
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS secure_access (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        admin_id INT,
-        access_type ENUM('user', 'admin') NOT NULL,
-        ip_address VARCHAR(45),
-        user_agent TEXT,
-        login_success BOOLEAN DEFAULT FALSE,
-        failure_reason VARCHAR(255),
+        user_id INT NOT NULL,
+        session_id INT NOT NULL,
+        access_token VARCHAR(255) UNIQUE NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
       )
     `);
     console.log('✅ Secure_access table created');
 
-    // Insert admin user
+    // Insert default admin user
     const hashedPassword = await bcrypt.hash('Skillyme@2025', 12);
-    await pool.execute(`
-      INSERT INTO admins (username, password) 
-      VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE password = VALUES(password)
-    `, ['admin', hashedPassword]);
-    console.log('✅ Admin user created (username: admin, password: Skillyme@2025)');
+    await pool.execute(
+      'INSERT IGNORE INTO admins (username, email, password) VALUES (?, ?, ?)',
+      ['admin', 'admin@skillyme.com', hashedPassword]
+    );
+    console.log('✅ Default admin user created');
 
     // Insert sample session
     await pool.execute(`
-      INSERT INTO sessions (title, company, recruiter, date, time, price, description, google_meet_link) 
+      INSERT IGNORE INTO sessions (title, company, recruiter, date, time, price, description, google_meet_link) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE title = VALUES(title)
     `, [
       'Law Career Session',
-      'Kenya Law Society',
-      'John Mwangi',
-      '2024-12-20',
+      'Legal Professionals',
+      'Legal Professionals',
+      '2025-10-09',
       '14:00:00',
       200.00,
-      'Join us for an interactive session about careers in law. Learn about different legal specializations, career paths, and opportunities in Kenya.',
+      'Join us for an engaging session designed for high school and university students to learn from experienced legal professionals.',
       'https://meet.google.com/nmh-nfxk-oao'
     ]);
     console.log('✅ Sample session created');
@@ -162,10 +158,41 @@ router.get('/setup-mysql-database', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ MySQL database setup failed:', error);
+    console.error('❌ Database setup failed:', error);
     res.status(500).json({
       success: false,
-      message: 'MySQL database setup failed',
+      message: 'Database setup failed',
+      error: error.message
+    });
+  }
+});
+
+// Test admin login endpoint
+router.get('/test-admin-login', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM admins WHERE username = ?', ['admin']);
+    
+    if (rows.length > 0) {
+      res.json({
+        success: true,
+        message: 'Admin found',
+        admin: {
+          id: rows[0].id,
+          username: rows[0].username,
+          email: rows[0].email
+        }
+      });
+    } else {
+      res.json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Test admin login failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Test failed',
       error: error.message
     });
   }
