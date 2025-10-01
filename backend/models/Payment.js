@@ -40,7 +40,7 @@ class Payment {
   static async getAllPayments() {
     const query = `
       SELECT 
-        p.payment_id,
+        p.id as payment_id,
         p.user_id,
         p.session_id,
         p.mpesa_code,
@@ -49,7 +49,7 @@ class Payment {
         p.amount_mismatch,
         p.status,
         p.full_mpesa_message,
-        p.submitted_at AS submission_date,
+        p.created_at AS submission_date,
         u.name AS user_name,
         u.email AS user_email,
         s.title AS session_title,
@@ -57,7 +57,7 @@ class Payment {
       FROM payments p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN sessions s ON p.session_id = s.id
-      ORDER BY p.submitted_at DESC
+      ORDER BY p.created_at DESC
     `;
     
     try {
@@ -75,7 +75,7 @@ class Payment {
     const query = `
       UPDATE payments 
       SET status = ?, admin_notes = ?, updated_at = NOW() 
-      WHERE payment_id = ?
+      WHERE id = ?
     `;
     
     try {

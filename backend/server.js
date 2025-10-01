@@ -181,7 +181,14 @@ app.get('/test-email', async (req, res) => {
     res.json({
       success: true,
       message: 'Email test completed',
-      result: result
+      result: result,
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+        GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
+        GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
+      }
     });
   } catch (error) {
     console.error('❌ Email test failed:', error);
@@ -255,9 +262,14 @@ app.get('/diagnostic-email', async (req, res) => {
       if (process.env.SENDGRID_API_KEY) {
         diagnostic.emailService.connection = 'SUCCESS';
         diagnostic.emailService.provider = 'SendGrid';
+        diagnostic.emailService.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com';
+      } else if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
+        diagnostic.emailService.connection = 'SUCCESS';
+        diagnostic.emailService.provider = 'Gmail SMTP';
+        diagnostic.emailService.fromEmail = process.env.GMAIL_USER;
       } else {
         diagnostic.emailService.connection = 'FAILED';
-        diagnostic.emailService.error = 'SendGrid API key not configured';
+        diagnostic.emailService.error = 'No email service configured (SendGrid or Gmail)';
       }
     } catch (error) {
       diagnostic.emailService.connection = 'FAILED';

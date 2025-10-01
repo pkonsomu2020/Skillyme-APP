@@ -115,8 +115,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const token = apiService.getAuthToken();
         console.log('AuthContext: Token stored after registration:', token ? 'YES' : 'NO');
         
-        // Don't call fetchUserProfile here as it might override the user state
-        // The user is already set from the registration response
+        // Store authentication state in localStorage for persistence
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
         setIsLoading(false);
         
         return true;
@@ -135,12 +137,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log('AuthContext: Logging out user...');
     apiService.logout();
     setUser(null);
+    // Clear all stored authentication data
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user');
     console.log('AuthContext: User state cleared, isAuthenticated should be false');
   };
 
   // Check authentication status on mount
   useEffect(() => {
-    fetchUserProfile();
+    const checkAuthState = async () => {
+      console.log('AuthContext: Checking initial auth state...');
+      const storedAuth = localStorage.getItem('authToken');
+      const storedUser = localStorage.getItem('user');
+      const isAuthenticated = localStorage.getItem('isAuthenticated');
+      
+      console.log('Stored auth:', !!storedAuth);
+      console.log('Stored token:', storedAuth ? 'Present' : 'Not found');
+      console.log('Stored user:', storedUser ? 'Present' : 'Not found');
+      console.log('Stored isAuthenticated:', isAuthenticated);
+      
+      if (storedAuth && storedUser && isAuthenticated === 'true') {
+        console.log('Token value:', storedAuth);
+        console.log('AuthContext: Setting authenticated state from localStorage');
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          console.log('AuthContext: User restored from localStorage:', userData);
+        } catch (error) {
+          console.error('AuthContext: Error parsing stored user data:', error);
+          // Clear invalid data
+          localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated');
+        }
+        setIsLoading(false);
+      } else {
+        console.log('AuthContext: No stored authentication data found');
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuthState();
   }, []);
 
   const value: AuthContextType = {

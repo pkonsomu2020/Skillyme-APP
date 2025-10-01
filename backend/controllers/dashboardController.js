@@ -4,31 +4,36 @@ const pool = require('../config/database');
 const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('Fetching dashboard stats for user:', userId);
 
     // Get available sessions count
     const [sessionsResult] = await pool.execute(
       'SELECT COUNT(*) as count FROM sessions WHERE is_active = 1'
     );
     const availableSessions = sessionsResult[0].count;
+    console.log('Available sessions:', availableSessions);
 
-    // Get sessions joined by user
+    // Get sessions joined by user (from payments table)
     const [joinedResult] = await pool.execute(
-      'SELECT COUNT(*) as count FROM user_sessions WHERE user_id = ?',
+      'SELECT COUNT(*) as count FROM payments WHERE user_id = ? AND status = "paid"',
       [userId]
     );
     const sessionsJoined = joinedResult[0].count;
+    console.log('Sessions joined:', sessionsJoined);
 
     // Get session cost (from sessions table)
     const [costResult] = await pool.execute(
       'SELECT price FROM sessions WHERE is_active = 1 LIMIT 1'
     );
     const sessionCost = costResult[0]?.price || 200;
+    console.log('Session cost:', sessionCost);
 
-    // Get recruiters count (this could be from a recruiters table or sessions)
+    // Get recruiters count (from sessions table)
     const [recruitersResult] = await pool.execute(
       'SELECT COUNT(DISTINCT recruiter) as count FROM sessions WHERE is_active = 1'
     );
     const recruiters = recruitersResult[0].count;
+    console.log('Recruiters:', recruiters);
 
     res.json({
       success: true,
@@ -62,12 +67,12 @@ const getUserSessions = async (req, res) => {
         s.date,
         s.time,
         s.price,
-        s.status as session_status,
-        us.status as user_status,
-        us.created_at as joined_at
+        s.is_active as session_status,
+        p.status as payment_status,
+        p.created_at as joined_at
       FROM sessions s
-      LEFT JOIN user_sessions us ON s.id = us.session_id AND us.user_id = ?
-      WHERE s.status = 'active'
+      LEFT JOIN payments p ON s.id = p.session_id AND p.user_id = ?
+      WHERE s.is_active = 1
       ORDER BY s.date ASC
     `, [userId]);
 

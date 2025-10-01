@@ -36,6 +36,12 @@ class EmailService {
       return { success: true, messageId: 'dev-mode-' + Date.now() };
     }
 
+    // Validate email parameters
+    if (!to || !subject || !html) {
+      console.error('📧 [ERROR] Missing required email parameters');
+      return { success: false, error: 'Missing required email parameters' };
+    }
+
     // Log email attempt for debugging
     console.log('📧 [EMAIL ATTEMPT] Sending email:');
     console.log(`   To: ${to}`);
@@ -254,8 +260,8 @@ class EmailService {
             </div>
             
             <p style="color: #666; font-size: 16px; line-height: 1.6;">
-              Email: skillyme25@gmail.com<br>
-              Phone: +254 745 266526
+              Email: ${process.env.SUPPORT_EMAIL || 'skillyme25@gmail.com'}<br>
+              Phone: ${process.env.SUPPORT_PHONE || '+254 745 266526'}
             </p>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
