@@ -109,4 +109,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Skillyme API server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:8081'}`);
+  console.log(`🔧 Admin URL: ${process.env.ADMIN_URL || 'http://localhost:8080'}`);
 });
