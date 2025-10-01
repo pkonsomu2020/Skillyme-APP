@@ -1,53 +1,42 @@
 const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 require('dotenv').config();
 
 class EmailService {
   constructor() {
+    // Initialize SendGrid if API key is provided
+    if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      console.log('📧 SendGrid initialized successfully');
+    } else {
+      console.log('📧 SendGrid API key not found, will use SMTP fallback');
+    }
+
+    // SMTP transporter as fallback
     this.transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
       port: process.env.EMAIL_PORT || process.env.SMTP_PORT || 587,
-      secure: false, // true for 465, false for other ports
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER || process.env.SMTP_USER,
         pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
       },
-      // Optimized timeout settings for cloud platforms
-      connectionTimeout: 30000, // 30 seconds
-      greetingTimeout: 10000, // 10 seconds
-      socketTimeout: 30000, // 30 seconds
-      pool: false, // Disable connection pooling
-      tls: {
-        rejectUnauthorized: false,
-        ciphers: 'SSLv3'
-      },
-      // Additional options for better reliability
-      requireTLS: true,
-      debug: false,
-      logger: false,
-      // Additional Gmail-specific settings
-      service: 'gmail',
-      ignoreTLS: false,
-      secureConnection: false
+      connectionTimeout: 30000,
+      greetingTimeout: 10000,
+      socketTimeout: 30000,
+      pool: false,
+      tls: { rejectUnauthorized: false }
     });
   }
 
   async sendEmail(to, subject, html, text = '', retries = 3) {
     // For development/testing, log email instead of sending
-    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+    if (process.env.NODE_ENV === 'development') {
       console.log('📧 [DEV MODE] Email would be sent:');
       console.log(`   To: ${to}`);
       console.log(`   Subject: ${subject}`);
       console.log(`   Content: ${text || html.substring(0, 100)}...`);
       return { success: true, messageId: 'dev-mode-' + Date.now() };
-    }
-
-    // Check if email service is configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log('📧 [NO EMAIL CONFIG] Email would be sent:');
-      console.log(`   To: ${to}`);
-      console.log(`   Subject: ${subject}`);
-      console.log(`   Content: ${text || html.substring(0, 100)}...`);
-      return { success: true, messageId: 'no-config-' + Date.now() };
     }
 
     // Log email attempt for debugging
@@ -56,122 +45,68 @@ class EmailService {
     console.log(`   Subject: ${subject}`);
     console.log(`   Secure Access Link: ${html.includes('secure-access') ? 'INCLUDED' : 'NOT FOUND'}`);
 
-    // Try multiple SMTP configurations
-    const smtpConfigs = [
-      // Primary Gmail configuration with optimized settings
-      {
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        },
-        connectionTimeout: 60000, // 60 seconds
-        greetingTimeout: 30000, // 30 seconds
-        socketTimeout: 60000, // 60 seconds
-        tls: { 
-          rejectUnauthorized: false,
-          ciphers: 'SSLv3',
-          servername: 'smtp.gmail.com'
-        },
-        requireTLS: true,
-        service: 'gmail',
-        pool: false,
-        maxConnections: 1,
-        maxMessages: 1
-      },
-      // Alternative Gmail configuration with SSL
-      {
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        },
-        connectionTimeout: 60000,
-        greetingTimeout: 30000,
-        socketTimeout: 60000,
-        tls: { 
-          rejectUnauthorized: false,
-          servername: 'smtp.gmail.com'
-        },
-        pool: false,
-        maxConnections: 1,
-        maxMessages: 1
-      },
-      // Simple Gmail configuration without advanced options
-      {
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        },
-        connectionTimeout: 60000,
-        greetingTimeout: 30000,
-        socketTimeout: 60000
-      }
-    ];
-
-    for (let configIndex = 0; configIndex < smtpConfigs.length; configIndex++) {
-      const config = smtpConfigs[configIndex];
-      console.log(`📧 [SMTP CONFIG ${configIndex + 1}] Trying ${config.host}:${config.port} (secure: ${config.secure})`);
-      
+    // Try SendGrid first (most reliable for cloud platforms)
+    if (process.env.SENDGRID_API_KEY) {
+      console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
       try {
-        const testTransporter = nodemailer.createTransport(config);
-        
-        for (let attempt = 1; attempt <= retries; attempt++) {
-          try {
-            const mailOptions = {
-              from: `"Skillyme" <${process.env.EMAIL_USER}>`,
-              to: to,
-              subject: subject,
-              text: text,
-              html: html
-            };
+        const msg = {
+          to: to,
+          from: {
+            email: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USER || 'noreply@skillyme.com',
+            name: 'Skillyme'
+          },
+          subject: subject,
+          text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+          html: html
+        };
 
-            const result = await testTransporter.sendMail(mailOptions);
-            console.log(`✅ Email sent successfully with config ${configIndex + 1}:`, result.messageId);
-            return { success: true, messageId: result.messageId };
-          } catch (error) {
-            console.error(`❌ Email sending failed (config ${configIndex + 1}, attempt ${attempt}/${retries}):`, error.message);
-            
-            if (attempt === retries) {
-              console.error(`❌ Config ${configIndex + 1} failed after all retries:`, error.message);
-              break; // Try next config
-            }
-            
-            // Wait before retry (exponential backoff)
-            const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
-            console.log(`⏳ Retrying email in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
-        }
-      } catch (configError) {
-        console.error(`❌ SMTP Config ${configIndex + 1} setup failed:`, configError.message);
-        continue; // Try next config
+        const result = await sgMail.send(msg);
+        console.log('✅ Email sent successfully via SendGrid:', result[0].headers['x-message-id']);
+        return { success: true, messageId: result[0].headers['x-message-id'] };
+      } catch (error) {
+        console.error('❌ SendGrid failed:', error.message);
+        console.log('📧 [FALLBACK] Trying SMTP...');
       }
     }
 
-    // If all configs failed, log the email and return success
-    console.log('📧 [FALLBACK] All SMTP configs failed, logging email instead:');
+    // Fallback to SMTP if SendGrid fails or is not configured
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      console.log('📧 [SMTP FALLBACK] Attempting to send via SMTP...');
+      try {
+        const mailOptions = {
+          from: `"Skillyme" <${process.env.EMAIL_USER}>`,
+          to: to,
+          subject: subject,
+          text: text,
+          html: html
+        };
+
+        const result = await this.transporter.sendMail(mailOptions);
+        console.log('✅ Email sent successfully via SMTP:', result.messageId);
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        console.error('❌ SMTP failed:', error.message);
+      }
+    }
+
+    // If all methods failed, log the email
+    console.log('📧 [FALLBACK] All email methods failed, logging email:');
     console.log(`   To: ${to}`);
     console.log(`   Subject: ${subject}`);
     console.log(`   Content: ${text || html.substring(0, 100)}...`);
     
-    // Log email details to a file for manual sending if needed
     const emailLog = {
       timestamp: new Date().toISOString(),
       to: to,
       subject: subject,
       html: html,
       text: text,
-      status: 'failed_to_send'
+      status: 'failed_to_send',
+      reason: 'No working email service configured'
     };
     console.log('📧 [EMAIL LOG]', JSON.stringify(emailLog, null, 2));
     
-    return { success: true, messageId: 'fallback-' + Date.now() };
+    return { success: true, messageId: 'logged-' + Date.now() };
   }
 
   // Email template for M-Pesa submission confirmation
