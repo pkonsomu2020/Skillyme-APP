@@ -216,6 +216,85 @@ app.get('/check-env', async (req, res) => {
   }
 });
 
+// Comprehensive email diagnostic
+app.get('/diagnostic-email', async (req, res) => {
+  try {
+    const diagnostic = {
+      timestamp: new Date().toISOString(),
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        EMAIL_USER: process.env.EMAIL_USER ? 'SET' : 'NOT SET',
+        EMAIL_PASS: process.env.EMAIL_PASS ? 'SET' : 'NOT SET',
+        EMAIL_HOST: process.env.EMAIL_HOST || 'NOT SET',
+        EMAIL_PORT: process.env.EMAIL_PORT || 'NOT SET',
+        SMTP_USER: process.env.SMTP_USER ? 'SET' : 'NOT SET',
+        SMTP_PASS: process.env.SMTP_PASS ? 'SET' : 'NOT SET',
+        SMTP_HOST: process.env.SMTP_HOST || 'NOT SET',
+        SMTP_PORT: process.env.SMTP_PORT || 'NOT SET'
+      },
+      database: {},
+      secureAccess: {},
+      emailService: {}
+    };
+    
+    // Test database connection
+    try {
+      await pool.execute('SELECT 1 as test');
+      diagnostic.database.connection = 'SUCCESS';
+    } catch (error) {
+      diagnostic.database.connection = 'FAILED';
+      diagnostic.database.error = error.message;
+    }
+    
+    // Check secure_access table
+    try {
+      const [rows] = await pool.execute('DESCRIBE secure_access');
+      diagnostic.secureAccess.exists = true;
+      diagnostic.secureAccess.columns = rows.map(r => ({ Field: r.Field, Type: r.Type }));
+    } catch (error) {
+      diagnostic.secureAccess.exists = false;
+      diagnostic.secureAccess.error = error.message;
+    }
+    
+    // Test email service
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransporter({
+        host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.EMAIL_PORT || process.env.SMTP_PORT || 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER || process.env.SMTP_USER,
+          pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000,
+        pool: false,
+        tls: { rejectUnauthorized: false }
+      });
+      
+      await transporter.verify();
+      diagnostic.emailService.connection = 'SUCCESS';
+    } catch (error) {
+      diagnostic.emailService.connection = 'FAILED';
+      diagnostic.emailService.error = error.message;
+    }
+    
+    res.json({
+      success: true,
+      message: 'Email diagnostic completed',
+      diagnostic: diagnostic
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
