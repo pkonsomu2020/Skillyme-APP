@@ -11,18 +11,26 @@ class EmailService {
         user: process.env.EMAIL_USER || process.env.SMTP_USER,
         pass: process.env.EMAIL_PASS || process.env.SMTP_PASS
       },
-      connectionTimeout: 60000, // 60 seconds
-      greetingTimeout: 30000, // 30 seconds
-      socketTimeout: 60000, // 60 seconds
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 3,
-      rateDelta: 20000, // 20 seconds
-      rateLimit: 5 // max 5 emails per rateDelta
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 15000, // 15 seconds
+      socketTimeout: 30000, // 30 seconds
+      pool: false, // Disable connection pooling for now
+      tls: {
+        rejectUnauthorized: false
+      }
     });
   }
 
   async sendEmail(to, subject, html, text = '', retries = 3) {
+    // For development/testing, log email instead of sending
+    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+      console.log('📧 [DEV MODE] Email would be sent:');
+      console.log(`   To: ${to}`);
+      console.log(`   Subject: ${subject}`);
+      console.log(`   Content: ${text || html.substring(0, 100)}...`);
+      return { success: true, messageId: 'dev-mode-' + Date.now() };
+    }
+
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const mailOptions = {

@@ -197,4 +197,23 @@ router.get('/test-admin-login', async (req, res) => {
   }
 });
 
+// Check secure_access table structure
+router.get('/check-secure-access-table', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('DESCRIBE secure_access');
+    res.json({
+      success: true,
+      message: 'Secure access table structure',
+      columns: rows
+    });
+  } catch (error) {
+    console.error('❌ Check secure_access table failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Check secure_access table failed',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
