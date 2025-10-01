@@ -259,7 +259,7 @@ app.get('/diagnostic-email', async (req, res) => {
     // Test email service
     try {
       const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
         port: process.env.EMAIL_PORT || process.env.SMTP_PORT || 587,
         secure: false,
