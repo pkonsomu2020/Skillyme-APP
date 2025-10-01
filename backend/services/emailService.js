@@ -28,7 +28,8 @@ class EmailService {
 
   async sendEmail(to, subject, html, text = '') {
     // For development/testing, log email instead of sending
-    if (process.env.NODE_ENV === 'development') {
+    // Temporarily disabled for testing - emails will be sent even in development
+    if (process.env.NODE_ENV === 'development' && process.env.DISABLE_EMAIL_SENDING === 'true') {
       console.log('📧 [DEV MODE] Email would be sent:');
       console.log(`   To: ${to}`);
       console.log(`   Subject: ${subject}`);
