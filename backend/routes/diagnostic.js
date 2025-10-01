@@ -64,4 +64,76 @@ router.get('/check-payments-exists', async (req, res) => {
   }
 });
 
+// Get all tables and their schemas
+router.get('/all-tables-schema', async (req, res) => {
+  try {
+    console.log('Getting all tables and their schemas...');
+    
+    // Get all tables
+    const [tables] = await pool.execute('SHOW TABLES');
+    console.log('All tables:', tables);
+    
+    const tableSchemas = {};
+    
+    // Get schema for each table
+    for (const table of tables) {
+      const tableName = Object.values(table)[0]; // Get the table name from the result
+      console.log(`Getting schema for table: ${tableName}`);
+      
+      try {
+        const [columns] = await pool.execute(`DESCRIBE ${tableName}`);
+        tableSchemas[tableName] = columns;
+        console.log(`${tableName} columns:`, columns);
+      } catch (error) {
+        console.error(`Error getting schema for ${tableName}:`, error);
+        tableSchemas[tableName] = { error: error.message };
+      }
+    }
+    
+    res.json({
+      success: true,
+      tables: tables,
+      schemas: tableSchemas,
+      message: 'All table schemas retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Error getting all table schemas:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Failed to get all table schemas'
+    });
+  }
+});
+
+// Get specific table schema
+router.get('/table-schema/:tableName', async (req, res) => {
+  try {
+    const { tableName } = req.params;
+    console.log(`Getting schema for table: ${tableName}`);
+    
+    const [columns] = await pool.execute(`DESCRIBE ${tableName}`);
+    console.log(`${tableName} columns:`, columns);
+    
+    // Also get sample data
+    const [sampleData] = await pool.execute(`SELECT * FROM ${tableName} LIMIT 3`);
+    console.log(`${tableName} sample data:`, sampleData);
+    
+    res.json({
+      success: true,
+      tableName: tableName,
+      columns: columns,
+      sampleData: sampleData,
+      message: `Schema for ${tableName} retrieved successfully`
+    });
+  } catch (error) {
+    console.error(`Error getting schema for ${tableName}:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: `Failed to get schema for ${tableName}`
+    });
+  }
+});
+
 module.exports = router;
