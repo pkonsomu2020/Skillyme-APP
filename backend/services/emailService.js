@@ -60,25 +60,26 @@ class EmailService {
           to: to,
           from: {
             email: fromEmail,
-            name: 'Skillyme Team'
+            name: 'Skillyme'
           },
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
           html: html,
-          // Add headers to prevent spam
+          // Minimal headers to avoid spam filters
           headers: {
-            'X-Priority': '1',
-            'X-MSMail-Priority': 'High',
-            'Importance': 'high',
-            'X-Mailer': 'Skillyme Platform',
-            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
+            'X-Mailer': 'Skillyme Platform'
           },
           // Add categories for better deliverability
           categories: ['transaction', 'skillyme-notification'],
-          // Add custom args
+          // Add custom args for tracking
           customArgs: {
             source: 'skillyme-platform',
             type: 'transaction-notification'
+          },
+          // Add reply-to for better deliverability
+          replyTo: {
+            email: fromEmail,
+            name: 'Skillyme Support'
           }
         };
 
@@ -168,40 +169,35 @@ class EmailService {
 
   // Email template for M-Pesa submission confirmation
   async sendPaymentSubmissionConfirmation(userEmail, userName, sessionName) {
-    const subject = `Payment Submission Confirmation - ${sessionName}`;
+    const subject = `Your ${sessionName} registration is being processed`;
     
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">Skillyme</h1>
-          <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">Career Connection Platform</p>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
-          <h2 style="color: #333; margin-top: 0;">Thank You for Your Payment Submission!</h2>
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; border: 1px solid #e9ecef;">
+          <h2 style="color: #333; margin-top: 0;">Thank you for your registration!</h2>
           
           <p style="color: #666; font-size: 16px; line-height: 1.6;">
-            Dear <strong>${userName}</strong>,
+            Hi ${userName},
           </p>
           
           <p style="color: #666; font-size: 16px; line-height: 1.6;">
-            Thank you for registering for the <strong>${sessionName}</strong> session. We have received your M-Pesa payment submission and are currently processing it.
+            We have received your registration for <strong>${sessionName}</strong> and your payment is being processed.
           </p>
           
           <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196f3;">
             <p style="margin: 0; color: #1976d2; font-weight: 500;">
-              📧 We shall get back to you shortly with the invite link once your payment is confirmed.
+              We will send you the session link once your payment is confirmed.
             </p>
           </div>
           
           <p style="color: #666; font-size: 16px; line-height: 1.6;">
-            Please keep an eye on your email for further updates regarding your session access.
+            Please check your email for updates.
           </p>
           
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
             <p style="color: #999; font-size: 14px; margin: 0;">
               Best regards,<br>
-              <strong>The Skillyme Team</strong>
+              <strong>Skillyme Team</strong>
             </p>
           </div>
         </div>

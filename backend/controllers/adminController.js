@@ -102,7 +102,9 @@ const getAdminProfile = async (req, res) => {
 // Get all payments for admin dashboard
 const getAllPayments = async (req, res) => {
   try {
+    console.log('📊 Admin: Fetching all payments...');
     const payments = await Payment.getAllPayments();
+    console.log(`📊 Admin: Found ${payments.length} payments`);
     
     res.json({
       success: true,

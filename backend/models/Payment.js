@@ -75,6 +75,7 @@ class Payment {
 
   static async getAllPayments() {
     try {
+      console.log('📊 Payment.getAllPayments: Fetching payments from database...');
       const { data, error } = await supabase
         .from('payments')
         .select(`
@@ -94,8 +95,11 @@ class Payment {
         .order('submitted_at', { ascending: false });
       
       if (error) {
+        console.error('📊 Payment.getAllPayments: Database error:', error);
         throw error;
       }
+      
+      console.log(`📊 Payment.getAllPayments: Raw data from database: ${data?.length || 0} payments`);
       
       // Transform the data to match the expected format
       const transformedData = data?.map(payment => ({
@@ -115,7 +119,7 @@ class Payment {
         session_google_meet_link: payment.sessions?.google_meet_link
       })) || [];
       
-      console.log(`Found ${transformedData.length} payments`);
+      console.log(`📊 Payment.getAllPayments: Transformed ${transformedData.length} payments`);
       return transformedData;
     } catch (error) {
       console.error('Error fetching payments:', error);
