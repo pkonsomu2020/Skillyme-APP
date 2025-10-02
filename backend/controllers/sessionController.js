@@ -4,7 +4,7 @@ const supabase = require('../config/supabase');
 // Get all available sessions (public endpoint)
 const getAllSessions = async (req, res) => {
   try {
-    console.log('📋 Fetching all sessions...');
+    // Fetching sessions
     
     const { data: sessions, error } = await supabase
       .from('sessions')
@@ -32,7 +32,7 @@ const getAllSessions = async (req, res) => {
       throw error;
     }
 
-    console.log(`✅ Found ${sessions.length} sessions`);
+    // Sessions retrieved successfully
     
     res.json({
       success: true,

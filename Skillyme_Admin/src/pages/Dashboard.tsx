@@ -44,10 +44,16 @@ const Dashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [previousPaymentCount, setPreviousPaymentCount] = useState(0);
   const [newPaymentsDetected, setNewPaymentsDetected] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
 
   // Fetch payments from backend
   const fetchPayments = useCallback(async (isAutoRefresh = false) => {
-    // Fetching payments data
+    // Debounce: Prevent excessive API calls (minimum 2 seconds between calls)
+    const now = Date.now();
+    if (isAutoRefresh && now - lastFetchTime < 2000) {
+      return;
+    }
+    setLastFetchTime(now);
 
     // Validate token before making API call
     const isValidToken = await validateToken();
@@ -128,7 +134,7 @@ const Dashboard = () => {
     fetchPayments(false);
   }, [isInitialized, fetchPayments]);
 
-  // Auto-refresh every 5 seconds
+  // Auto-refresh every 30 seconds (optimized for performance)
   useEffect(() => {
     if (!isAuthenticated || !adminToken || !autoRefresh) return;
 
@@ -137,7 +143,7 @@ const Dashboard = () => {
       if (document.visibilityState === 'visible') {
         fetchPayments(true);
       }
-    }, 5000); // Refresh every 5 seconds
+    }, 30000); // Refresh every 30 seconds (reduced frequency)
 
     return () => clearInterval(interval);
   }, [isAuthenticated, adminToken, autoRefresh, fetchPayments]);

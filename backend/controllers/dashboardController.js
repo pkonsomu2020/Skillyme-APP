@@ -4,7 +4,7 @@ const supabase = require('../config/supabase');
 const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('Fetching dashboard stats for user:', userId);
+    // Fetching dashboard stats
 
     // Get available sessions count
     const { count: availableSessions, error: sessionsError } = await supabase
@@ -13,7 +13,7 @@ const getDashboardStats = async (req, res) => {
       .eq('is_active', true);
     
     if (sessionsError) throw sessionsError;
-    console.log('Available sessions:', availableSessions);
+    // Available sessions retrieved
 
     // Get sessions joined by user (from payments table)
     const { count: sessionsJoined, error: joinedError } = await supabase
@@ -23,7 +23,7 @@ const getDashboardStats = async (req, res) => {
       .eq('status', 'paid');
     
     if (joinedError) throw joinedError;
-    console.log('Sessions joined:', sessionsJoined);
+    // Sessions joined retrieved
 
     // Get session cost (from sessions table)
     const { data: costResult, error: costError } = await supabase
@@ -35,7 +35,7 @@ const getDashboardStats = async (req, res) => {
     
     if (costError && costError.code !== 'PGRST116') throw costError;
     const sessionCost = costResult?.price || 200;
-    console.log('Session cost:', sessionCost);
+    // Session cost retrieved
 
     // Get recruiters count (from sessions table)
     const { data: recruitersResult, error: recruitersError } = await supabase
@@ -45,7 +45,7 @@ const getDashboardStats = async (req, res) => {
     
     if (recruitersError) throw recruitersError;
     const recruiters = new Set(recruitersResult.map(r => r.recruiter)).size;
-    console.log('Recruiters:', recruiters);
+    // Recruiters count retrieved
 
     res.json({
       success: true,

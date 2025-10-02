@@ -10,28 +10,26 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      console.log('No token provided for request:', req.path);
+      // No token provided
       return res.status(401).json({ 
         success: false, 
         message: 'Access token required' 
       });
     }
 
-    console.log('Verifying token for request:', req.path);
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Token decoded successfully:', { userId: decoded.userId, email: decoded.email });
     
     const user = await User.findById(decoded.userId);
     
     if (!user) {
-      console.log('User not found for token:', decoded.userId);
+      // User not found
       return res.status(401).json({ 
         success: false, 
         message: 'Invalid token - user not found' 
       });
     }
 
-    console.log('User found:', { id: user.id, name: user.name, email: user.email });
+    // User found
     
     req.user = {
       id: user.id,
@@ -42,7 +40,7 @@ const authenticateToken = async (req, res, next) => {
       county: user.county
     };
     
-    console.log('Authentication successful for user:', user.email);
+    // Authentication successful
     next();
   } catch (error) {
     console.error('Token verification error:', error);

@@ -137,7 +137,7 @@ const submitMpesaCode = async (req, res) => {
             user.name,
             sessionName
           );
-          console.log('Payment submission confirmation email sent to:', user.email);
+          // Payment submission confirmation email sent
         }
       } catch (emailError) {
         console.error('Error sending payment confirmation email:', emailError);
