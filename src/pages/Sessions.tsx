@@ -186,7 +186,7 @@ const Sessions = () => {
 
       {/* Payment Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Join Session</DialogTitle>
             <DialogDescription>
