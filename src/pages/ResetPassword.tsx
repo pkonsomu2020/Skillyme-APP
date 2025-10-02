@@ -150,13 +150,19 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary-glow/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center mx-auto mb-4 shadow-lg ring-2 ring-primary/20 overflow-hidden">
-            <img 
-              src="/Skillyme LOGO.jpg" 
-              alt="Skillyme Logo" 
-              className="w-12 h-12 object-contain" 
-            />
+        <CardHeader className="text-center pb-8">
+          {/* Logo matching navbar design */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
+              <img 
+                src="/Skillyme LOGO.jpg" 
+                alt="Skillyme Logo" 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+            <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent font-bold text-2xl">
+              Skillyme
+            </span>
           </div>
           <CardTitle className="text-2xl font-bold">Reset Your Password</CardTitle>
           <CardDescription>
@@ -164,8 +170,8 @@ const ResetPassword = () => {
           </CardDescription>
         </CardHeader>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
               <div className="relative">
@@ -226,7 +232,7 @@ const ResetPassword = () => {
 
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full mt-8" 
               disabled={isLoading}
               variant="hero"
             >
@@ -244,7 +250,7 @@ const ResetPassword = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <Link to="/login">
               <Button variant="ghost" className="text-sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
