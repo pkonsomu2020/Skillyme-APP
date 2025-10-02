@@ -1,17 +1,31 @@
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 
 class User {
   static async create(userData) {
     const { name, email, password, phone, country, county, field_of_study, institution, level_of_study } = userData;
-    const query = `
-      INSERT INTO users (name, email, password, phone, country, county, field_of_study, institution, level_of_study, created_at) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    `;
-    const values = [name, email, password, phone, country, county, field_of_study, institution, level_of_study];
     
     try {
-      const result = await pool.execute(query, values);
-      return { id: result[0].insertId, ...userData };
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          name,
+          email,
+          password,
+          phone,
+          country,
+          county,
+          field_of_study,
+          institution,
+          level_of_study
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { id: data.id, ...userData };
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -19,10 +33,18 @@ class User {
   }
 
   static async findByEmail(email) {
-    const query = 'SELECT * FROM users WHERE email = ?';
     try {
-      const result = await pool.execute(query, [email]);
-      return result[0][0] || null;
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+        throw error;
+      }
+      
+      return data || null;
     } catch (error) {
       console.error('Error finding user by email:', error);
       throw error;
@@ -30,10 +52,18 @@ class User {
   }
 
   static async findById(id) {
-    const query = 'SELECT * FROM users WHERE id = ?';
     try {
-      const result = await pool.execute(query, [id]);
-      return result[0][0] || null;
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      return data || null;
     } catch (error) {
       console.error('Error finding user by ID:', error);
       throw error;
@@ -41,15 +71,21 @@ class User {
   }
 
   static async update(id, updateData) {
-    const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
-    const values = Object.values(updateData);
-    values.push(id);
-    
-    const query = `UPDATE users SET ${fields}, updated_at = NOW() WHERE id = ?`;
-    
     try {
-      const result = await pool.execute(query, values);
-      return result[0].affectedRows > 0;
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -62,11 +98,21 @@ class User {
   }
 
   static async updatePassword(userId, hashedPassword) {
-    const query = 'UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?';
-    
     try {
-      const result = await pool.execute(query, [hashedPassword, userId]);
-      return result[0].affectedRows > 0;
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          password: hashedPassword,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error updating password:', error);
       throw error;

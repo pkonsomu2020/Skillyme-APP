@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 
 class Payment {
   static async create(paymentData) {
@@ -14,23 +14,28 @@ class Payment {
       status = 'pending' 
     } = paymentData;
     
-    const query = `
-      INSERT INTO payments (
-        user_id, session_id, mpesa_code, amount, 
-        expected_amount, actual_amount, amount_mismatch, 
-        full_mpesa_message, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    
-    const values = [
-      userId, sessionId, mpesaCode, amount,
-      expectedAmount, actualAmount, amountMismatch,
-      fullMpesaMessage, status
-    ];
-    
     try {
-      const result = await pool.execute(query, values);
-      return { id: result[0].insertId, ...paymentData };
+      const { data, error } = await supabase
+        .from('payments')
+        .insert([{
+          user_id: userId,
+          session_id: sessionId,
+          mpesa_code: mpesaCode,
+          amount,
+          expected_amount: expectedAmount,
+          actual_amount: actualAmount,
+          amount_mismatch: amountMismatch,
+          full_mpesa_message: fullMpesaMessage,
+          status
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { id: data.payment_id, ...paymentData };
     } catch (error) {
       console.error('Error creating payment:', error);
       throw error;
@@ -38,33 +43,49 @@ class Payment {
   }
 
   static async getAllPayments() {
-    const query = `
-      SELECT 
-        p.payment_id,
-        p.user_id,
-        p.session_id,
-        p.mpesa_code,
-        p.amount,
-        p.actual_amount,
-        p.amount_mismatch,
-        p.status,
-        p.full_mpesa_message,
-        p.submitted_at AS submission_date,
-        u.name AS user_name,
-        u.email AS user_email,
-        s.title AS session_title,
-        s.google_meet_link AS session_google_meet_link
-      FROM payments p
-      JOIN users u ON p.user_id = u.id
-      LEFT JOIN sessions s ON p.session_id = s.id
-      ORDER BY p.submitted_at DESC
-    `;
-    
     try {
-      const result = await pool.execute(query);
-      const rows = result[0];
-      console.log(`Found ${rows.length} payments`);
-      return rows;
+      const { data, error } = await supabase
+        .from('payments')
+        .select(`
+          payment_id,
+          user_id,
+          session_id,
+          mpesa_code,
+          amount,
+          actual_amount,
+          amount_mismatch,
+          status,
+          full_mpesa_message,
+          submitted_at,
+          users!inner(name, email),
+          sessions(title, google_meet_link)
+        `)
+        .order('submitted_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform the data to match the expected format
+      const transformedData = data?.map(payment => ({
+        payment_id: payment.payment_id,
+        user_id: payment.user_id,
+        session_id: payment.session_id,
+        mpesa_code: payment.mpesa_code,
+        amount: payment.amount,
+        actual_amount: payment.actual_amount,
+        amount_mismatch: payment.amount_mismatch,
+        status: payment.status,
+        full_mpesa_message: payment.full_mpesa_message,
+        submission_date: payment.submitted_at,
+        user_name: payment.users?.name,
+        user_email: payment.users?.email,
+        session_title: payment.sessions?.title,
+        session_google_meet_link: payment.sessions?.google_meet_link
+      })) || [];
+      
+      console.log(`Found ${transformedData.length} payments`);
+      return transformedData;
     } catch (error) {
       console.error('Error fetching payments:', error);
       throw error;
@@ -72,15 +93,22 @@ class Payment {
   }
 
   static async updateStatus(paymentId, status, adminNotes = null) {
-    const query = `
-      UPDATE payments 
-      SET status = ?, admin_notes = ?, updated_at = NOW() 
-      WHERE payment_id = ?
-    `;
-    
     try {
-      const result = await pool.execute(query, [status, adminNotes, paymentId]);
-      return result[0].affectedRows > 0;
+      const { data, error } = await supabase
+        .from('payments')
+        .update({
+          status,
+          admin_notes: adminNotes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('payment_id', paymentId)
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error updating payment status:', error);
       throw error;

@@ -1,13 +1,14 @@
 const Session = require('../models/Session');
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 
 // Get all available sessions (public endpoint)
 const getAllSessions = async (req, res) => {
   try {
     console.log('📋 Fetching all sessions...');
     
-    const [sessions] = await pool.execute(`
-      SELECT 
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select(`
         id,
         title,
         description,
@@ -22,10 +23,14 @@ const getAllSessions = async (req, res) => {
         is_active,
         created_at,
         updated_at
-      FROM sessions 
-      WHERE is_active = 1
-      ORDER BY date ASC, time ASC
-    `);
+      `)
+      .eq('is_active', true)
+      .order('date', { ascending: true })
+      .order('time', { ascending: true });
+    
+    if (error) {
+      throw error;
+    }
 
     console.log(`✅ Found ${sessions.length} sessions`);
     

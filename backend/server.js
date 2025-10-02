@@ -6,7 +6,8 @@ const cookieParser = require('cookie-parser');
 const { generalLimiter, authLimiter, paymentLimiter, adminLimiter } = require('./middleware/rateLimiting');
 const { securityHeaders, httpsRedirect, corsSecurity } = require('./middleware/securityHeaders');
 const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware/csrfProtection');
-const pool = require('./config/database');
+// Database connection is now handled by individual models using Supabase
+// const pool = require('./config/database'); // DEPRECATED: Now using Supabase
 require('dotenv').config();
 
 const app = express();
@@ -73,7 +74,7 @@ app.use('/api/admin', adminLimiter, require('./routes/admin'));
 app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/sessions', require('./routes/sessions'));
-app.use('/api/mysql-setup', require('./routes/mysql-setup'));
+// MySQL setup route removed - now using Supabase
 app.use('/api/diagnostic', require('./routes/diagnostic'));
 app.use('/secure-access', require('./routes/secureAccess'));
 
@@ -99,48 +100,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Quick fix endpoint for secure_access table
-app.get('/fix-secure-access', async (req, res) => {
-  try {
-    console.log('🔧 Quick fix of secure_access table...');
-    
-    await pool.execute('DROP TABLE IF EXISTS secure_access');
-    console.log('✅ Dropped table');
-    
-    await pool.execute(`
-      CREATE TABLE secure_access (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        session_id INT NOT NULL,
-        access_token VARCHAR(255) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        expires_at TIMESTAMP NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
-      )
-    `);
-    console.log('✅ Created new table');
-    
-    res.json({ success: true, message: 'Secure access table fixed' });
-  } catch (error) {
-    console.error('❌ Error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// DEPRECATED: MySQL-specific endpoint removed
+// Secure access table is now managed through Supabase
 
-// Check secure_access table structure
-app.get('/check-secure-access', async (req, res) => {
-  try {
-    const [rows] = await pool.execute('DESCRIBE secure_access');
-    res.json({
-      success: true,
-      message: 'Secure access table structure',
-      columns: rows.map(r => ({ Field: r.Field, Type: r.Type }))
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// DEPRECATED: MySQL-specific endpoint removed
+// Use Supabase dashboard to check table structure
 
 // Test secure access creation
 app.get('/test-secure-access', async (req, res) => {
@@ -237,10 +201,15 @@ app.get('/diagnostic-email', async (req, res) => {
       emailService: {}
     };
     
-    // Test database connection
+    // Test Supabase connection
     try {
-      await pool.execute('SELECT 1 as test');
+      const supabase = require('./config/supabase');
+      const { data, error } = await supabase.from('users').select('id').limit(1);
+      if (error) {
+        throw error;
+      }
       diagnostic.database.connection = 'SUCCESS';
+      diagnostic.database.provider = 'Supabase';
     } catch (error) {
       diagnostic.database.connection = 'FAILED';
       diagnostic.database.error = error.message;
@@ -248,9 +217,13 @@ app.get('/diagnostic-email', async (req, res) => {
     
     // Check secure_access table
     try {
-      const [rows] = await pool.execute('DESCRIBE secure_access');
+      const supabase = require('./config/supabase');
+      const { data, error } = await supabase.from('secure_access').select('*').limit(1);
+      if (error) {
+        throw error;
+      }
       diagnostic.secureAccess.exists = true;
-      diagnostic.secureAccess.columns = rows.map(r => ({ Field: r.Field, Type: r.Type }));
+      diagnostic.secureAccess.provider = 'Supabase';
     } catch (error) {
       diagnostic.secureAccess.exists = false;
       diagnostic.secureAccess.error = error.message;

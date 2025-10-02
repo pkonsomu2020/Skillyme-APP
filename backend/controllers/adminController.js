@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
@@ -25,18 +25,18 @@ const adminLogin = async (req, res) => {
     }
 
     // Find admin
-    const query = 'SELECT * FROM admins WHERE username = ?';
-    const result = await pool.execute(query, [username]);
-    const rows = result[0];
+    const { data: admin, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('username', username)
+      .single();
     
-    if (!rows || rows.length === 0) {
+    if (error || !admin) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
-
-    const admin = rows[0];
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, admin.password);
@@ -269,14 +269,18 @@ const getAllSessions = async (req, res) => {
   try {
     console.log('📋 Fetching all sessions for admin...');
     
-    const [sessions] = await pool.execute(`
-      SELECT 
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select(`
         id, title, description, date, time, google_meet_link,
         recruiter, company, price, paybill_number, business_number,
         is_active, created_at, updated_at
-      FROM sessions 
-      ORDER BY created_at DESC
-    `);
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
 
     console.log(`✅ Found ${sessions.length} sessions`);
     
@@ -300,7 +304,7 @@ const getAllSessions = async (req, res) => {
 const createSession = async (req, res) => {
   try {
     const {
-      title, description, date, time, duration, google_meet_link,
+      title, description, date, time, google_meet_link,
       recruiter, company, price, paybill_number, business_number
     } = req.body;
 
@@ -312,27 +316,32 @@ const createSession = async (req, res) => {
       });
     }
 
-    const query = `
-      INSERT INTO sessions (
-        title, description, date, time, duration, google_meet_link,
-        recruiter, company, price, paybill_number, business_number,
-        is_active, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
-    `;
-
-    const values = [
-      title, description, date, time, duration || 90, google_meet_link,
-      recruiter || 'Skillyme Team', company || 'Skillyme', price,
-      paybill_number || '714888', business_number || '272177'
-    ];
-
-    const result = await pool.execute(query, values);
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert([{
+        title,
+        description,
+        date,
+        time,
+        google_meet_link,
+        recruiter: recruiter || 'Skillyme Team',
+        company: company || 'Skillyme',
+        price,
+        paybill_number: paybill_number || '714888',
+        business_number: business_number || '272177',
+        is_active: true
+      }])
+      .select();
+    
+    if (error) {
+      throw error;
+    }
     
     res.status(201).json({
       success: true,
       message: 'Session created successfully',
       data: {
-        sessionId: result[0].insertId
+        sessionId: data[0].id
       }
     });
   } catch (error) {
@@ -351,16 +360,20 @@ const updateSession = async (req, res) => {
     const { sessionId } = req.params;
     const updateData = req.body;
 
-    // Build dynamic update query
-    const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
-    const values = Object.values(updateData);
-    values.push(sessionId);
-
-    const query = `UPDATE sessions SET ${fields}, updated_at = NOW() WHERE id = ?`;
+    const { data, error } = await supabase
+      .from('sessions')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', sessionId)
+      .select();
     
-    const result = await pool.execute(query, values);
+    if (error) {
+      throw error;
+    }
     
-    if (result[0].affectedRows > 0) {
+    if (data && data.length > 0) {
       res.json({
         success: true,
         message: 'Session updated successfully'

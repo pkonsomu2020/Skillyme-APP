@@ -1,5 +1,5 @@
 const express = require('express');
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 const router = express.Router();
 
 // Diagnostic endpoint to check table structure
@@ -7,18 +7,21 @@ router.get('/check-payments-schema', async (req, res) => {
   try {
     console.log('Checking payments table schema...');
     
-    // Get table structure
-    const [columns] = await pool.execute('DESCRIBE payments');
-    console.log('Payments table columns:', columns);
+    // Get sample data from payments table
+    const { data: sampleData, error } = await supabase
+      .from('payments')
+      .select('*')
+      .limit(1);
     
-    // Try to get all data to see what's available
-    const [rows] = await pool.execute('SELECT * FROM payments LIMIT 1');
-    console.log('Sample payment data:', rows);
+    if (error) {
+      throw error;
+    }
+    
+    console.log('Sample payment data:', sampleData);
     
     res.json({
       success: true,
-      columns: columns,
-      sampleData: rows,
+      sampleData: sampleData,
       message: 'Payments table schema retrieved successfully'
     });
   } catch (error) {
@@ -36,22 +39,26 @@ router.get('/check-payments-exists', async (req, res) => {
   try {
     console.log('Checking if payments table exists...');
     
-    const [tables] = await pool.execute("SHOW TABLES LIKE 'payments'");
-    console.log('Payments table exists:', tables.length > 0);
+    const { data, error } = await supabase
+      .from('payments')
+      .select('payment_id')
+      .limit(1);
     
-    if (tables.length > 0) {
-      const [columns] = await pool.execute('DESCRIBE payments');
-      res.json({
-        success: true,
-        exists: true,
-        columns: columns,
-        message: 'Payments table exists'
-      });
+    if (error) {
+      if (error.code === 'PGRST116') {
+        res.json({
+          success: true,
+          exists: false,
+          message: 'Payments table does not exist'
+        });
+      } else {
+        throw error;
+      }
     } else {
       res.json({
         success: true,
-        exists: false,
-        message: 'Payments table does not exist'
+        exists: true,
+        message: 'Payments table exists'
       });
     }
   } catch (error) {
@@ -69,32 +76,32 @@ router.get('/all-tables-schema', async (req, res) => {
   try {
     console.log('Getting all tables and their schemas...');
     
-    // Get all tables
-    const [tables] = await pool.execute('SHOW TABLES');
-    console.log('All tables:', tables);
+    // Test connection to main tables
+    const tables = ['users', 'sessions', 'payments', 'admins', 'user_sessions', 'password_resets', 'secure_access'];
+    const tableStatus = {};
     
-    const tableSchemas = {};
-    
-    // Get schema for each table
-    for (const table of tables) {
-      const tableName = Object.values(table)[0]; // Get the table name from the result
-      console.log(`Getting schema for table: ${tableName}`);
-      
+    for (const tableName of tables) {
       try {
-        const [columns] = await pool.execute(`DESCRIBE ${tableName}`);
-        tableSchemas[tableName] = columns;
-        console.log(`${tableName} columns:`, columns);
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .limit(1);
+        
+        if (error) {
+          tableStatus[tableName] = { exists: false, error: error.message };
+        } else {
+          tableStatus[tableName] = { exists: true, sampleData: data };
+        }
       } catch (error) {
-        console.error(`Error getting schema for ${tableName}:`, error);
-        tableSchemas[tableName] = { error: error.message };
+        tableStatus[tableName] = { exists: false, error: error.message };
       }
     }
     
     res.json({
       success: true,
       tables: tables,
-      schemas: tableSchemas,
-      message: 'All table schemas retrieved successfully'
+      status: tableStatus,
+      message: 'All table status retrieved successfully'
     });
   } catch (error) {
     console.error('Error getting all table schemas:', error);
@@ -112,17 +119,21 @@ router.get('/table-schema/:tableName', async (req, res) => {
     const { tableName } = req.params;
     console.log(`Getting schema for table: ${tableName}`);
     
-    const [columns] = await pool.execute(`DESCRIBE ${tableName}`);
-    console.log(`${tableName} columns:`, columns);
+    // Get sample data from the table
+    const { data: sampleData, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .limit(3);
     
-    // Also get sample data
-    const [sampleData] = await pool.execute(`SELECT * FROM ${tableName} LIMIT 3`);
+    if (error) {
+      throw error;
+    }
+    
     console.log(`${tableName} sample data:`, sampleData);
     
     res.json({
       success: true,
       tableName: tableName,
-      columns: columns,
       sampleData: sampleData,
       message: `Schema for ${tableName} retrieved successfully`
     });
