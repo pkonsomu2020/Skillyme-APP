@@ -71,8 +71,7 @@ class EmailService {
             'X-MSMail-Priority': 'High',
             'Importance': 'high',
             'X-Mailer': 'Skillyme Platform',
-            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>',
-            'X-SG-EID': 'skillyme-transaction'
+            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
           },
           // Add categories for better deliverability
           categories: ['transaction', 'skillyme-notification'],
