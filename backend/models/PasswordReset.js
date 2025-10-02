@@ -1,16 +1,22 @@
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 const crypto = require('crypto');
 
 class PasswordReset {
   static async create(userId, token, expiresAt) {
-    const query = `
-      INSERT INTO password_resets (user_id, token, expires_at) 
-      VALUES (?, ?, ?)
-    `;
-    
     try {
-      const result = await pool.execute(query, [userId, token, expiresAt]);
-      return { id: result[0].insertId, userId, token, expiresAt };
+      const { data, error } = await supabase
+        .from('password_resets')
+        .insert([{
+          user_id: userId,
+          token: token,
+          expires_at: expiresAt
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { id: data.id, userId, token, expiresAt };
     } catch (error) {
       console.error('Error creating password reset:', error);
       throw error;
@@ -18,16 +24,20 @@ class PasswordReset {
   }
 
   static async findByToken(token) {
-    const query = `
-      SELECT pr.*, u.email, u.name 
-      FROM password_resets pr 
-      JOIN users u ON pr.user_id = u.id 
-      WHERE pr.token = ? AND pr.expires_at > NOW()
-    `;
-    
     try {
-      const [rows] = await pool.execute(query, [token]);
-      return rows[0] || null;
+      const { data: rows, error } = await supabase
+        .from('password_resets')
+        .select(`
+          *,
+          users!inner(email, name)
+        `)
+        .eq('token', token)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      return rows || null;
     } catch (error) {
       console.error('Error finding password reset:', error);
       throw error;
@@ -35,11 +45,16 @@ class PasswordReset {
   }
 
   static async deleteByToken(token) {
-    const query = 'DELETE FROM password_resets WHERE token = ?';
-    
     try {
-      const result = await pool.execute(query, [token]);
-      return result[0].affectedRows > 0;
+      const { data, error } = await supabase
+        .from('password_resets')
+        .delete()
+        .eq('token', token)
+        .select();
+      
+      if (error) throw error;
+      
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error deleting password reset:', error);
       throw error;
@@ -47,11 +62,16 @@ class PasswordReset {
   }
 
   static async deleteByUserId(userId) {
-    const query = 'DELETE FROM password_resets WHERE user_id = ?';
-    
     try {
-      const result = await pool.execute(query, [userId]);
-      return result[0].affectedRows > 0;
+      const { data, error } = await supabase
+        .from('password_resets')
+        .delete()
+        .eq('user_id', userId)
+        .select();
+      
+      if (error) throw error;
+      
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error deleting password resets for user:', error);
       throw error;
@@ -59,11 +79,16 @@ class PasswordReset {
   }
 
   static async cleanupExpired() {
-    const query = 'DELETE FROM password_resets WHERE expires_at < NOW()';
-    
     try {
-      const result = await pool.execute(query);
-      return result[0].affectedRows;
+      const { data, error } = await supabase
+        .from('password_resets')
+        .delete()
+        .lt('expires_at', new Date().toISOString())
+        .select();
+      
+      if (error) throw error;
+      
+      return data ? data.length : 0;
     } catch (error) {
       console.error('Error cleaning up expired password resets:', error);
       throw error;

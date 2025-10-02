@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const mysql = require('mysql2/promise');
+const supabase = require('../config/supabase');
 
 /**
  * Password hash integrity checker
@@ -8,13 +8,16 @@ const mysql = require('mysql2/promise');
 class HashIntegrityChecker {
   static async checkAllHashes() {
     try {
-      const pool = require('../config/database');
-      const connection = await pool.getConnection();
-      
       console.log('🔍 Checking password hash integrity...');
       
-      // Get all users
-      const [users] = await connection.execute('SELECT id, email, password FROM users');
+      // Get all users from Supabase
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('id, email, password');
+      
+      if (error) {
+        throw error;
+      }
       
       const results = {
         total: users.length,
@@ -43,8 +46,6 @@ class HashIntegrityChecker {
           }
         }
       }
-      
-      connection.release();
       
       console.log(`✅ Hash integrity check complete:`);
       console.log(`   Total users: ${results.total}`);
@@ -117,13 +118,17 @@ class HashIntegrityChecker {
   
   static async fixCorruptedHashes() {
     try {
-      const pool = require('../config/database');
-      const connection = await pool.getConnection();
-      
       console.log('🔧 Fixing corrupted password hashes...');
       
       // Get users with corrupted hashes
-      const [users] = await connection.execute('SELECT id, email, password FROM users');
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('id, email, password');
+      
+      if (error) {
+        throw error;
+      }
+      
       const corruptedUsers = [];
       
       for (const user of users) {
@@ -135,7 +140,6 @@ class HashIntegrityChecker {
       
       if (corruptedUsers.length === 0) {
         console.log('✅ No corrupted hashes found');
-        connection.release();
         return;
       }
       
@@ -147,15 +151,21 @@ class HashIntegrityChecker {
         const saltRounds = 12;
         const newHash = await bcrypt.hash(defaultPassword, saltRounds);
         
-        await connection.execute(
-          'UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?',
-          [newHash, user.id]
-        );
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            password: newHash,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+        
+        if (updateError) {
+          throw updateError;
+        }
         
         console.log(`✅ Reset password for user ${user.email}`);
       }
       
-      connection.release();
       console.log('✅ All corrupted hashes fixed');
       
     } catch (error) {

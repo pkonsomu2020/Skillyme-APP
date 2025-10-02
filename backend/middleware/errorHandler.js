@@ -102,10 +102,11 @@ class ErrorHandler {
   
   static async validateDatabaseConnection() {
     try {
-      const pool = require('../config/database');
-      const connection = await pool.getConnection();
-      await connection.ping();
-      connection.release();
+      const supabase = require('../config/supabase');
+      const { data, error } = await supabase.from('users').select('id').limit(1);
+      if (error) {
+        throw error;
+      }
       return true;
     } catch (error) {
       await this.logError(error, { context: 'database_health_check' });

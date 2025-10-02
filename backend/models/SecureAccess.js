@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 
 /**
  * Secure Access Model
@@ -14,10 +14,19 @@ class SecureAccess {
       const token = `skillyme_${userId}_${sessionId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Store token in database
-      await pool.execute(
-        'INSERT INTO secure_access (user_id, session_id, access_token, created_at, expires_at) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))',
-        [userId, sessionId, token]
-      );
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+      
+      const { error } = await supabase
+        .from('secure_access')
+        .insert([{
+          user_id: userId,
+          session_id: sessionId,
+          access_token: token,
+          expires_at: expiresAt.toISOString()
+        }]);
+      
+      if (error) throw error;
       
       return token;
     } catch (error) {
@@ -31,24 +40,30 @@ class SecureAccess {
    */
   static async verifyAccessToken(token, userEmail) {
     try {
-      const [rows] = await pool.execute(`
-        SELECT sa.*, u.email, u.name, s.title as session_title, s.google_meet_link
-        FROM secure_access sa
-        JOIN users u ON sa.user_id = u.id
-        JOIN sessions s ON sa.session_id = s.id
-        WHERE sa.access_token = ? AND u.email = ? AND sa.expires_at > NOW()
-      `, [token, userEmail]);
+      const { data: rows, error } = await supabase
+        .from('secure_access')
+        .select(`
+          *,
+          users!inner(email, name),
+          sessions!inner(title, google_meet_link)
+        `)
+        .eq('access_token', token)
+        .eq('users.email', userEmail)
+        .gt('expires_at', new Date().toISOString());
       
-      if (rows.length === 0) {
+      if (error) throw error;
+      
+      if (!rows || rows.length === 0) {
         return { valid: false, message: 'Invalid or expired access token' };
       }
       
+      const row = rows[0];
       return {
         valid: true,
-        user: rows[0],
+        user: row,
         session: {
-          title: rows[0].session_title,
-          google_meet_link: rows[0].google_meet_link
+          title: row.sessions?.title,
+          google_meet_link: row.sessions?.google_meet_link
         }
       };
     } catch (error) {
@@ -62,12 +77,18 @@ class SecureAccess {
    */
   static async getUserAccessToken(userId, sessionId) {
     try {
-      const [rows] = await pool.execute(
-        'SELECT access_token FROM secure_access WHERE user_id = ? AND session_id = ? AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
-        [userId, sessionId]
-      );
+      const { data: rows, error } = await supabase
+        .from('secure_access')
+        .select('access_token')
+        .eq('user_id', userId)
+        .eq('session_id', sessionId)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
       
-      return rows.length > 0 ? rows[0].access_token : null;
+      if (error) throw error;
+      
+      return rows && rows.length > 0 ? rows[0].access_token : null;
     } catch (error) {
       console.error('Error getting user access token:', error);
       return null;
@@ -101,15 +122,19 @@ class SecureAccess {
    */
   static async getSessionAccessList(sessionId) {
     try {
-      const [rows] = await pool.execute(`
-        SELECT sa.*, u.name, u.email, sa.created_at as access_granted_at
-        FROM secure_access sa
-        JOIN users u ON sa.user_id = u.id
-        WHERE sa.session_id = ? AND sa.expires_at > NOW()
-        ORDER BY sa.created_at DESC
-      `, [sessionId]);
+      const { data: rows, error } = await supabase
+        .from('secure_access')
+        .select(`
+          *,
+          users!inner(name, email)
+        `)
+        .eq('session_id', sessionId)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
       
-      return rows;
+      if (error) throw error;
+      
+      return rows || [];
     } catch (error) {
       console.error('Error getting session access list:', error);
       return [];
@@ -121,10 +146,13 @@ class SecureAccess {
    */
   static async revokeAccess(userId, sessionId) {
     try {
-      await pool.execute(
-        'UPDATE secure_access SET expires_at = NOW() WHERE user_id = ? AND session_id = ?',
-        [userId, sessionId]
-      );
+      const { error } = await supabase
+        .from('secure_access')
+        .update({ expires_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('session_id', sessionId);
+      
+      if (error) throw error;
       
       console.log(`Access revoked for user ${userId}, session ${sessionId}`);
       return true;

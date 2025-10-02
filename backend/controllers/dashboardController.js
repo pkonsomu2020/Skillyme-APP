@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const supabase = require('../config/supabase');
 
 // Get dashboard statistics for a user
 const getDashboardStats = async (req, res) => {
@@ -7,32 +7,44 @@ const getDashboardStats = async (req, res) => {
     console.log('Fetching dashboard stats for user:', userId);
 
     // Get available sessions count
-    const [sessionsResult] = await pool.execute(
-      'SELECT COUNT(*) as count FROM sessions WHERE is_active = 1'
-    );
-    const availableSessions = sessionsResult[0].count;
+    const { count: availableSessions, error: sessionsError } = await supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+    
+    if (sessionsError) throw sessionsError;
     console.log('Available sessions:', availableSessions);
 
     // Get sessions joined by user (from payments table)
-    const [joinedResult] = await pool.execute(
-      'SELECT COUNT(*) as count FROM payments WHERE user_id = ? AND status = "paid"',
-      [userId]
-    );
-    const sessionsJoined = joinedResult[0].count;
+    const { count: sessionsJoined, error: joinedError } = await supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'paid');
+    
+    if (joinedError) throw joinedError;
     console.log('Sessions joined:', sessionsJoined);
 
     // Get session cost (from sessions table)
-    const [costResult] = await pool.execute(
-      'SELECT price FROM sessions WHERE is_active = 1 LIMIT 1'
-    );
-    const sessionCost = costResult[0]?.price || 200;
+    const { data: costResult, error: costError } = await supabase
+      .from('sessions')
+      .select('price')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+    
+    if (costError && costError.code !== 'PGRST116') throw costError;
+    const sessionCost = costResult?.price || 200;
     console.log('Session cost:', sessionCost);
 
     // Get recruiters count (from sessions table)
-    const [recruitersResult] = await pool.execute(
-      'SELECT COUNT(DISTINCT recruiter) as count FROM sessions WHERE is_active = 1'
-    );
-    const recruiters = recruitersResult[0].count;
+    const { data: recruitersResult, error: recruitersError } = await supabase
+      .from('sessions')
+      .select('recruiter')
+      .eq('is_active', true);
+    
+    if (recruitersError) throw recruitersError;
+    const recruiters = new Set(recruitersResult.map(r => r.recruiter)).size;
     console.log('Recruiters:', recruiters);
 
     res.json({
@@ -59,26 +71,40 @@ const getUserSessions = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [sessions] = await pool.execute(`
-      SELECT 
-        s.id,
-        s.title,
-        s.description,
-        s.date,
-        s.time,
-        s.price,
-        s.is_active as session_status,
-        p.status as payment_status,
-        p.submitted_at as joined_at
-      FROM sessions s
-      LEFT JOIN payments p ON s.id = p.session_id AND p.user_id = ?
-      WHERE s.is_active = 1
-      ORDER BY s.date ASC
-    `, [userId]);
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select(`
+        id,
+        title,
+        description,
+        date,
+        time,
+        price,
+        is_active,
+        payments!left(status, submitted_at)
+      `)
+      .eq('is_active', true)
+      .eq('payments.user_id', userId)
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+
+    // Transform the data to match expected format
+    const transformedSessions = sessions?.map(session => ({
+      id: session.id,
+      title: session.title,
+      description: session.description,
+      date: session.date,
+      time: session.time,
+      price: session.price,
+      session_status: session.is_active,
+      payment_status: session.payments?.[0]?.status || null,
+      joined_at: session.payments?.[0]?.submitted_at || null
+    })) || [];
 
     res.json({
       success: true,
-      data: sessions
+      data: transformedSessions
     });
 
   } catch (error) {

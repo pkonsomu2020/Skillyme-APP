@@ -123,12 +123,13 @@ const submitMpesaCode = async (req, res) => {
         const user = await User.findById(userId);
         if (user) {
           // Get session details for email
-          const pool = require('../config/database');
-          const [sessionResult] = await pool.execute(
-            'SELECT title FROM sessions WHERE id = ?',
-            [sessionId || 1]
-          );
-          const sessionName = sessionResult[0]?.title || 'Career Session';
+          const supabase = require('../config/supabase');
+          const { data: sessionResult, error } = await supabase
+            .from('sessions')
+            .select('title')
+            .eq('id', sessionId || 1)
+            .single();
+          const sessionName = sessionResult?.title || 'Career Session';
           
           // Send payment submission confirmation email
           await emailService.sendPaymentSubmissionConfirmation(
