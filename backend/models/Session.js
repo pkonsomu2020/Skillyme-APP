@@ -14,7 +14,14 @@ class Session {
   }
 
   static async getAllSessions() {
-    const query = 'SELECT * FROM sessions ORDER BY created_at DESC';
+    const query = `
+      SELECT 
+        id, title, description, date, time, google_meet_link,
+        recruiter, company, price, is_active, paybill_number, business_number,
+        created_at, updated_at
+      FROM sessions 
+      ORDER BY created_at DESC
+    `;
     try {
       const result = await pool.execute(query);
       const rows = result[0];
@@ -26,12 +33,21 @@ class Session {
   }
 
   static async create(sessionData) {
-    const { title, description, date, time, duration, google_meet_link, recruiter_name, recruiter_email } = sessionData;
+    const { 
+      title, description, date, time, duration, google_meet_link, 
+      recruiter_name, recruiter_email, paybill_number, business_number, price 
+    } = sessionData;
     const query = `
-      INSERT INTO sessions (title, description, date, time, duration, google_meet_link, recruiter_name, recruiter_email, created_at) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO sessions (
+        title, description, date, time, duration, google_meet_link, 
+        recruiter_name, recruiter_email, paybill_number, business_number, price, created_at
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `;
-    const values = [title, description, date, time, duration, google_meet_link, recruiter_name, recruiter_email];
+    const values = [
+      title, description, date, time, duration, google_meet_link, 
+      recruiter_name, recruiter_email, paybill_number, business_number, price
+    ];
     
     try {
       const result = await pool.execute(query, values);

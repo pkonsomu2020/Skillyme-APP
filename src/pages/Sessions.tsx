@@ -19,6 +19,9 @@ interface Session {
   time: string;
   duration: string;
   description: string;
+  paybill_number?: string;
+  business_number?: string;
+  price?: number;
 }
 
 const Sessions = () => {
@@ -47,7 +50,10 @@ const Sessions = () => {
             date: session.date,
             time: session.time,
             duration: '90 minutes', // Default duration since it's not in the database
-            description: session.description || 'Join us for an engaging session designed for high school and university students to learn from experienced legal professionals.'
+            description: session.description || 'Join us for an engaging session designed for high school and university students to learn from experienced legal professionals.',
+            paybill_number: session.paybill_number || '714888',
+            business_number: session.business_number || '272177',
+            price: session.price || 200
           }));
           
           setSessions(transformedSessions);
@@ -82,8 +88,8 @@ const Sessions = () => {
 
     setIsSubmitting(true);
     try {
-      // Assuming session price is 200 KES as per project overview
-      const sessionPrice = 200.00; 
+      // Use session price from the selected session
+      const sessionPrice = selectedSession!.price || 200.00; 
 
       const response = await apiService.submitMpesaCode(
         selectedSession!.id,
@@ -170,7 +176,7 @@ const Sessions = () => {
                 className="w-full"
                 onClick={() => handleJoinSession(session)}
               >
-                Join Session - 200 KES
+                Join Session - {session.price || 200} KES
               </Button>
             </CardContent>
           </Card>
@@ -201,7 +207,18 @@ const Sessions = () => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Session Fee</Label>
-              <div className="text-2xl font-bold text-primary">200 KES</div>
+              <div className="text-2xl font-bold text-primary">{selectedSession?.price || 200} KES</div>
+            </div>
+
+            {/* Payment Instructions */}
+            <div className="space-y-2 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Label className="text-sm font-semibold text-blue-800 dark:text-blue-200">Payment Instructions</Label>
+              <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                <p><strong>Paybill:</strong> {selectedSession?.paybill_number || '714888'}</p>
+                <p><strong>Business No:</strong> {selectedSession?.business_number || '272177'}</p>
+                <p><strong>Amount:</strong> {selectedSession?.price || 200} KES</p>
+                <p className="text-xs mt-2">Go to M-Pesa → Pay Bill → Enter Paybill → Enter Business No → Enter Amount → Enter your PIN</p>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -215,7 +232,7 @@ const Sessions = () => {
                 className="resize-none"
               />
               <p className="text-xs text-muted-foreground">
-                Pay 200 KES to M-Pesa number: 0700000000, then paste the complete confirmation message above
+                After making the payment, paste the complete confirmation message above
               </p>
             </div>
 

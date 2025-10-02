@@ -264,9 +264,129 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
+// Get all sessions for admin management
+const getAllSessions = async (req, res) => {
+  try {
+    console.log('📋 Fetching all sessions for admin...');
+    
+    const [sessions] = await pool.execute(`
+      SELECT 
+        id, title, description, date, time, google_meet_link,
+        recruiter, company, price, paybill_number, business_number,
+        is_active, created_at, updated_at
+      FROM sessions 
+      ORDER BY created_at DESC
+    `);
+
+    console.log(`✅ Found ${sessions.length} sessions`);
+    
+    res.json({
+      success: true,
+      data: {
+        sessions
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch sessions',
+      error: error.message
+    });
+  }
+};
+
+// Create new session
+const createSession = async (req, res) => {
+  try {
+    const {
+      title, description, date, time, duration, google_meet_link,
+      recruiter, company, price, paybill_number, business_number
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !date || !time || !price) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title, date, time, and price are required'
+      });
+    }
+
+    const query = `
+      INSERT INTO sessions (
+        title, description, date, time, duration, google_meet_link,
+        recruiter, company, price, paybill_number, business_number,
+        is_active, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
+    `;
+
+    const values = [
+      title, description, date, time, duration || 90, google_meet_link,
+      recruiter || 'Skillyme Team', company || 'Skillyme', price,
+      paybill_number || '714888', business_number || '272177'
+    ];
+
+    const result = await pool.execute(query, values);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Session created successfully',
+      data: {
+        sessionId: result[0].insertId
+      }
+    });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create session',
+      error: error.message
+    });
+  }
+};
+
+// Update session
+const updateSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const updateData = req.body;
+
+    // Build dynamic update query
+    const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
+    const values = Object.values(updateData);
+    values.push(sessionId);
+
+    const query = `UPDATE sessions SET ${fields}, updated_at = NOW() WHERE id = ?`;
+    
+    const result = await pool.execute(query, values);
+    
+    if (result[0].affectedRows > 0) {
+      res.json({
+        success: true,
+        message: 'Session updated successfully'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Session not found'
+      });
+    }
+  } catch (error) {
+    console.error('Error updating session:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update session',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   adminLogin,
   getAdminProfile,
   getAllPayments,
-  updatePaymentStatus
+  updatePaymentStatus,
+  getAllSessions,
+  createSession,
+  updateSession
 };

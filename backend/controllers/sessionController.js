@@ -17,6 +17,8 @@ const getAllSessions = async (req, res) => {
         recruiter,
         company,
         price,
+        paybill_number,
+        business_number,
         is_active,
         created_at,
         updated_at
