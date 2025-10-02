@@ -85,7 +85,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const response = await apiService.login(email, password);
       
       if (response.success) {
+        // Set user immediately without waiting
         setUser(response.data.user);
+        // Store auth state for persistence
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         return true;
       }
       return false;
@@ -99,34 +103,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const register = async (userData: any): Promise<boolean> => {
     try {
-      console.log('AuthContext: register called with userData:', userData);
       setIsLoading(true);
       const response = await apiService.register(userData);
       
-      console.log('AuthContext: Registration response:', response);
-      
       if (response.success) {
-        console.log('AuthContext: Registration successful, setting user:', response.data.user);
-        // Set user data from registration response
+        // Set user immediately
         setUser(response.data.user);
-        console.log('AuthContext: User state updated, isAuthenticated should be true');
-        
-        // Verify token is stored
-        const token = apiService.getAuthToken();
-        console.log('AuthContext: Token stored after registration:', token ? 'YES' : 'NO');
-        
-        // Store authentication state in localStorage for persistence
+        // Store auth state for persistence
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        setIsLoading(false);
-        
         return true;
       }
-      console.log('AuthContext: Registration failed');
       return false;
     } catch (error) {
-      console.error('AuthContext: Registration failed:', error);
+      console.error('Registration failed:', error);
       return false;
     } finally {
       setIsLoading(false);

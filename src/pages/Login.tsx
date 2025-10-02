@@ -9,16 +9,20 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
       const success = await login(formData.email, formData.password);
       
       if (success) {
@@ -30,6 +34,8 @@ const Login = () => {
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,8 +87,14 @@ const Login = () => {
               </Link>
             </div>
 
-            <Button type="submit" variant="hero" className="w-full" size="lg">
-              Sign In
+            <Button 
+              type="submit" 
+              variant="hero" 
+              className="w-full" 
+              size="lg"
+              disabled={isSubmitting || isLoading}
+            >
+              {isSubmitting || isLoading ? "Signing In..." : "Sign In"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">

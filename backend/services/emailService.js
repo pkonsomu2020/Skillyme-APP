@@ -58,10 +58,29 @@ class EmailService {
         
         const msg = {
           to: to,
-          from: fromEmail, // Use simple string format to avoid "via sendgrid.net"
+          from: {
+            email: fromEmail,
+            name: 'Skillyme Team'
+          },
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
-          html: html
+          html: html,
+          // Add headers to prevent spam
+          headers: {
+            'X-Priority': '1',
+            'X-MSMail-Priority': 'High',
+            'Importance': 'high',
+            'X-Mailer': 'Skillyme Platform',
+            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>',
+            'X-SG-EID': 'skillyme-transaction'
+          },
+          // Add categories for better deliverability
+          categories: ['transaction', 'skillyme-notification'],
+          // Add custom args
+          customArgs: {
+            source: 'skillyme-platform',
+            type: 'transaction-notification'
+          }
         };
 
         console.log('📧 [SENDGRID] Sending with from email:', fromEmail);
@@ -102,11 +121,22 @@ class EmailService {
       console.log('📧 [GMAIL SMTP] Attempting to send via Gmail SMTP...');
       try {
         const mailOptions = {
-          from: process.env.GMAIL_USER,
+          from: {
+            name: 'Skillyme Team',
+            address: process.env.GMAIL_USER
+          },
           to: to,
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''),
-          html: html
+          html: html,
+          // Add headers to prevent spam
+          headers: {
+            'X-Priority': '1',
+            'X-MSMail-Priority': 'High',
+            'Importance': 'high',
+            'X-Mailer': 'Skillyme Platform',
+            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
+          }
         };
 
         const result = await this.nodemailerTransporter.sendMail(mailOptions);
@@ -328,50 +358,67 @@ class EmailService {
 
   // Email template for password reset
   async sendPasswordResetEmail(userEmail, userName, resetUrl) {
-    const subject = 'Reset Your Skillyme Password';
+    const subject = 'Password Reset Request - Skillyme Account';
     
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">🔐 Password Reset</h1>
-          <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">Reset your Skillyme account password</p>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
-          <h2 style="color: #333; margin-top: 0;">Hello ${userName}!</h2>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset - Skillyme</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           
-          <p style="color: #666; font-size: 16px; line-height: 1.6;">
-            We received a request to reset your password for your Skillyme account.
-          </p>
-          
-          <p style="color: #666; font-size: 16px; line-height: 1.6;">
-            Click the button below to reset your password:
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background: #4caf50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
-              Reset Password
-            </a>
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Password Reset Request</h1>
+            <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Skillyme Career Platform</p>
           </div>
           
-          <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-            <p style="margin: 0; color: #856404; font-size: 14px;">
-              <strong>⚠️ Important:</strong> This link will expire in 1 hour for security reasons.
+          <!-- Content -->
+          <div style="padding: 40px 30px;">
+            <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">Hello ${userName},</h2>
+            
+            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              We received a request to reset the password for your Skillyme account. If you made this request, please click the button below to reset your password.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background: #667eea; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px; transition: background-color 0.3s;">
+                Reset My Password
+              </a>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 30px 0; border-left: 4px solid #667eea;">
+              <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">
+                <strong>Security Notice:</strong> This password reset link will expire in 1 hour for your security.
+              </p>
+            </div>
+            
+            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+              If you didn't request this password reset, please ignore this email. Your password will remain unchanged and your account is secure.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
+            
+            <p style="color: #999999; font-size: 12px; text-align: center; margin: 0;">
+              If the button doesn't work, copy and paste this link into your browser:<br>
+              <a href="${resetUrl}" style="color: #667eea; word-break: break-all; text-decoration: none;">${resetUrl}</a>
             </p>
           </div>
           
-          <p style="color: #666; font-size: 14px; line-height: 1.6;">
-            If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
-          </p>
-          
-          <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
-          
-          <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${resetUrl}" style="color: #4caf50; word-break: break-all;">${resetUrl}</a>
-          </p>
+          <!-- Footer -->
+          <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+            <p style="color: #999999; font-size: 12px; margin: 0;">
+              © 2024 Skillyme. All rights reserved.<br>
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
         </div>
-      </div>
+      </body>
+      </html>
     `;
 
     return await this.sendEmail(userEmail, subject, html);
