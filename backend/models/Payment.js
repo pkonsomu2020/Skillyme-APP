@@ -15,6 +15,22 @@ class Payment {
     } = paymentData;
     
     try {
+      // Check if payment already exists for this user and session
+      const { data: existingPayment, error: checkError } = await supabase
+        .from('payments')
+        .select('payment_id')
+        .eq('user_id', userId)
+        .eq('session_id', sessionId)
+        .eq('mpesa_code', mpesaCode)
+        .single();
+      
+      if (existingPayment && !checkError) {
+        // Payment already exists, return existing payment
+        console.log('Payment already exists, returning existing payment');
+        return { id: existingPayment.payment_id, ...paymentData };
+      }
+      
+      // Create new payment
       const { data, error } = await supabase
         .from('payments')
         .insert([{
@@ -32,6 +48,21 @@ class Payment {
         .single();
       
       if (error) {
+        // If it's a duplicate key error, try to find the existing payment
+        if (error.code === '23505' && error.message.includes('duplicate key')) {
+          console.log('Duplicate payment detected, fetching existing payment');
+          const { data: existingData, error: fetchError } = await supabase
+            .from('payments')
+            .select('payment_id')
+            .eq('user_id', userId)
+            .eq('session_id', sessionId)
+            .eq('mpesa_code', mpesaCode)
+            .single();
+          
+          if (existingData && !fetchError) {
+            return { id: existingData.payment_id, ...paymentData };
+          }
+        }
         throw error;
       }
       
