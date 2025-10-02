@@ -25,8 +25,7 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getAuthToken();
 
-    console.log(`API Request: ${options.method || 'GET'} ${endpoint}`);
-    console.log('Token available:', token ? 'YES' : 'NO');
+    // API request being made
 
     // CSRF token fetching disabled for performance
     let csrfToken = null;
@@ -53,7 +52,7 @@ class ApiService {
       const response = await fetch(url, config);
       const data = await response.json();
 
-      console.log(`API Response: ${response.status} ${response.statusText}`);
+      // API response received
       
       if (!response.ok) {
         console.error('API Error:', data);

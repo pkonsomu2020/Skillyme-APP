@@ -17,20 +17,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    console.log('AuthContext: Checking initial auth state...');
     const auth = localStorage.getItem('isAuthenticated');
     const token = localStorage.getItem('adminToken');
     
-    console.log('Stored auth:', auth);
-    console.log('Stored token:', token ? 'Present' : 'Missing');
-    console.log('Token value:', token);
-    
     if (auth === 'true' && token && token !== 'undefined' && token !== 'null' && token.length > 10) {
-      console.log('AuthContext: Setting authenticated state from localStorage');
       setIsAuthenticated(true);
       setAdminToken(token);
     } else {
-      console.log('AuthContext: Clearing invalid auth data');
       // Clear invalid auth data
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('adminToken');
@@ -43,14 +36,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      console.log('Attempting admin login with:', { username, password: '***' });
-      
-      // Clear any existing auth data before login
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('adminToken');
-      setIsAuthenticated(false);
-      setAdminToken(null);
-      
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/login`, {
         method: 'POST',
         headers: {
@@ -59,33 +44,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ username, password }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
       const data = await response.json();
-      console.log('Response data:', data);
 
-      if (data.success) {
-        console.log('Login successful, setting auth state...');
-        console.log('Full response data:', data);
-        console.log('Token received:', data.data?.token);
+      if (data.success && data.data?.token) {
+        const token = data.data.token;
         
-        const token = data.data?.token;
-        if (!token) {
-          console.error('No token found in response data');
-          return false;
-        }
-        
-        // Set state first
+        // Set state immediately
         setIsAuthenticated(true);
         setAdminToken(token);
         
-        // Then store in localStorage
+        // Store in localStorage
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('adminToken', token);
         
-        console.log('Auth state updated, isAuthenticated:', true);
-        console.log('Token stored:', token);
         return true;
       }
       return false;

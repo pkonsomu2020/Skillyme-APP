@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar, Users, DollarSign, Settings } from "lucide-react";
 
 interface Payment {
   payment_id: number;
@@ -28,10 +29,7 @@ interface Payment {
 const Dashboard = () => {
   const { logout, isAuthenticated, adminToken, validateToken, isInitialized } = useAuth();
   
-  // Debug authentication state
-  console.log('Dashboard: isAuthenticated:', isAuthenticated);
-  console.log('Dashboard: adminToken:', adminToken ? 'Present' : 'Missing');
-  console.log('Dashboard: isInitialized:', isInitialized);
+  // Authentication state is managed by AuthContext
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,7 +47,7 @@ const Dashboard = () => {
 
   // Fetch payments from backend
   const fetchPayments = useCallback(async (isAutoRefresh = false) => {
-    console.log('Fetching payments - isAuthenticated:', isAuthenticated, 'adminToken:', adminToken ? 'Present' : 'Missing', 'isAutoRefresh:', isAutoRefresh);
+    // Fetching payments data
 
     // Validate token before making API call
     const isValidToken = await validateToken();
@@ -86,7 +84,7 @@ const Dashboard = () => {
       const data = await response.json();
 
       if (data.success) {
-        console.log('Fetched payments from API:', data.data.payments);
+        // Payments data received
         const newPayments = data.data.payments;
         
         // Detect new payments
@@ -172,76 +170,59 @@ const Dashboard = () => {
   };
 
   const handleUpdateStatus = async () => {
-    if (selectedPayment) {
-      try {
-        // Make API call to update payment status in backend
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/payments/${selectedPayment.payment_id}/status`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`
-          },
-          body: JSON.stringify({
-            status: newStatus,
-            adminNotes: reason || null
-          })
-        });
+    if (!selectedPayment) return;
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/payments/${selectedPayment.payment_id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          adminNotes: reason || null
+        })
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (data.success) {
-          // Update local state only after successful API call
-          setPayments(payments.map(payment => 
+      if (data.success) {
+        // Update local state immediately for better UX
+        setPayments(prevPayments => 
+          prevPayments.map(payment => 
             payment.payment_id === selectedPayment.payment_id 
               ? { ...payment, status: newStatus as 'pending' | 'paid' | 'failed' | 'amount_mismatch' }
               : payment
-          ));
-          
-          toast({
-            title: "Status updated",
-            description: `Payment #${selectedPayment.payment_id} status has been updated to ${newStatus}`,
-          });
-          
-          setSelectedPayment(null);
-          setNewStatus("");
-          setReason("");
-          
-          // Refresh payments data from server
-          setTimeout(async () => {
-            try {
-              const refreshResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/payments?t=${Date.now()}`, {
-                headers: {
-                  'Authorization': `Bearer ${adminToken}`,
-                  'Content-Type': 'application/json',
-                },
-              });
-              
-              if (refreshResponse.ok) {
-                const refreshData = await refreshResponse.json();
-                if (refreshData.success) {
-                  setPayments(refreshData.data.payments);
-                  console.log('Payments refreshed from server:', refreshData.data.payments);
-                }
-              }
-            } catch (error) {
-              console.error('Error refreshing payments:', error);
-            }
-          }, 1000);
-        } else {
-          toast({
-            title: "Update failed",
-            description: data.message || "Failed to update payment status",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error('Error updating payment status:', error);
+          )
+        );
+        
+        toast({
+          title: "Status updated",
+          description: `Payment #${selectedPayment.payment_id} status has been updated to ${newStatus}`,
+        });
+        
+        // Clear form immediately
+        setSelectedPayment(null);
+        setNewStatus("");
+        setReason("");
+        
+        // Refresh data in background (no setTimeout needed)
+        fetchPayments(true);
+      } else {
         toast({
           title: "Update failed",
-          description: "Failed to update payment status. Please try again.",
+          description: data.message || "Failed to update payment status",
           variant: "destructive"
         });
       }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update payment status. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -295,6 +276,12 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/sessions">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
+                <Calendar className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Sessions</span>
+              </Button>
+            </Link>
             <ThemeToggle />
             <Button 
               onClick={handleLogout}

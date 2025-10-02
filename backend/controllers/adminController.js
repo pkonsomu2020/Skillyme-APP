@@ -102,9 +102,7 @@ const getAdminProfile = async (req, res) => {
 // Get all payments for admin dashboard
 const getAllPayments = async (req, res) => {
   try {
-    console.log('Fetching all payments for admin dashboard');
     const payments = await Payment.getAllPayments();
-    console.log('Payments fetched from database:', payments);
     
     res.json({
       success: true,
@@ -151,7 +149,7 @@ const updatePaymentStatus = async (req, res) => {
     if (requestCache.has(cacheKey)) {
       const lastRequest = requestCache.get(cacheKey);
       if (Date.now() - lastRequest < 5000) { // 5 seconds
-        console.log('Duplicate payment status update request detected, ignoring');
+        // Duplicate request ignored
         return res.json({
           success: true,
           message: 'Payment status already updated recently'
@@ -189,9 +187,9 @@ const updatePaymentStatus = async (req, res) => {
             // Fallback to the actual Google Meet link if database link is not available
             if (!googleMeetLink) {
               googleMeetLink = 'https://meet.google.com/nmh-nfxk-oao';
-              console.log('No Google Meet link found in database, using default link:', googleMeetLink);
+              // Using default Google Meet link
             } else {
-              console.log('Using Google Meet link from database:', googleMeetLink);
+              // Using Google Meet link from database
             }
           }
           
@@ -203,7 +201,7 @@ const updatePaymentStatus = async (req, res) => {
           if (!lastEmailSent || Date.now() - lastEmailSent > 30000) {
             if (status === 'paid') {
               // Send confirmation email with Google Meet link
-              console.log('Attempting to send payment confirmation email to:', payment.user_email);
+              // Sending payment confirmation email
               const emailResult = await emailService.sendPaymentStatusUpdate(
                 payment.user_email,
                 payment.user_name,
@@ -211,8 +209,7 @@ const updatePaymentStatus = async (req, res) => {
                 status,
                 googleMeetLink
               );
-              console.log('Payment confirmation email result:', emailResult);
-              console.log('Payment confirmation email with Google Meet link sent to:', payment.user_email);
+              // Payment confirmation email sent
             } else if (status === 'pending') {
               // Send submission confirmation email
               await emailService.sendPaymentSubmissionConfirmation(
@@ -220,7 +217,7 @@ const updatePaymentStatus = async (req, res) => {
                 payment.user_name,
                 sessionName
               );
-              console.log('Payment submission confirmation email sent to:', payment.user_email);
+              // Payment submission confirmation email sent
             } else {
               // Send status update email for other statuses
               await emailService.sendPaymentStatusUpdate(
@@ -230,13 +227,13 @@ const updatePaymentStatus = async (req, res) => {
                 status,
                 null
               );
-              console.log('Payment status update email sent to:', payment.user_email);
+              // Payment status update email sent
             }
             
             // Cache this email send
             requestCache.set(emailCacheKey, Date.now());
           } else {
-            console.log('Email already sent recently for this user and status, skipping');
+            // Email already sent recently, skipping
           }
         }
       } catch (emailError) {
@@ -267,7 +264,7 @@ const updatePaymentStatus = async (req, res) => {
 // Get all sessions for admin management
 const getAllSessions = async (req, res) => {
   try {
-    console.log('📋 Fetching all sessions for admin...');
+    // Fetching sessions for admin
     
     const { data: sessions, error } = await supabase
       .from('sessions')
@@ -282,7 +279,7 @@ const getAllSessions = async (req, res) => {
       throw error;
     }
 
-    console.log(`✅ Found ${sessions.length} sessions`);
+    // Sessions retrieved successfully
     
     res.json({
       success: true,
