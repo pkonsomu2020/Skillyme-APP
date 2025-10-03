@@ -27,31 +27,39 @@ class EmailService {
   }
 
   async sendEmail(to, subject, html, text = '') {
-    // For development/testing, log email instead of sending
-    // Temporarily disabled for testing - emails will be sent even in development
-    if (process.env.NODE_ENV === 'development' && process.env.DISABLE_EMAIL_SENDING === 'true') {
-      console.log('📧 [DEV MODE] Email would be sent:');
-      console.log(`   To: ${to}`);
-      console.log(`   Subject: ${subject}`);
-      console.log(`   Content: ${text || html.substring(0, 100)}...`);
-      return { success: true, messageId: 'dev-mode-' + Date.now() };
-    }
-
-    // Validate email parameters
+    // SECURITY: Input validation and sanitization
     if (!to || !subject || !html) {
       console.error('📧 [ERROR] Missing required email parameters');
       return { success: false, error: 'Missing required email parameters' };
     }
 
-    // Log email attempt for debugging
-    console.log('📧 [EMAIL ATTEMPT] Sending email:');
-    console.log(`   To: ${to}`);
-    console.log(`   Subject: ${subject}`);
-    console.log(`   Secure Access Link: ${html.includes('secure-access') ? 'INCLUDED' : 'NOT FOUND'}`);
+    // SECURITY: Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      console.error('📧 [ERROR] Invalid email format');
+      return { success: false, error: 'Invalid email format' };
+    }
+
+    // SECURITY: Sanitize inputs
+    const sanitizedTo = to.trim().toLowerCase();
+    const sanitizedSubject = subject.trim().substring(0, 200);
+    const sanitizedHtml = html.trim();
+    const sanitizedText = text.trim();
+
+    // For development/testing, log email instead of sending
+    if (process.env.NODE_ENV === 'development' && process.env.DISABLE_EMAIL_SENDING === 'true') {
+      console.log('📧 [DEV MODE] Email would be sent:');
+      console.log(`   To: ${sanitizedTo}`);
+      console.log(`   Subject: ${sanitizedSubject}`);
+      console.log(`   Content: ${sanitizedText || sanitizedHtml.substring(0, 100)}...`);
+      return { success: true, messageId: 'dev-mode-' + Date.now() };
+    }
+
+    // Email sending in progress
 
     // Send via SendGrid
     if (process.env.SENDGRID_API_KEY) {
-      console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
+      // Attempting to send via SendGrid
       try {
         // Use a verified sender email or fallback to a default
         const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com';
@@ -65,9 +73,14 @@ class EmailService {
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
           html: html,
-          // Minimal headers to avoid spam filters
+          // Professional headers to prevent spam
           headers: {
-            'X-Mailer': 'Skillyme Platform'
+            'X-Mailer': 'Skillyme Platform',
+            'X-Priority': '3',
+            'X-MSMail-Priority': 'Normal',
+            'Importance': 'Normal',
+            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>',
+            'X-SG-EID': 'skillyme-transaction'
           },
           // Add categories for better deliverability
           categories: ['transaction', 'skillyme-notification'],
@@ -83,10 +96,7 @@ class EmailService {
           }
         };
 
-        console.log('📧 [SENDGRID] Sending with from email:', fromEmail);
-        
         const result = await sgMail.send(msg);
-        console.log('✅ Email sent successfully via SendGrid:', result[0].headers['x-message-id']);
         return { success: true, messageId: result[0].headers['x-message-id'] };
       } catch (error) {
         console.error('❌ SendGrid failed:', error.message);

@@ -45,29 +45,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const fetchUserProfile = async () => {
     try {
-      console.log('AuthContext: fetchUserProfile called');
       if (apiService.isAuthenticated()) {
-        console.log('AuthContext: Token exists, fetching profile...');
         const response = await apiService.getProfile();
         if (response.success) {
-          console.log('AuthContext: Profile fetched successfully:', response.data.user);
           setUser(response.data.user);
         } else {
-          console.log('AuthContext: Profile fetch failed:', response);
           // Only clear user state if we don't have a user already
           if (!user) {
             setUser(null);
           }
         }
       } else {
-        console.log('AuthContext: No token found');
         // Only clear user state if we don't have a user already
         if (!user) {
           setUser(null);
         }
       }
     } catch (error) {
-      console.error('AuthContext: Failed to fetch user profile:', error);
+      // PERFORMANCE: Removed excessive error logging
       // Only clear authentication if it's a 401/403 error
       if (error.message.includes('401') || error.message.includes('403') || error.message.includes('Invalid')) {
         apiService.logout();
@@ -94,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       return false;
     } catch (error) {
-      console.error('Login failed:', error);
+      // PERFORMANCE: Removed excessive error logging
       return false;
     } finally {
       setIsLoading(false);
@@ -116,7 +111,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       return false;
     } catch (error) {
-      console.error('Registration failed:', error);
+      // PERFORMANCE: Removed excessive error logging
       return false;
     } finally {
       setIsLoading(false);
@@ -124,44 +119,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
-    console.log('AuthContext: Logging out user...');
+    // Logging out user
     apiService.logout();
     setUser(null);
     // Clear all stored authentication data
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('user');
-    console.log('AuthContext: User state cleared, isAuthenticated should be false');
+    // User state cleared
   };
 
   // Check authentication status on mount
   useEffect(() => {
     const checkAuthState = async () => {
-      console.log('AuthContext: Checking initial auth state...');
       const storedAuth = localStorage.getItem('authToken');
       const storedUser = localStorage.getItem('user');
       const isAuthenticated = localStorage.getItem('isAuthenticated');
       
-      console.log('Stored auth:', !!storedAuth);
-      console.log('Stored token:', storedAuth ? 'Present' : 'Not found');
-      console.log('Stored user:', storedUser ? 'Present' : 'Not found');
-      console.log('Stored isAuthenticated:', isAuthenticated);
-      
       if (storedAuth && storedUser && isAuthenticated === 'true') {
-        console.log('Token value:', storedAuth);
-        console.log('AuthContext: Setting authenticated state from localStorage');
         try {
           const userData = JSON.parse(storedUser);
           setUser(userData);
-          console.log('AuthContext: User restored from localStorage:', userData);
         } catch (error) {
-          console.error('AuthContext: Error parsing stored user data:', error);
+          // PERFORMANCE: Removed excessive error logging
           // Clear invalid data
           localStorage.removeItem('user');
           localStorage.removeItem('isAuthenticated');
         }
         setIsLoading(false);
       } else {
-        console.log('AuthContext: No stored authentication data found');
         setIsLoading(false);
       }
     };

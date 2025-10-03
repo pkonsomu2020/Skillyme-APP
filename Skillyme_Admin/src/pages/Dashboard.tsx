@@ -48,12 +48,12 @@ const Dashboard = () => {
 
   // Fetch payments from backend
   const fetchPayments = useCallback(async (isAutoRefresh = false) => {
-    console.log(`🔄 fetchPayments called - isAutoRefresh: ${isAutoRefresh}`);
+    // Fetching payments
     
     // Debounce: Prevent excessive API calls (minimum 2 seconds between calls)
     const now = Date.now();
     if (isAutoRefresh && now - lastFetchTime < 2000) {
-      console.log('🔄 fetchPayments skipped - debounced');
+      // Skipped due to debouncing
       return;
     }
     setLastFetchTime(now);
@@ -61,7 +61,7 @@ const Dashboard = () => {
     // Validate token before making API call
     const isValidToken = await validateToken();
     if (!isValidToken) {
-      console.log('🔄 fetchPayments skipped - invalid token');
+      // Skipped due to invalid token
       if (!isAutoRefresh) {
         setLoading(false);
         setError('Session expired. Please login again.');
@@ -72,16 +72,13 @@ const Dashboard = () => {
     try {
       if (isAutoRefresh) {
         setIsRefreshing(true);
-        console.log('🔄 Auto-refresh: fetching payments...');
+        // Auto-refresh in progress
       } else {
         setError(null);
-        console.log('🔄 Manual refresh: fetching payments...');
+        // Manual refresh in progress
       }
 
-      const apiUrl = `${import.meta.env.VITE_API_URL || 'https://skillyme-backend-s3sy.onrender.com/api'}/admin/payments?t=${Date.now()}`;
-      console.log('🔄 API URL:', apiUrl);
-
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://skillyme-backend-s3sy.onrender.com/api'}/admin/payments?t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
@@ -97,16 +94,16 @@ const Dashboard = () => {
       }
 
       const data = await response.json();
-      console.log('🔄 API Response:', data);
+      // API response received
 
       if (data.success) {
         // Payments data received
         const newPayments = data.data.payments;
-        console.log(`🔄 Received ${newPayments.length} payments (previous: ${previousPaymentCount})`);
+        // Payments data processed
         
         // Detect new payments
         if (isAutoRefresh && newPayments.length > previousPaymentCount) {
-          console.log(`🔄 New payments detected: ${newPayments.length - previousPaymentCount}`);
+          // New payments detected
           setNewPaymentsDetected(true);
           toast({
             title: "New Payment Detected!",
@@ -121,15 +118,15 @@ const Dashboard = () => {
         setPayments(newPayments);
         setPreviousPaymentCount(newPayments.length);
         setLastRefresh(new Date());
-        console.log('🔄 Payments updated successfully');
+        // Payments updated successfully
       } else {
-        console.error('🔄 API Error:', data.message);
+        // API error occurred
         if (!isAutoRefresh) {
           setError(data.message || 'Failed to fetch payments.');
         }
       }
     } catch (err: unknown) {
-      console.error('Error fetching payments:', err);
+      // PERFORMANCE: Removed excessive error logging
       if (!isAutoRefresh) {
         setError('Failed to connect to the backend or an unexpected error occurred.');
       }
@@ -152,20 +149,20 @@ const Dashboard = () => {
   useEffect(() => {
     if (!isAuthenticated || !adminToken || !autoRefresh) return;
 
-    console.log('🔄 Auto-refresh enabled, setting up interval...');
+    // Auto-refresh enabled
 
     const interval = setInterval(() => {
       // Only refresh if the page is visible (not minimized or in background)
       if (document.visibilityState === 'visible') {
-        console.log('🔄 Auto-refresh triggered');
+        // Auto-refresh triggered
         fetchPayments(true);
       } else {
-        console.log('🔄 Auto-refresh skipped - page not visible');
+        // Auto-refresh skipped - page not visible
       }
-    }, 5000); // Refresh every 5 seconds (as it was working before)
+    }, 30000); // Refresh every 30 seconds (optimized for performance)
 
     return () => {
-      console.log('🔄 Auto-refresh interval cleared');
+      // Auto-refresh interval cleared
       clearInterval(interval);
     };
   }, [isAuthenticated, adminToken, autoRefresh, fetchPayments]);
@@ -245,7 +242,7 @@ const Dashboard = () => {
         });
       }
     } catch (error) {
-      console.error('Error updating payment status:', error);
+      // PERFORMANCE: Removed excessive error logging
       toast({
         title: "Update failed",
         description: "Failed to update payment status. Please try again.",

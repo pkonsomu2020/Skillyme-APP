@@ -24,8 +24,7 @@ const ProfileDropdown = ({ user }: ProfileDropdownProps) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  // Debug: Log user data to see what's being passed
-  console.log('ProfileDropdown user data:', user);
+  // PERFORMANCE: Removed excessive debug logging
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -43,12 +42,12 @@ const ProfileDropdown = ({ user }: ProfileDropdownProps) => {
 
   const handleLogout = async () => {
     try {
-      console.log('ProfileDropdown: Starting logout process...');
+      // PERFORMANCE: Removed excessive debug logging
       
       // Use AuthContext logout function to properly clear state
       logout();
       
-      console.log('ProfileDropdown: AuthContext logout called');
+      // PERFORMANCE: Removed excessive debug logging
       
       // Show success message
       toast.success("Logged out successfully");
@@ -56,9 +55,9 @@ const ProfileDropdown = ({ user }: ProfileDropdownProps) => {
       // Navigate to home page
       navigate("/");
       
-      console.log('ProfileDropdown: Logout completed, navigated to home');
+      // PERFORMANCE: Removed excessive debug logging
     } catch (error) {
-      console.error("Logout error:", error);
+      // PERFORMANCE: Removed excessive error logging
       toast.error("Logout failed");
     }
   };

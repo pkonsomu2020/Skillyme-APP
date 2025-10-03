@@ -3,9 +3,15 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const emailService = require('../services/emailService');
 
-// Extract M-Pesa code from full message
+// SECURITY: Extract M-Pesa code from full message with validation
 const extractMpesaCodeFromMessage = (fullMessage) => {
-  if (!fullMessage) return null;
+  // SECURITY: Input validation
+  if (!fullMessage || typeof fullMessage !== 'string') {
+    return null;
+  }
+  
+  // SECURITY: Sanitize input
+  const sanitizedMessage = fullMessage.trim().substring(0, 1000);
   
   // Common M-Pesa code patterns
   const patterns = [
@@ -15,9 +21,13 @@ const extractMpesaCodeFromMessage = (fullMessage) => {
   ];
   
   for (const pattern of patterns) {
-    const matches = fullMessage.match(pattern);
+    const matches = sanitizedMessage.match(pattern);
     if (matches && matches.length > 0) {
-      return matches[0];
+      // SECURITY: Validate extracted code
+      const code = matches[0];
+      if (code.length >= 6 && code.length <= 20) {
+        return code;
+      }
     }
   }
   

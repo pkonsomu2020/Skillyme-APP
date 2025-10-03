@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
+// SECURITY RISK: Weak default JWT secret
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
+  console.error('❌ CRITICAL: JWT_SECRET not properly configured in admin auth!');
+  process.exit(1);
+}
 
 // Verify admin JWT token
 const authenticateAdmin = (req, res, next) => {
@@ -15,7 +20,23 @@ const authenticateAdmin = (req, res, next) => {
       });
     }
 
+    // SECURITY: Validate token format
+    if (!token || typeof token !== 'string') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token format' 
+      });
+    }
+
     const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // SECURITY: Validate admin token structure
+    if (!decoded || !decoded.adminId || !decoded.username || !decoded.role) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid admin token payload' 
+      });
+    }
     
     if (decoded.role !== 'super_admin') {
       return res.status(403).json({ 

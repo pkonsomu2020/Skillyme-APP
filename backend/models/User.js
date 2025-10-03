@@ -2,30 +2,43 @@ const supabase = require('../config/supabase');
 
 class User {
   static async create(userData) {
+    // SECURITY: Input validation and sanitization
     const { name, email, password, phone, country, county, field_of_study, institution, level_of_study } = userData;
+    
+    // Validate required fields
+    if (!name || !email || !password) {
+      throw new Error('Missing required fields: name, email, password');
+    }
+    
+    // Sanitize inputs
+    const sanitizedData = {
+      name: name?.trim()?.substring(0, 255),
+      email: email?.trim()?.toLowerCase()?.substring(0, 255),
+      password, // Will be hashed by bcrypt
+      phone: phone?.trim()?.substring(0, 50),
+      country: country?.trim()?.substring(0, 100),
+      county: county?.trim()?.substring(0, 100),
+      field_of_study: field_of_study?.trim()?.substring(0, 255),
+      institution: institution?.trim()?.substring(0, 255),
+      level_of_study: level_of_study?.trim()?.substring(0, 100)
+    };
     
     try {
       const { data, error } = await supabase
         .from('users')
-        .insert([{
-          name,
-          email,
-          password,
-          phone,
-          country,
-          county,
-          field_of_study,
-          institution,
-          level_of_study
-        }])
+        .insert([sanitizedData])
         .select()
         .single();
       
       if (error) {
+        // Handle specific Supabase errors
+        if (error.code === '23505') {
+          throw new Error('User with this email already exists');
+        }
         throw error;
       }
       
-      return { id: data.id, ...userData };
+      return { id: data.id, ...sanitizedData };
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -33,11 +46,16 @@ class User {
   }
 
   static async findByEmail(email) {
+    // SECURITY: Input validation
+    if (!email || typeof email !== 'string') {
+      throw new Error('Invalid email parameter');
+    }
+    
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email)
+        .eq('email', email.trim().toLowerCase())
         .single();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error

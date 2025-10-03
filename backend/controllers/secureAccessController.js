@@ -51,7 +51,7 @@ const verifySecureAccess = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Secure access verification error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Access verification failed'
@@ -170,7 +170,7 @@ const getSecureAccessPage = async (req, res) => {
     `);
     
   } catch (error) {
-    console.error('Secure access page error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).send(`
       <html>
         <head><title>Error - Skillyme</title></head>

@@ -38,7 +38,7 @@ const ResetPassword = () => {
           navigate("/forgot-password");
         }
       } catch (error: any) {
-        console.error("Token validation error:", error);
+        // PERFORMANCE: Removed excessive error logging
         toast.error("Invalid or expired reset link");
         navigate("/forgot-password");
       } finally {
@@ -78,7 +78,7 @@ const ResetPassword = () => {
         toast.error(response.message || "Failed to reset password");
       }
     } catch (error: any) {
-      console.error("Reset password error:", error);
+      // PERFORMANCE: Removed excessive error logging
       toast.error(error.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);

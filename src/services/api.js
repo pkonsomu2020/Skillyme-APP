@@ -25,18 +25,7 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getAuthToken();
 
-    // API request being made
-
-    // CSRF token fetching disabled for performance
-    let csrfToken = null;
-    // if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
-    //   try {
-    //     csrfToken = await this.getCSRFToken();
-    //     console.log('CSRF token obtained:', csrfToken ? 'YES' : 'NO');
-    //   } catch (error) {
-    //     console.warn('Failed to get CSRF token:', error);
-    //   }
-    // }
+    // PERFORMANCE: Removed excessive logging and CSRF overhead
 
     const config = {
       headers: {
@@ -52,16 +41,14 @@ class ApiService {
       const response = await fetch(url, config);
       const data = await response.json();
 
-      // API response received
-      
+      // PERFORMANCE: Removed excessive error logging
       if (!response.ok) {
-        console.error('API Error:', data);
         throw new Error(data.message || 'Request failed');
       }
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      // PERFORMANCE: Removed excessive error logging
       throw error;
     }
   }

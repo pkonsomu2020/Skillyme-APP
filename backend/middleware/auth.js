@@ -1,7 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
+// SECURITY RISK: Weak default JWT secret
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
+  console.error('❌ CRITICAL: JWT_SECRET not properly configured in auth middleware!');
+  process.exit(1);
+}
 
 // Verify JWT token (lenient for development)
 const authenticateToken = async (req, res, next) => {
@@ -17,7 +22,23 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // SECURITY: Validate token format and decode
+    if (!token || typeof token !== 'string') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token format' 
+      });
+    }
+    
     const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // SECURITY: Validate decoded token structure
+    if (!decoded || !decoded.userId || typeof decoded.userId !== 'number') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token payload' 
+      });
+    }
     
     const user = await User.findById(decoded.userId);
     

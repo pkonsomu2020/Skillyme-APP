@@ -22,10 +22,9 @@ const Navbar = () => {
     user = authContext?.user || null;
     isLoading = authContext?.isLoading || false;
     
-    // Debug authentication state
-    console.log('Navbar: isAuthenticated:', isAuthenticated, 'user:', user ? 'Present' : 'Null', 'isLoading:', isLoading);
+    // PERFORMANCE: Removed excessive debug logging
   } catch (error) {
-    console.warn('Auth context not available:', error);
+    // PERFORMANCE: Removed excessive warning logging
   }
 
   if (isAuthPage) return null;

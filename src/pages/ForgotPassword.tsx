@@ -37,7 +37,7 @@ const ForgotPassword = () => {
         toast.error(response.message || "Failed to send reset instructions");
       }
     } catch (error: any) {
-      console.error("Forgot password error:", error);
+      // PERFORMANCE: Removed excessive error logging
       toast.error(error.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);

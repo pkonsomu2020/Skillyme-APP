@@ -142,7 +142,7 @@ const Signup = () => {
         toast.error("Registration failed. Please try again.");
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      // PERFORMANCE: Removed excessive error logging
       toast.error(error.message || "Registration failed. Please try again.");
     }
   };

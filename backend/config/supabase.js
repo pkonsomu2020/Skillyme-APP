@@ -1,18 +1,30 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// Supabase configuration
+// SECURITY: Validate Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY in your .env file');
+  console.error('❌ CRITICAL: Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY in your .env file');
+  process.exit(1);
+}
+
+// SECURITY: Validate URL format
+if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+  console.error('❌ CRITICAL: Invalid Supabase URL format');
+  process.exit(1);
+}
+
+// SECURITY: Validate key format (should be a JWT-like string)
+if (!supabaseKey || supabaseKey.length < 100) {
+  console.error('❌ CRITICAL: Invalid Supabase key format');
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Test Supabase connection
+// Test Supabase connection (only when explicitly called)
 async function testConnection() {
   try {
     const { data, error } = await supabase.from('users').select('count').limit(1);
@@ -26,6 +38,9 @@ async function testConnection() {
   }
 }
 
-testConnection();
+// Only test connection in production or when explicitly requested
+if (process.env.NODE_ENV === 'production') {
+  testConnection();
+}
 
 module.exports = supabase;

@@ -7,7 +7,12 @@ const ErrorHandler = require('../middleware/errorHandler');
 const TransactionLogger = require('../middleware/transactionLogger');
 const HashIntegrityChecker = require('../middleware/hashIntegrity');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
+// SECURITY RISK: Weak default JWT secret
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
+  console.error('❌ CRITICAL: JWT_SECRET not properly configured!');
+  process.exit(1);
+}
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
 
 // Register user

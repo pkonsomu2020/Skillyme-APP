@@ -26,7 +26,7 @@ const DashboardOverview = () => {
     const fetchDashboardStats = async () => {
       // Only fetch if user is authenticated
       if (!user) {
-        console.log('User not authenticated, skipping dashboard stats fetch');
+        // PERFORMANCE: Removed excessive logging
         setIsLoading(false);
         return;
       }
@@ -41,7 +41,7 @@ const DashboardOverview = () => {
           setError('Failed to fetch dashboard statistics');
         }
       } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
+        // PERFORMANCE: Removed excessive error logging
         setError('Failed to load dashboard data');
       } finally {
         setIsLoading(false);

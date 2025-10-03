@@ -32,7 +32,7 @@ const Login = () => {
         toast.error("Login failed. Please check your credentials.");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      // PERFORMANCE: Removed excessive error logging
       toast.error("Login failed. Please try again.");
     } finally {
       setIsSubmitting(false);

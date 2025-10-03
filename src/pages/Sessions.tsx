@@ -61,7 +61,7 @@ const Sessions = () => {
           toast.error('Failed to fetch sessions');
         }
       } catch (error) {
-        console.error('Error fetching sessions:', error);
+        // PERFORMANCE: Removed excessive error logging
         toast.error('Failed to fetch sessions');
       } finally {
         setIsLoading(false);
@@ -115,7 +115,7 @@ const Sessions = () => {
         toast.error(response.message || "Failed to submit M-Pesa code. Please try again.");
       }
     } catch (error: any) {
-      console.error("Error submitting M-Pesa code:", error);
+      // PERFORMANCE: Removed excessive error logging
       toast.error(error.message || "An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

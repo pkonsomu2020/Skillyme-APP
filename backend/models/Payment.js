@@ -26,7 +26,6 @@ class Payment {
       
       if (existingPayment && !checkError) {
         // Payment already exists, return existing payment
-        console.log('Payment already exists, returning existing payment');
         return { id: existingPayment.payment_id, ...paymentData };
       }
       
@@ -50,7 +49,7 @@ class Payment {
       if (error) {
         // If it's a duplicate key error, try to find the existing payment
         if (error.code === '23505' && error.message.includes('duplicate key')) {
-          console.log('Duplicate payment detected, fetching existing payment');
+          // Duplicate payment detected
           const { data: existingData, error: fetchError } = await supabase
             .from('payments')
             .select('payment_id')
@@ -75,7 +74,7 @@ class Payment {
 
   static async getAllPayments() {
     try {
-      console.log('📊 Payment.getAllPayments: Fetching payments from database...');
+      // Fetching payments from database
       const { data, error } = await supabase
         .from('payments')
         .select(`
@@ -99,7 +98,7 @@ class Payment {
         throw error;
       }
       
-      console.log(`📊 Payment.getAllPayments: Raw data from database: ${data?.length || 0} payments`);
+      // Raw data retrieved from database
       
       // Transform the data to match the expected format
       const transformedData = data?.map(payment => ({
@@ -119,7 +118,7 @@ class Payment {
         session_google_meet_link: payment.sessions?.google_meet_link
       })) || [];
       
-      console.log(`📊 Payment.getAllPayments: Transformed ${transformedData.length} payments`);
+      // Data transformed successfully
       return transformedData;
     } catch (error) {
       console.error('Error fetching payments:', error);

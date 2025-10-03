@@ -106,86 +106,97 @@ app.use((err, req, res, next) => {
 // DEPRECATED: MySQL-specific endpoint removed
 // Use Supabase dashboard to check table structure
 
-// Test secure access creation
-app.get('/test-secure-access', async (req, res) => {
-  try {
-    const SecureAccess = require('./models/SecureAccess');
-    
-    // Test creating secure access
-    const token = await SecureAccess.createSecureAccess(1, 1);
-    
-    res.json({
-      success: true,
-      message: 'Secure access test successful',
-      token: token
-    });
-  } catch (error) {
-    console.error('❌ Secure access test failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-});
+// SECURITY RISK: Test endpoints should be removed in production
+// Test secure access creation (DEVELOPMENT ONLY)
+if (process.env.NODE_ENV === 'development') {
+  app.get('/test-secure-access', async (req, res) => {
+    try {
+      const SecureAccess = require('./models/SecureAccess');
+      
+      // Test creating secure access
+      const token = await SecureAccess.createSecureAccess(1, 1);
+      
+      res.json({
+        success: true,
+        message: 'Secure access test successful',
+        token: token
+      });
+    } catch (error) {
+      console.error('❌ Secure access test failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+}
 
-// Test email sending
-app.get('/test-email', async (req, res) => {
-  try {
-    const emailService = require('./services/emailService');
-    
-    // Test sending email
-    const result = await emailService.sendPaymentStatusUpdate(
-      'test@example.com',
-      'Test User',
-      'Test Session',
-      'paid',
-      'https://meet.google.com/test'
-    );
-    
-    res.json({
-      success: true,
-      message: 'Email test completed',
-      result: result,
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-        GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
-        GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
-      }
-    });
-  } catch (error) {
-    console.error('❌ Email test failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-});
+// SECURITY RISK: Test endpoints should be removed in production
+// Test email sending (DEVELOPMENT ONLY)
+if (process.env.NODE_ENV === 'development') {
+  app.get('/test-email', async (req, res) => {
+    try {
+      const emailService = require('./services/emailService');
+      
+      // Test sending email
+      const result = await emailService.sendPaymentStatusUpdate(
+        'test@example.com',
+        'Test User',
+        'Test Session',
+        'paid',
+        'https://meet.google.com/test'
+      );
+      
+      res.json({
+        success: true,
+        message: 'Email test completed',
+        result: result,
+        environment: {
+          NODE_ENV: process.env.NODE_ENV,
+          SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+          SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+          GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
+          GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
+        }
+      });
+    } catch (error) {
+      console.error('❌ Email test failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+}
 
-// Check environment variables
-app.get('/check-env', async (req, res) => {
-  try {
-    res.json({
-      success: true,
-      message: 'Environment variables check',
-      env: {
-        NODE_ENV: process.env.NODE_ENV,
-        SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-        GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
-        GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// SECURITY RISK: Environment variables exposure
+// Check environment variables (DEVELOPMENT ONLY)
+if (process.env.NODE_ENV === 'development') {
+  app.get('/check-env', async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        message: 'Environment variables check',
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+          SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
+          GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
+          GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+}
 
-// Comprehensive email diagnostic
-app.get('/diagnostic-email', async (req, res) => {
+// SECURITY RISK: Diagnostic endpoints expose sensitive information
+// Comprehensive email diagnostic (DEVELOPMENT ONLY)
+if (process.env.NODE_ENV === 'development') {
+  app.get('/diagnostic-email', async (req, res) => {
   try {
     const diagnostic = {
       timestamp: new Date().toISOString(),
@@ -262,7 +273,8 @@ app.get('/diagnostic-email', async (req, res) => {
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-});
+  });
+}
 
 // 404 handler
 app.use('*', (req, res) => {
