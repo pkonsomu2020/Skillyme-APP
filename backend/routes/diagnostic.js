@@ -77,7 +77,7 @@ router.get('/all-tables-schema', async (req, res) => {
     console.log('Getting all tables and their schemas...');
     
     // Test connection to main tables
-    const tables = ['users', 'sessions', 'payments', 'admins', 'user_sessions', 'password_resets', 'secure_access'];
+    const tables = ['users', 'sessions', 'payments', 'user_sessions', 'password_resets', 'secure_access'];
     const tableStatus = {};
     
     for (const tableName of tables) {

@@ -61,21 +61,7 @@ To become the leading career connection platform in Kenya and Africa, connecting
 - **Career Resources**: Access to industry insights
 - **Community Forum**: Peer-to-peer learning
 
-### 🛡️ **For Administrators**
-
-#### **📈 Analytics Dashboard**
-- **Real-time Payments**: Live payment monitoring
-- **User Statistics**: Comprehensive user analytics
-- **Session Management**: Create and manage career sessions
-- **Revenue Tracking**: Financial performance insights
-
-#### **👥 User Management**
-- **User Overview**: Complete user database
-- **Payment Processing**: M-Pesa transaction management
-- **Session Administration**: Full session lifecycle management
-- **Email Management**: Automated communication system
-
-#### **🔒 Security Features**
+### 🔒 **Security Features**
 - **Rate Limiting**: API protection against abuse
 - **CSRF Protection**: Cross-site request forgery prevention
 - **Security Headers**: Comprehensive security implementation
@@ -149,7 +135,7 @@ Email Notification → Google Meet Link → Live Session → Feedback & Networki
 - Users can join multiple sessions
 - Sessions have multiple participants
 - Payments are linked to users and sessions
-- Admins manage all system operations
+- System operations are automated
 
 ## 🚀 **Getting Started**
 

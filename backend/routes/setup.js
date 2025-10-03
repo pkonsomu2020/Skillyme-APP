@@ -22,14 +22,6 @@ router.post('/setup-database', async (req, res) => {
   });
 });
 
-// Test admin login endpoint (DEPRECATED)
-router.get('/test-admin-login', async (req, res) => {
-  res.json({
-    success: false,
-    message: 'This endpoint is deprecated. Admin authentication is now handled through Supabase.',
-    instructions: 'Please use the Supabase dashboard to manage admin users.'
-  });
-});
 
 // CORS test endpoint (still works)
 router.get('/cors-test', (req, res) => {

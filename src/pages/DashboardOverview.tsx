@@ -163,7 +163,7 @@ const DashboardOverview = () => {
               <div>
                 <h4 className="font-semibold mb-1">Receive Session Link</h4>
                 <p className="text-sm text-muted-foreground">
-                  Get your Google Meet link via email after admin confirmation
+                  Get your Google Meet link directly from the session page
                 </p>
               </div>
             </div>

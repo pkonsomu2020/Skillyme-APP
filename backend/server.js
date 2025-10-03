@@ -54,7 +54,7 @@ app.use((req, res, next) => {
     (req.path === '/api/auth/login' && req.method === 'POST') ||
     (req.path === '/api/auth/forgot-password' && req.method === 'POST') ||
     (req.path === '/api/auth/reset-password' && req.method === 'POST') ||
-    (req.path === '/api/payments/submit-mpesa' && req.method === 'POST') ||
+    (req.path === '/api/payments/submit-mpesa' && req.method === 'POST')
   ) {
     return next();
   }

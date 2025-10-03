@@ -45,8 +45,6 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
     
-    --admin-header: 215 30% 15%;
-    --admin-header-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -85,8 +83,6 @@ All colors MUST be HSL.
     --input: 215 25% 22%;
     --ring: 174 100% 32%;
     
-    --admin-header: 215 30% 15%;
-    --admin-header-foreground: 0 0% 100%;
   }
 }
 
