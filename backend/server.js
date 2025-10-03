@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
-const { generalLimiter, authLimiter, paymentLimiter, adminLimiter } = require('./middleware/rateLimiting');
+const { generalLimiter, authLimiter, paymentLimiter } = require('./middleware/rateLimiting');
 const { securityHeaders, httpsRedirect, corsSecurity } = require('./middleware/securityHeaders');
 const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware/csrfProtection');
 // Database connection is now handled by individual models using Supabase
@@ -25,12 +25,8 @@ app.use(corsSecurity);
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
     'http://localhost:5173', // Main app (development)
-    'http://localhost:8080', // Admin app (development)
-    'http://localhost:8081', // Alternative admin port (development)
     'https://skillyme-app.vercel.app', // Production main app
-    'https://skillyme-admin.vercel.app', // Production admin dashboard
-    process.env.FRONTEND_URL, // Production frontend
-    process.env.ADMIN_URL     // Production admin
+    process.env.FRONTEND_URL // Production frontend
   ].filter(Boolean), // Remove undefined values
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -54,13 +50,11 @@ app.use(cookieParser());
 app.use((req, res, next) => {
   // Skip CSRF for auth and payment endpoints
   if (
-    (req.path === '/api/admin/login' && req.method === 'POST') ||
     (req.path === '/api/auth/register' && req.method === 'POST') ||
     (req.path === '/api/auth/login' && req.method === 'POST') ||
     (req.path === '/api/auth/forgot-password' && req.method === 'POST') ||
     (req.path === '/api/auth/reset-password' && req.method === 'POST') ||
     (req.path === '/api/payments/submit-mpesa' && req.method === 'POST') ||
-    (req.path.startsWith('/api/admin/payments/') && req.path.endsWith('/status') && req.method === 'PUT')
   ) {
     return next();
   }
@@ -70,7 +64,6 @@ app.get('/api/csrf-token', getCSRFToken);
 
 // Routes with specific rate limiting
 app.use('/api/auth', authLimiter, require('./routes/auth'));
-app.use('/api/admin', adminLimiter, require('./routes/admin'));
 app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/sessions', require('./routes/sessions'));
@@ -288,5 +281,4 @@ app.listen(PORT, () => {
   console.log(`🚀 Skillyme API server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:8081'}`);
-  console.log(`🔧 Admin URL: ${process.env.ADMIN_URL || 'http://localhost:8080'}`);
 });
