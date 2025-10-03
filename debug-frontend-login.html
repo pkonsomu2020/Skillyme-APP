@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Login Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Frontend Login Debug Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE_URL = 'https://skillyme-backend-s3sy.onrender.com/api';
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testLogin() {
+            log('🚀 Starting login test...', 'info');
+            log(`API URL: ${API_BASE_URL}`, 'info');
+            
+            const loginData = {
+                email: 'pkonsomu2020@gmail.com',
+                password: 'Ponsomu756@'
+            };
+            
+            try {
+                log('📤 Sending login request...', 'info');
+                log(`Request data: ${JSON.stringify(loginData, null, 2)}`, 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin
+                    },
+                    body: JSON.stringify(loginData)
+                });
+                
+                log(`📥 Response received:`, 'info');
+                log(`Status: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`Status Text: ${response.statusText}`, 'info');
+                log(`Headers: ${JSON.stringify([...response.headers.entries()])}`, 'info');
+                
+                const responseText = await response.text();
+                log(`Raw Response: ${responseText}`, 'info');
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    log(`Parsed JSON: ${JSON.stringify(data, null, 2)}`, 'info');
+                } catch (parseError) {
+                    log(`❌ JSON Parse Error: ${parseError.message}`, 'error');
+                    return;
+                }
+                
+                if (response.ok && data.success) {
+                    log('✅ LOGIN SUCCESSFUL!', 'success');
+                    log(`User: ${data.data.user.name}`, 'success');
+                    log(`Email: ${data.data.user.email}`, 'success');
+                    log(`Token: ${data.data.token.substring(0, 20)}...`, 'success');
+                    
+                    // Test token validation
+                    log('🔐 Testing token validation...', 'info');
+                    try {
+                        const profileResponse = await fetch(`${API_BASE_URL}/auth/profile`, {
+                            headers: {
+                                'Authorization': `Bearer ${data.data.token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (profileResponse.ok) {
+                            const profileData = await profileResponse.json();
+                            log('✅ Token validation successful!', 'success');
+                            log(`Profile: ${JSON.stringify(profileData, null, 2)}`, 'success');
+                        } else {
+                            log(`❌ Token validation failed: ${profileResponse.status}`, 'error');
+                        }
+                    } catch (tokenError) {
+                        log(`❌ Token validation error: ${tokenError.message}`, 'error');
+                    }
+                    
+                } else {
+                    log('❌ LOGIN FAILED!', 'error');
+                    log(`Success: ${data.success}`, 'error');
+                    log(`Message: ${data.message}`, 'error');
+                    if (data.errors) {
+                        log(`Errors: ${JSON.stringify(data.errors, null, 2)}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Network Error: ${error.message}`, 'error');
+                log(`Error Type: ${error.name}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Run test when page loads
+        testLogin();
+    </script>
+</body>
+</html>

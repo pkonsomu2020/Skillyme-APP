@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://skillyme-backend-s3sy.onrender.com/api';
 
 class ApiService {
   constructor() {
@@ -68,13 +68,21 @@ class ApiService {
   }
 
   async login(email, password) {
+    console.log('🔍 API Service: Login request for', email);
+    console.log('🔍 API Service: Base URL:', this.baseURL);
+    
     const response = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
+    console.log('🔍 API Service: Response received:', response);
+
     if (response.success && response.data.token) {
+      console.log('✅ API Service: Setting auth token');
       this.setAuthToken(response.data.token);
+    } else {
+      console.log('❌ API Service: No token in response or success is false');
     }
 
     return response;

@@ -77,19 +77,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('🔍 AuthContext: Starting login for', email);
       const response = await apiService.login(email, password);
+      console.log('🔍 AuthContext: API response:', response);
       
       if (response.success) {
+        console.log('✅ AuthContext: Login successful, setting user');
         // Set user immediately without waiting
         setUser(response.data.user);
         // Store auth state for persistence
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('user', JSON.stringify(response.data.user));
         return true;
+      } else {
+        console.log('❌ AuthContext: Login failed - response.success is false');
+        console.log('Response data:', response);
+        return false;
       }
-      return false;
     } catch (error) {
-      // PERFORMANCE: Removed excessive error logging
+      console.log('❌ AuthContext: Login error:', error);
       return false;
     } finally {
       setIsLoading(false);
