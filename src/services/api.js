@@ -31,7 +31,6 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
-        ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
         ...options.headers,
       },
       ...options,
