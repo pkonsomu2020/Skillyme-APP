@@ -67,7 +67,7 @@ class Payment {
       
       return { id: data.payment_id, ...paymentData };
     } catch (error) {
-      console.error('Error creating payment:', error);
+      // PERFORMANCE: Removed excessive error logging
       throw error;
     }
   }
@@ -94,7 +94,7 @@ class Payment {
         .order('submitted_at', { ascending: false });
       
       if (error) {
-        console.error('📊 Payment.getAllPayments: Database error:', error);
+        // PERFORMANCE: Removed excessive error logging
         throw error;
       }
       
@@ -121,7 +121,7 @@ class Payment {
       // Data transformed successfully
       return transformedData;
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      // PERFORMANCE: Removed excessive error logging
       throw error;
     }
   }
@@ -144,7 +144,7 @@ class Payment {
       
       return data && data.length > 0;
     } catch (error) {
-      console.error('Error updating payment status:', error);
+      // PERFORMANCE: Removed excessive error logging
       throw error;
     }
   }

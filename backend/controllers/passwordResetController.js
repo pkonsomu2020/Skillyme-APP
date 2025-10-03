@@ -43,7 +43,7 @@ const forgotPassword = async (req, res) => {
       
       // Password reset email sent
     } catch (emailError) {
-      console.error('Error sending password reset email:', emailError);
+      // PERFORMANCE: Removed excessive error logging
       // Don't fail the request if email fails
     }
 
@@ -53,7 +53,7 @@ const forgotPassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -92,7 +92,7 @@ const validateResetToken = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Validate reset token error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -148,7 +148,7 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Reset password error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Internal server error'

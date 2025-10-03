@@ -58,7 +58,7 @@ const getDashboardStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Dashboard stats error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch dashboard statistics'
@@ -108,7 +108,7 @@ const getUserSessions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('User sessions error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user sessions'

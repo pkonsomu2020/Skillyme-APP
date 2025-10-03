@@ -150,7 +150,7 @@ const submitMpesaCode = async (req, res) => {
           // Payment submission confirmation email sent
         }
       } catch (emailError) {
-        console.error('Error sending payment confirmation email:', emailError);
+        // PERFORMANCE: Removed excessive error logging
         // Don't fail the payment submission if email fails
       }
     });
@@ -172,7 +172,7 @@ const submitMpesaCode = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('M-Pesa submission error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to submit M-Pesa code',

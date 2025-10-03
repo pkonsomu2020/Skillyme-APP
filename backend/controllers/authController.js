@@ -222,7 +222,7 @@ const getProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Profile error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch profile',
@@ -257,7 +257,7 @@ const updateProfile = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Update profile error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Profile update failed',

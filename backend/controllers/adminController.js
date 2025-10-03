@@ -71,7 +71,7 @@ const adminLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin login error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Admin login failed',
@@ -90,7 +90,7 @@ const getAdminProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin profile error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch admin profile',
@@ -111,7 +111,7 @@ const getAllPayments = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching payments:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch payments',
@@ -237,7 +237,7 @@ const updatePaymentStatus = async (req, res) => {
           }
         }
       } catch (emailError) {
-        console.error('Failed to send payment status update email:', emailError);
+        // PERFORMANCE: Removed excessive error logging
         // Don't fail the request if email fails
       }
       
@@ -252,7 +252,7 @@ const updatePaymentStatus = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Update payment status error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to update payment status',
@@ -288,7 +288,7 @@ const getAllSessions = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching sessions:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch sessions',
@@ -342,7 +342,7 @@ const createSession = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error creating session:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to create session',
@@ -382,7 +382,7 @@ const updateSession = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error updating session:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to update session',

@@ -40,7 +40,7 @@ const getAllSessions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Sessions fetch error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch sessions'
@@ -68,7 +68,7 @@ const getSessionById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Session fetch error:', error);
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch session'
