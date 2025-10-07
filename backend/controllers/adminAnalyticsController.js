@@ -489,7 +489,7 @@ const getUserDemographics = async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from('users')
-      .select('field_of_study, experience_level, created_at');
+      .select('field_of_study, level_of_study, created_at');
 
     if (error) {
       throw error;
@@ -507,9 +507,9 @@ const getUserDemographics = async (req, res) => {
       const field = user.field_of_study || 'Not specified';
       demographics.byField[field] = (demographics.byField[field] || 0) + 1;
 
-      // Group by experience level
-      const experience = user.experience_level || 'Not specified';
-      demographics.byExperience[experience] = (demographics.byExperience[experience] || 0) + 1;
+      // Group by level of study
+      const level = user.level_of_study || 'Not specified';
+      demographics.byExperience[level] = (demographics.byExperience[level] || 0) + 1;
 
       // Group by month
       const month = new Date(user.created_at).toISOString().substring(0, 7);

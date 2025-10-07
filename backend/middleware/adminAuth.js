@@ -26,12 +26,12 @@ const authenticateAdmin = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    // Check if admin exists and is active
+    // Check if admin exists
     const admin = await Admin.findById(decoded.adminId);
-    if (!admin || !admin.is_active) {
+    if (!admin) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token. Admin not found or inactive.'
+        message: 'Invalid token. Admin not found.'
       });
     }
 

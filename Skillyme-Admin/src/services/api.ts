@@ -1,9 +1,20 @@
 // Admin API Service for Backend Communication
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://skillyme-backend-s3sy.onrender.com/api';
+import environment from '../../config/environment.js';
+
+const API_BASE_URL = environment.apiConfig.baseURL;
 
 // SECURITY: Validate API URL
 if (!API_BASE_URL.startsWith('https://')) {
   console.error('❌ CRITICAL: API_BASE_URL must use HTTPS in production!');
+}
+
+// Log environment info in development
+if (environment.isDevelopment) {
+  console.log('🔧 Admin Dashboard Environment:', {
+    backendUrl: API_BASE_URL,
+    appName: environment.appName,
+    version: environment.appVersion
+  });
 }
 
 // Types for API responses
@@ -59,7 +70,7 @@ export interface User {
   year_of_study?: string;
   primary_field_interest?: string;
   signup_source?: string;
-  is_active: boolean;
+  // is_active: boolean; // Field doesn't exist in database
   created_at: string;
 }
 

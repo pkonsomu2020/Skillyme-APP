@@ -77,7 +77,6 @@ class Admin {
         .from('admins')
         .select('*')
         .eq('id', id)
-        .eq('is_active', true)
         .single();
       
       if (error && error.code !== 'PGRST116') {

@@ -164,8 +164,8 @@ export default function Users() {
                   <TableCell>{user.field_of_study}</TableCell>
                   <TableCell>{user.institution}</TableCell>
                   <TableCell>
-                    <Badge variant={user.is_active ? "default" : "secondary"}>
-                      {user.is_active ? "Active" : "Inactive"}
+                    <Badge variant="default">
+                      Active
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -181,9 +181,9 @@ export default function Users() {
                         <DropdownMenuItem>Send Email</DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-destructive"
-                          onClick={() => handleToggleUserStatus(user.id, !user.is_active)}
+                          onClick={() => handleToggleUserStatus(user.id, false)}
                         >
-                          {user.is_active ? "Suspend Account" : "Activate Account"}
+                          Suspend Account
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
