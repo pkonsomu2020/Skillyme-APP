@@ -46,18 +46,24 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Cookie parsing for CSRF
 app.use(cookieParser());
 
-// CSRF Protection (exclude auth and payment endpoints)
+// Static file serving for uploads
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// CSRF Protection (exclude auth, payment, and admin auth endpoints)
 app.use((req, res, next) => {
-  // Skip CSRF for auth and payment endpoints
+  // Skip CSRF for specific auth, payment, and admin auth endpoints
   if (
     (req.path === '/api/auth/register' && req.method === 'POST') ||
     (req.path === '/api/auth/login' && req.method === 'POST') ||
     (req.path === '/api/auth/forgot-password' && req.method === 'POST') ||
     (req.path === '/api/auth/reset-password' && req.method === 'POST') ||
-    (req.path === '/api/payments/submit-mpesa' && req.method === 'POST')
+    (req.path === '/api/payments/submit-mpesa' && req.method === 'POST') ||
+    (req.path === '/api/admin/auth/login' && req.method === 'POST')
   ) {
     return next();
   }
+  // Apply CSRF protection to all other routes
   return csrfProtection(req, res, next);
 });
 app.get('/api/csrf-token', getCSRFToken);
@@ -70,6 +76,14 @@ app.use('/api/sessions', require('./routes/sessions'));
 // MySQL setup route removed - now using Supabase
 app.use('/api/diagnostic', require('./routes/diagnostic'));
 app.use('/secure-access', require('./routes/secureAccess'));
+
+// Admin routes
+app.use('/api/admin/auth', require('./routes/adminAuth'));
+app.use('/api/admin/sessions', require('./routes/adminSessions'));
+app.use('/api/admin/users', require('./routes/adminUsers'));
+app.use('/api/admin/analytics', require('./routes/adminAnalytics'));
+app.use('/api/admin/notifications', require('./routes/adminNotifications'));
+app.use('/api/admin/upload', require('./routes/adminUpload'));
 
 // Health check endpoint
 app.get('/api/test', (req, res) => {
@@ -99,175 +113,13 @@ app.use((err, req, res, next) => {
 // DEPRECATED: MySQL-specific endpoint removed
 // Use Supabase dashboard to check table structure
 
-// SECURITY RISK: Test endpoints should be removed in production
-// Test secure access creation (DEVELOPMENT ONLY)
-if (process.env.NODE_ENV === 'development') {
-  app.get('/test-secure-access', async (req, res) => {
-    try {
-      const SecureAccess = require('./models/SecureAccess');
-      
-      // Test creating secure access
-      const token = await SecureAccess.createSecureAccess(1, 1);
-      
-      res.json({
-        success: true,
-        message: 'Secure access test successful',
-        token: token
-      });
-    } catch (error) {
-      console.error('❌ Secure access test failed:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
-    }
-  });
-}
+// SECURITY: Development test endpoints removed for production security
 
-// SECURITY RISK: Test endpoints should be removed in production
-// Test email sending (DEVELOPMENT ONLY)
-if (process.env.NODE_ENV === 'development') {
-  app.get('/test-email', async (req, res) => {
-    try {
-      const emailService = require('./services/emailService');
-      
-      // Test sending email
-      const result = await emailService.sendPaymentStatusUpdate(
-        'test@example.com',
-        'Test User',
-        'Test Session',
-        'paid',
-        'https://meet.google.com/test'
-      );
-      
-      res.json({
-        success: true,
-        message: 'Email test completed',
-        result: result,
-        environment: {
-          NODE_ENV: process.env.NODE_ENV,
-          SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-          SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-          GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
-          GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
-        }
-      });
-    } catch (error) {
-      console.error('❌ Email test failed:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
-    }
-  });
-}
+// SECURITY: Email test endpoints removed for production security
 
-// SECURITY RISK: Environment variables exposure
-// Check environment variables (DEVELOPMENT ONLY)
-if (process.env.NODE_ENV === 'development') {
-  app.get('/check-env', async (req, res) => {
-    try {
-      res.json({
-        success: true,
-        message: 'Environment variables check',
-        env: {
-          NODE_ENV: process.env.NODE_ENV,
-          SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-          SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-          GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
-          GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
-        }
-      });
-    } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-}
+// SECURITY: Environment variable exposure endpoints removed for production security
 
-// SECURITY RISK: Diagnostic endpoints expose sensitive information
-// Comprehensive email diagnostic (DEVELOPMENT ONLY)
-if (process.env.NODE_ENV === 'development') {
-  app.get('/diagnostic-email', async (req, res) => {
-  try {
-    const diagnostic = {
-      timestamp: new Date().toISOString(),
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        SENDGRID_API_KEY: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
-        SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'NOT SET',
-        GMAIL_USER: process.env.GMAIL_USER ? 'SET' : 'NOT SET',
-        GMAIL_PASS: process.env.GMAIL_PASS ? 'SET' : 'NOT SET'
-      },
-      database: {},
-      secureAccess: {},
-      emailService: {}
-    };
-    
-    // Test Supabase connection
-    try {
-      const supabase = require('./config/supabase');
-      const { data, error } = await supabase.from('users').select('id').limit(1);
-      if (error) {
-        throw error;
-      }
-      diagnostic.database.connection = 'SUCCESS';
-      diagnostic.database.provider = 'Supabase';
-    } catch (error) {
-      diagnostic.database.connection = 'FAILED';
-      diagnostic.database.error = error.message;
-    }
-    
-    // Check secure_access table
-    try {
-      const supabase = require('./config/supabase');
-      const { data, error } = await supabase.from('secure_access').select('*').limit(1);
-      if (error) {
-        throw error;
-      }
-      diagnostic.secureAccess.exists = true;
-      diagnostic.secureAccess.provider = 'Supabase';
-    } catch (error) {
-      diagnostic.secureAccess.exists = false;
-      diagnostic.secureAccess.error = error.message;
-    }
-    
-    // Test email service
-    try {
-      const emailService = require('./services/emailService');
-      // Test if SendGrid is properly configured
-      if (process.env.SENDGRID_API_KEY) {
-        diagnostic.emailService.connection = 'SUCCESS';
-        diagnostic.emailService.provider = 'SendGrid';
-        diagnostic.emailService.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com';
-      } else if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
-        diagnostic.emailService.connection = 'SUCCESS';
-        diagnostic.emailService.provider = 'Gmail SMTP';
-        diagnostic.emailService.fromEmail = process.env.GMAIL_USER;
-      } else {
-        diagnostic.emailService.connection = 'FAILED';
-        diagnostic.emailService.error = 'No email service configured (SendGrid or Gmail)';
-      }
-    } catch (error) {
-      diagnostic.emailService.connection = 'FAILED';
-      diagnostic.emailService.error = error.message;
-    }
-    
-    res.json({
-      success: true,
-      message: 'Email diagnostic completed',
-      diagnostic: diagnostic
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-  });
-}
+// SECURITY: Diagnostic endpoints removed for production security
 
 // 404 handler
 app.use('*', (req, res) => {

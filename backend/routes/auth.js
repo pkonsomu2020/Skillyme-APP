@@ -16,7 +16,16 @@ const registerValidation = [
   body('county').optional().trim().isLength({ min: 2 }).withMessage('County must be at least 2 characters'),
   body('field_of_study').optional().trim().isLength({ min: 2 }).withMessage('Field of study must be at least 2 characters'),
   body('institution').optional().trim().isLength({ min: 2 }).withMessage('Institution must be at least 2 characters'),
-  body('level_of_study').optional().isIn(['High School', 'Undergraduate', 'Graduate', 'Postgraduate']).withMessage('Invalid level of study')
+  body('level_of_study').optional().isIn(['High School', 'Undergraduate', 'Graduate', 'Postgraduate']).withMessage('Invalid level of study'),
+  
+  // New enhanced signup field validations
+  body('preferred_name').optional().trim().isLength({ min: 2, max: 255 }).withMessage('Preferred name must be between 2-255 characters'),
+  body('date_of_birth').optional().isISO8601().withMessage('Date of birth must be a valid date'),
+  body('course_of_study').optional().trim().isLength({ min: 2, max: 255 }).withMessage('Course of study must be between 2-255 characters'),
+  body('degree').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Degree must be between 2-100 characters'),
+  body('year_of_study').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Year of study must be between 2-50 characters'),
+  body('primary_field_interest').optional().trim().isLength({ min: 2, max: 255 }).withMessage('Primary field interest must be between 2-255 characters'),
+  body('signup_source').optional().trim().isLength({ min: 2, max: 255 }).withMessage('Signup source must be between 2-255 characters')
 ];
 
 const loginValidation = [

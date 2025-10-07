@@ -7,10 +7,10 @@ const ErrorHandler = require('../middleware/errorHandler');
 const TransactionLogger = require('../middleware/transactionLogger');
 const HashIntegrityChecker = require('../middleware/hashIntegrity');
 
-// SECURITY RISK: Weak default JWT secret
+// SECURITY: Strong JWT secret validation
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
-  console.error('❌ CRITICAL: JWT_SECRET not properly configured!');
+if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET === 'your_super_secret_jwt_key_here') {
+  console.error('❌ CRITICAL: JWT_SECRET must be at least 32 characters and properly configured!');
   process.exit(1);
 }
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
@@ -32,7 +32,11 @@ const register = async (req, res) => {
       });
     }
 
-    const { name, email, password, phone, country, county, field_of_study, institution, level_of_study } = req.body;
+    const { 
+      name, email, password, phone, country, county, field_of_study, institution, level_of_study,
+      preferred_name, date_of_birth, course_of_study, degree, year_of_study, 
+      primary_field_interest, signup_source 
+    } = req.body;
 
     // Enhanced password validation
     const passwordValidation = PasswordValidator.validatePassword(password);
@@ -77,7 +81,15 @@ const register = async (req, res) => {
       county,
       field_of_study: field_of_study || 'Not specified',
       institution: institution || 'Not specified',
-      level_of_study: level_of_study || 'High School'
+      level_of_study: level_of_study || 'High School',
+      // New enhanced signup fields
+      preferred_name: preferred_name || name, // Default to full name if not provided
+      date_of_birth: date_of_birth || null,
+      course_of_study: course_of_study || null,
+      degree: degree || null,
+      year_of_study: year_of_study || null,
+      primary_field_interest: primary_field_interest || field_of_study || 'Not specified',
+      signup_source: signup_source || 'Direct'
     };
 
     const user = await User.create(userData);
@@ -96,6 +108,8 @@ const register = async (req, res) => {
       { expiresIn: JWT_EXPIRE }
     );
 
+    // User object is ready for response
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -104,10 +118,19 @@ const register = async (req, res) => {
         user: {
           id: user.id,
           name: user.name,
+          preferred_name: user.preferred_name,
           email: user.email,
           phone: user.phone,
           country: user.country,
-          county: user.county
+          county: user.county,
+          field_of_study: user.field_of_study,
+          course_of_study: user.course_of_study,
+          degree: user.degree,
+          year_of_study: user.year_of_study,
+          primary_field_interest: user.primary_field_interest,
+          institution: user.institution,
+          level_of_study: user.level_of_study,
+          signup_source: user.signup_source
         }
       }
     });

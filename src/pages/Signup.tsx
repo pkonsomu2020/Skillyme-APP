@@ -22,6 +22,14 @@ const Signup = () => {
     levelOfStudy: "",
     password: "",
     confirmPassword: "",
+    // New enhanced signup fields
+    preferredName: "",
+    dateOfBirth: "",
+    courseOfStudy: "",
+    degree: "",
+    yearOfStudy: "",
+    primaryFieldInterest: "",
+    signupSource: "",
   });
 
   const countries = [
@@ -45,6 +53,49 @@ const Signup = () => {
   ];  
 
   const levelsOfStudy = ["High School", "Undergraduate", "Graduate", "Postgraduate"];
+
+  // New enhanced signup options
+  const degrees = [
+    "Certificate", "Diploma", "Bachelor's Degree", "Master's Degree", 
+    "PhD/Doctorate", "Professional Qualification", "Other"
+  ];
+
+  const yearsOfStudy = [
+    "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", 
+    "6th Year", "Graduate", "Postgraduate", "Other"
+  ];
+
+  const primaryFieldInterests = [
+    "Technology & Software Development",
+    "Business & Entrepreneurship", 
+    "Healthcare & Medicine",
+    "Education & Teaching",
+    "Law & Legal Services",
+    "Engineering",
+    "Finance & Banking",
+    "Marketing & Communications",
+    "Arts & Design",
+    "Science & Research",
+    "Agriculture & Environment",
+    "Government & Public Service",
+    "Non-profit & Social Work",
+    "Sports & Recreation",
+    "Other"
+  ];
+
+  const signupSources = [
+    "Social Media (Facebook, Instagram, Twitter)",
+    "Google Search",
+    "Friend/Family Recommendation",
+    "University/College",
+    "Career Fair",
+    "Online Advertisement",
+    "Email Newsletter",
+    "Podcast",
+    "YouTube",
+    "LinkedIn",
+    "Other"
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +181,15 @@ const Signup = () => {
         fieldOfStudy: formData.fieldOfStudy,
         institution: formData.institution || null,
         levelOfStudy: formData.levelOfStudy,
-        password: formData.password
+        password: formData.password,
+        // New enhanced signup fields
+        preferred_name: formData.preferredName || formData.name,
+        date_of_birth: formData.dateOfBirth || null,
+        course_of_study: formData.courseOfStudy || null,
+        degree: formData.degree || null,
+        year_of_study: formData.yearOfStudy || null,
+        primary_field_interest: formData.primaryFieldInterest || formData.fieldOfStudy || null,
+        signup_source: formData.signupSource || "Direct"
       };
 
       const success = await register(userData);
@@ -273,6 +332,108 @@ const Signup = () => {
                 value={formData.institution}
                 onChange={(e) => handleChange("institution", e.target.value)}
               />
+            </div>
+
+            {/* Enhanced Signup Fields */}
+            <div className="border-t pt-6 mt-6">
+              <h3 className="text-lg font-semibold mb-4 text-primary">Additional Information</h3>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="preferredName">Preferred Name (Display Name)</Label>
+                  <Input
+                    id="preferredName"
+                    placeholder="Johnny"
+                    value={formData.preferredName}
+                    onChange={(e) => handleChange("preferredName", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+                  />
+                  {formData.dateOfBirth && (
+                    <p className="text-xs text-muted-foreground">
+                      {new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear()} years old
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="courseOfStudy">Course of Study</Label>
+                  <Input
+                    id="courseOfStudy"
+                    placeholder="Bachelor of Science in Computer Science"
+                    value={formData.courseOfStudy}
+                    onChange={(e) => handleChange("courseOfStudy", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="degree">Degree Type</Label>
+                  <Select value={formData.degree} onValueChange={(value) => handleChange("degree", value)}>
+                    <SelectTrigger id="degree">
+                      <SelectValue placeholder="Select degree type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {degrees.map((degree) => (
+                        <SelectItem key={degree} value={degree}>{degree}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="yearOfStudy">Year of Study</Label>
+                  <Select value={formData.yearOfStudy} onValueChange={(value) => handleChange("yearOfStudy", value)}>
+                    <SelectTrigger id="yearOfStudy">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {yearsOfStudy.map((year) => (
+                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="primaryFieldInterest">Primary Field of Interest</Label>
+                  <Select value={formData.primaryFieldInterest} onValueChange={(value) => handleChange("primaryFieldInterest", value)}>
+                    <SelectTrigger id="primaryFieldInterest">
+                      <SelectValue placeholder="Select your interest" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {primaryFieldInterests.map((interest) => (
+                        <SelectItem key={interest} value={interest}>{interest}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signupSource">How did you hear about Skillyme?</Label>
+                <Select value={formData.signupSource} onValueChange={(value) => handleChange("signupSource", value)}>
+                  <SelectTrigger id="signupSource">
+                    <SelectValue placeholder="Select how you heard about us" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {signupSources.map((source) => (
+                      <SelectItem key={source} value={source}>{source}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-4">

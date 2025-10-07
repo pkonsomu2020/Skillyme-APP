@@ -3,11 +3,33 @@ const supabase = require('../config/supabase');
 class User {
   static async create(userData) {
     // SECURITY: Input validation and sanitization
-    const { name, email, password, phone, country, county, field_of_study, institution, level_of_study } = userData;
+    const { 
+      name, email, password, phone, country, county, field_of_study, institution, level_of_study,
+      preferred_name, date_of_birth, course_of_study, degree, year_of_study, 
+      primary_field_interest, signup_source 
+    } = userData;
     
     // Validate required fields
     if (!name || !email || !password) {
       throw new Error('Missing required fields: name, email, password');
+    }
+    
+    // Validate date of birth if provided
+    if (date_of_birth) {
+      const birthDate = new Date(date_of_birth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        // Adjust age if birthday hasn't occurred this year
+        const actualAge = age - 1;
+        if (actualAge < 13) {
+          throw new Error('Users must be at least 13 years old to register');
+        }
+      } else if (age < 13) {
+        throw new Error('Users must be at least 13 years old to register');
+      }
     }
     
     // Sanitize inputs
@@ -20,14 +42,26 @@ class User {
       county: county?.trim()?.substring(0, 100),
       field_of_study: field_of_study?.trim()?.substring(0, 255),
       institution: institution?.trim()?.substring(0, 255),
-      level_of_study: level_of_study?.trim()?.substring(0, 100)
+      level_of_study: level_of_study?.trim()?.substring(0, 100),
+      // New enhanced signup fields
+      preferred_name: preferred_name?.trim()?.substring(0, 255),
+      date_of_birth: date_of_birth ? new Date(date_of_birth).toISOString().split('T')[0] : null,
+      course_of_study: course_of_study?.trim()?.substring(0, 255),
+      degree: degree?.trim()?.substring(0, 100),
+      year_of_study: year_of_study?.trim()?.substring(0, 50),
+      primary_field_interest: primary_field_interest?.trim()?.substring(0, 255),
+      signup_source: signup_source?.trim()?.substring(0, 255)
     };
     
     try {
       const { data, error } = await supabase
         .from('users')
         .insert([sanitizedData])
-        .select()
+        .select(`
+          id, name, email, phone, country, county, field_of_study, institution, level_of_study,
+          preferred_name, date_of_birth, course_of_study, degree, year_of_study, 
+          primary_field_interest, signup_source, created_at, updated_at
+        `)
         .single();
       
       if (error) {
@@ -38,7 +72,7 @@ class User {
         throw error;
       }
       
-      return { id: data.id, ...sanitizedData };
+      return data;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -133,6 +167,101 @@ class User {
       return data && data.length > 0;
     } catch (error) {
       console.error('Error updating password:', error);
+      throw error;
+    }
+  }
+
+  // Get user analytics data
+  static async getAnalytics() {
+    try {
+      const { data, error } = await supabase
+        .from('user_analytics')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting user analytics:', error);
+      throw error;
+    }
+  }
+
+  // Get signup source statistics
+  static async getSignupSourceStats() {
+    try {
+      const { data, error } = await supabase
+        .from('signup_source_stats')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting signup source stats:', error);
+      throw error;
+    }
+  }
+
+  // Get field interest statistics
+  static async getFieldInterestStats() {
+    try {
+      const { data, error } = await supabase
+        .from('field_interest_stats')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting field interest stats:', error);
+      throw error;
+    }
+  }
+
+  // Get users with enhanced details for admin
+  static async getAllUsersWithDetails(limit = 50, offset = 0, filters = {}) {
+    try {
+      let query = supabase
+        .from('users')
+        .select(`
+          id, name, preferred_name, email, phone, country, county,
+          field_of_study, course_of_study, degree, year_of_study,
+          primary_field_interest, institution, level_of_study,
+          signup_source, date_of_birth, created_at, updated_at
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Apply filters
+      if (filters.field_of_study) {
+        query = query.eq('field_of_study', filters.field_of_study);
+      }
+      if (filters.institution) {
+        query = query.ilike('institution', `%${filters.institution}%`);
+      }
+      if (filters.county) {
+        query = query.eq('county', filters.county);
+      }
+      if (filters.primary_field_interest) {
+        query = query.eq('primary_field_interest', filters.primary_field_interest);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error getting users with details:', error);
       throw error;
     }
   }
