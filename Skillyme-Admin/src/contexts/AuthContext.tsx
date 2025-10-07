@@ -22,19 +22,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = localStorage.getItem("adminToken")
         if (token) {
-          // Verify token with backend
-          const response = await adminApi.auth.getProfile()
-          if (response.success && response.data?.admin) {
-            setIsAuthenticated(true)
-            setAdmin(response.data.admin)
-          } else {
-            // Invalid token, remove it
+          // Set authenticated state immediately to avoid multiple API calls
+          setIsAuthenticated(true)
+          // Verify token with backend in background
+          try {
+            const response = await adminApi.auth.getProfile()
+            if (response.success && response.data?.admin) {
+              setAdmin(response.data.admin)
+            } else {
+              // Invalid token, clear everything
+              localStorage.removeItem("adminToken")
+              setIsAuthenticated(false)
+              setAdmin(null)
+            }
+          } catch (error) {
+            console.error("Token verification failed:", error)
             localStorage.removeItem("adminToken")
+            setIsAuthenticated(false)
+            setAdmin(null)
           }
         }
       } catch (error) {
         console.error("Auth check failed:", error)
         localStorage.removeItem("adminToken")
+        setIsAuthenticated(false)
+        setAdmin(null)
       } finally {
         setLoading(false)
       }
@@ -46,6 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true)
+      
+      // Prevent multiple simultaneous login attempts
+      if (isAuthenticated) {
+        console.log("Already authenticated, skipping login")
+        return true
+      }
+      
       const response = await adminApi.auth.login(email, password)
       
       if (response.success && response.data?.token) {

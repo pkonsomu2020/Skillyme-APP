@@ -24,6 +24,13 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent multiple submissions
+    if (isLoading) {
+      console.log("Login already in progress, ignoring submission")
+      return
+    }
+    
     setIsLoading(true)
 
     try {
@@ -43,6 +50,7 @@ export default function Login() {
         })
       }
     } catch (error) {
+      console.error("Login error:", error)
       toast({
         title: "Login Error",
         description: "An error occurred during login",
