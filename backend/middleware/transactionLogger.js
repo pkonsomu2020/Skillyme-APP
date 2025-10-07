@@ -78,6 +78,28 @@ class TransactionLogger {
   static async logAdminAction(action, adminId, targetUserId = null) {
     await this.logTransaction('ADMIN_ACTION', 'admin_logs', { action, targetUserId }, adminId);
   }
+
+  static async logAdminLogin(email, adminId, success) {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      operation: 'admin_login',
+      email,
+      adminId,
+      success,
+      requestId: this.generateRequestId()
+    };
+    
+    try {
+      const logsDir = path.join(__dirname, '../logs');
+      await fs.mkdir(logsDir, { recursive: true });
+      
+      const logFile = path.join(logsDir, `transactions-${new Date().toISOString().split('T')[0]}.log`);
+      await fs.appendFile(logFile, JSON.stringify(logEntry) + '\n');
+    } catch (error) {
+      console.error('Failed to log admin login:', error.message);
+    }
+  }
 }
 
 module.exports = TransactionLogger;
