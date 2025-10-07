@@ -22,16 +22,25 @@ app.use(securityHeaders);
 app.use(corsSecurity);
 
 // CORS Configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
+  'http://localhost:5173', // Main app (development)
+  'http://localhost:8080', // Admin dashboard (development)
+  'https://skillyme-app.vercel.app', // Production main app
+  'https://skillyme-admin.vercel.app', // Production admin dashboard
+  process.env.FRONTEND_URL, // Production frontend
+  process.env.ADMIN_URL // Production admin URL
+].filter(Boolean); // Remove undefined values
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
-    'http://localhost:5173', // Main app (development)
-    'https://skillyme-app.vercel.app', // Production main app
-    process.env.FRONTEND_URL // Production frontend
-  ].filter(Boolean), // Remove undefined values
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
+
+// Log CORS configuration
+console.log('🌐 CORS Configuration:');
+console.log('   Allowed Origins:', allowedOrigins);
 
 // Rate Limiting
 app.use(generalLimiter);
