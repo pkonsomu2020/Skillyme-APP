@@ -17,15 +17,25 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Security: Remove console logs in production
-    minify: 'terser',
-    terserOptions: {
+    minify: mode === 'production' ? 'terser' : false,
+    terserOptions: mode === 'production' ? {
       compress: {
-        drop_console: mode === 'production',
-        drop_debugger: mode === 'production',
+        drop_console: true,
+        drop_debugger: true,
       },
-    },
+    } : undefined,
     // Security: Add source map options
     sourcemap: mode === 'development',
+    // Optimize for production
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+        },
+      },
+    },
   },
   // Security: Define environment variables
   define: {
