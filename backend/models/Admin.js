@@ -57,7 +57,6 @@ class Admin {
         .from('admins')
         .select('*')
         .eq('email', email.trim().toLowerCase())
-        .eq('is_active', true)
         .single();
       
       if (error && error.code !== 'PGRST116') {
