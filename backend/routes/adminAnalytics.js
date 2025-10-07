@@ -6,7 +6,9 @@ const {
   getSignupTrends,
   getSessionAnalytics,
   getUserAnalytics,
-  getRevenueAnalytics
+  getRevenueAnalytics,
+  getUserDemographics,
+  getSessionPerformance
 } = require('../controllers/adminAnalyticsController');
 
 const router = express.Router();
@@ -22,5 +24,7 @@ router.get('/signup-trends', periodValidation, getSignupTrends);
 router.get('/sessions', getSessionAnalytics);
 router.get('/users', getUserAnalytics);
 router.get('/revenue', periodValidation, getRevenueAnalytics);
+router.get('/user-demographics', getUserDemographics);
+router.get('/session-performance', getSessionPerformance);
 
 module.exports = router;

@@ -484,10 +484,101 @@ const getRevenueAnalytics = async (req, res) => {
   }
 };
 
+// Get user demographics
+const getUserDemographics = async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('field_of_study, experience_level, created_at');
+
+    if (error) {
+      throw error;
+    }
+
+    // Process demographics
+    const demographics = {
+      byField: {},
+      byExperience: {},
+      byMonth: {}
+    };
+
+    users.forEach(user => {
+      // Group by field of study
+      const field = user.field_of_study || 'Not specified';
+      demographics.byField[field] = (demographics.byField[field] || 0) + 1;
+
+      // Group by experience level
+      const experience = user.experience_level || 'Not specified';
+      demographics.byExperience[experience] = (demographics.byExperience[experience] || 0) + 1;
+
+      // Group by month
+      const month = new Date(user.created_at).toISOString().substring(0, 7);
+      demographics.byMonth[month] = (demographics.byMonth[month] || 0) + 1;
+    });
+
+    res.json({
+      success: true,
+      data: demographics
+    });
+  } catch (error) {
+    console.error('User demographics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user demographics',
+      error: error.message
+    });
+  }
+};
+
+// Get session performance
+const getSessionPerformance = async (req, res) => {
+  try {
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('sessions')
+      .select('*');
+
+    if (sessionsError) {
+      throw sessionsError;
+    }
+
+    const { data: userSessions, error: userSessionsError } = await supabase
+      .from('user_sessions')
+      .select('*');
+
+    if (userSessionsError) {
+      throw userSessionsError;
+    }
+
+    // Calculate performance metrics
+    const performance = {
+      totalSessions: sessions.length,
+      completedSessions: sessions.filter(s => s.is_completed).length,
+      activeSessions: sessions.filter(s => s.is_active && !s.is_completed).length,
+      totalParticipants: userSessions.length,
+      averageParticipants: sessions.length > 0 ? Math.round(userSessions.length / sessions.length) : 0,
+      completionRate: sessions.length > 0 ? Math.round((sessions.filter(s => s.is_completed).length / sessions.length) * 100) : 0
+    };
+
+    res.json({
+      success: true,
+      data: performance
+    });
+  } catch (error) {
+    console.error('Session performance error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch session performance',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getDashboardAnalytics,
   getSignupTrends,
   getSessionAnalytics,
   getUserAnalytics,
-  getRevenueAnalytics
+  getRevenueAnalytics,
+  getUserDemographics,
+  getSessionPerformance
 };
