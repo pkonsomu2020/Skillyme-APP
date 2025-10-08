@@ -70,18 +70,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true
       }
       
+      console.log("🔍 DEBUG: Attempting login with:", { email, password: "***" })
+      console.log("🔍 DEBUG: Using adminApi.auth.login method")
+      
       // Use clean login which is working perfectly
-      const response = await adminApi.auth.cleanLogin(email, password)
+      const response = await adminApi.auth.login(email, password)
+      
+      console.log("🔍 DEBUG: Login response:", response)
       
       if (response.success && response.data?.token) {
+        console.log("✅ DEBUG: Login successful, setting token")
         localStorage.setItem("adminToken", response.data.token)
         setIsAuthenticated(true)
         setAdmin(response.data.admin)
         return true
       }
+      
+      console.log("❌ DEBUG: Login failed - no success or token")
       return false
     } catch (error) {
-      console.error("Login failed:", error)
+      console.error("❌ DEBUG: Login error:", error)
       return false
     } finally {
       setLoading(false)
