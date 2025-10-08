@@ -41,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAuthenticated(false)
             setAdmin(null)
           }
+        } else {
+          // No token, ensure clean state
+          setIsAuthenticated(false)
+          setAdmin(null)
         }
       } catch (error) {
         console.error("Auth check failed:", error)

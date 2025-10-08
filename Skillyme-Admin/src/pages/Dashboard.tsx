@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { adminApi, DashboardStats } from "@/services/api"
 import ConnectionTest from "@/components/ConnectionTest"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function Dashboard() {
+  const { isAuthenticated, loading: authLoading } = useAuth()
   // Stats will be loaded from backend
   const [stats, setStats] = useState([
     { title: "Total Users", value: "Loading...", icon: Users },
@@ -23,6 +25,11 @@ export default function Dashboard() {
 
   // Load dashboard data from backend
   useEffect(() => {
+    // Don't make API calls if not authenticated or still loading auth
+    if (!isAuthenticated || authLoading) {
+      return
+    }
+
     const loadDashboardData = async () => {
       try {
         setLoading(true)
@@ -59,7 +66,35 @@ export default function Dashboard() {
     }
 
     loadDashboardData()
-  }, [])
+  }, [isAuthenticated, authLoading])
+
+  // Show loading state while authentication is being checked
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Show error if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Authentication required</p>
+            <p className="text-muted-foreground">Please log in to access this page</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>

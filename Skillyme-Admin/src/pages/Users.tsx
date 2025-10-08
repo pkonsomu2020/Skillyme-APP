@@ -26,8 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { adminApi, User } from "@/services/api"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function Users() {
+  const { isAuthenticated, loading: authLoading } = useAuth()
   // Users will be loaded from backend
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,6 +40,11 @@ export default function Users() {
 
   // Load users from backend
   useEffect(() => {
+    // Don't make API calls if not authenticated or still loading auth
+    if (!isAuthenticated || authLoading) {
+      return
+    }
+
     const loadUsers = async () => {
       try {
         setLoading(true)
@@ -63,7 +70,7 @@ export default function Users() {
     }
 
     loadUsers()
-  }, [searchTerm, fieldFilter, institutionFilter])
+  }, [isAuthenticated, authLoading, searchTerm, fieldFilter, institutionFilter])
 
   // Handle user actions
   const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
@@ -79,6 +86,34 @@ export default function Users() {
     } catch (err) {
       console.error('Failed to toggle user status:', err)
     }
+  }
+
+  // Show loading state while authentication is being checked
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Show error if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Authentication required</p>
+            <p className="text-muted-foreground">Please log in to access this page</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (

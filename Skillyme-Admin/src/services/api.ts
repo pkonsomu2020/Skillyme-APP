@@ -120,12 +120,21 @@ const apiRequest = async <T>(
     const data = await response.json();
     
     if (!response.ok) {
+      // Enhanced error logging for debugging
+      console.error(`❌ API Error: ${endpoint}`, {
+        status: response.status,
+        statusText: response.statusText,
+        data: data,
+        hasToken: !!token,
+        tokenLength: token?.length || 0
+      });
+      
       throw new Error(data.message || `HTTP error! status: ${response.status}`);
     }
     
     return data;
   } catch (error) {
-    console.error('API request failed:', error);
+    console.error('❌ API request failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
