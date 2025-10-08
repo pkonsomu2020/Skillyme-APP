@@ -62,13 +62,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Clean login method (using the working clean authentication)
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      setLoading(true)
-      
       // Prevent multiple simultaneous login attempts
       if (isAuthenticated) {
-        console.log("Already authenticated, skipping login")
+        console.log("✅ Already authenticated, skipping login")
         return true
       }
+      
+      if (loading) {
+        console.log("⏳ Login already in progress, skipping")
+        return false
+      }
+      
+      setLoading(true)
       
       console.log("🔍 DEBUG: Attempting login with:", { email, password: "***" })
       console.log("🔍 DEBUG: Using adminApi.auth.login method")
