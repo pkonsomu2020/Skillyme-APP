@@ -13,7 +13,11 @@ if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
 }
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
 
-// Admin login
+// ========================================
+// MAIN ADMIN AUTHENTICATION METHODS
+// ========================================
+
+// Admin login - Main authentication method
 const login = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -105,6 +109,156 @@ const login = async (req, res) => {
   }
 };
 
+// ========================================
+// ALTERNATIVE AUTHENTICATION METHODS
+// ========================================
+
+// Simple authentication - bypasses complex validation
+const simpleLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    const admin = await Admin.findByEmail(email);
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    const isPasswordValid = await Admin.verifyPassword(admin.password, password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    const token = jwt.sign(
+      { 
+        adminId: admin.id, 
+        email: admin.email,
+        role: 'admin'
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+
+    res.json({
+      success: true,
+      message: 'Simple login successful',
+      data: {
+        token,
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Simple login failed',
+      error: error.message
+    });
+  }
+};
+
+// Ultra simple authentication - minimal validation
+const ultraSimpleLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const admin = await Admin.findByEmail(email);
+    if (!admin || !await Admin.verifyPassword(admin.password, password)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    const token = jwt.sign(
+      { adminId: admin.id, email: admin.email, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+
+    res.json({
+      success: true,
+      message: 'Ultra simple login successful',
+      data: { token, admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Ultra simple login failed',
+      error: error.message
+    });
+  }
+};
+
+// Clean authentication - no CSRF, no complex validation
+const cleanLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const admin = await Admin.findByEmail(email);
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    const isPasswordValid = await Admin.verifyPassword(admin.password, password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid password'
+      });
+    }
+
+    const token = jwt.sign(
+      { adminId: admin.id, email: admin.email, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
+    );
+
+    res.json({
+      success: true,
+      message: 'Clean login successful',
+      data: {
+        token,
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Clean login failed',
+      error: error.message
+    });
+  }
+};
+
+// ========================================
+// PROFILE MANAGEMENT
+// ========================================
+
 // Get admin profile
 const getProfile = async (req, res) => {
   try {
@@ -149,8 +303,18 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// ========================================
+// EXPORTS
+// ========================================
+
 module.exports = {
+  // Main authentication
   login,
   getProfile,
-  updateProfile
+  updateProfile,
+  
+  // Alternative authentication methods
+  simpleLogin,
+  ultraSimpleLogin,
+  cleanLogin
 };

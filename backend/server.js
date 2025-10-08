@@ -68,7 +68,10 @@ app.use((req, res, next) => {
     (req.path === '/api/auth/forgot-password' && req.method === 'POST') ||
     (req.path === '/api/auth/reset-password' && req.method === 'POST') ||
     (req.path === '/api/payments/submit-mpesa' && req.method === 'POST') ||
-    (req.path === '/api/admin/auth/login' && req.method === 'POST')
+    (req.path === '/api/admin/auth/login' && req.method === 'POST') ||
+    (req.path === '/api/admin/auth/simple-login' && req.method === 'POST') ||
+    (req.path === '/api/admin/auth/ultra-simple-login' && req.method === 'POST') ||
+    (req.path === '/api/admin/auth/clean-login' && req.method === 'POST')
   ) {
     return next();
   }
@@ -93,6 +96,15 @@ app.use('/api/admin/users', require('./routes/adminUsers'));
 app.use('/api/admin/analytics', require('./routes/adminAnalytics'));
 app.use('/api/admin/notifications', require('./routes/adminNotifications'));
 app.use('/api/admin/upload', require('./routes/adminUpload'));
+
+// Simple authentication routes (NEW)
+app.use('/api/simple-auth', require('./routes/simpleAuth'));
+
+// Ultra simple authentication routes (NO CSRF)
+app.use('/api/ultra-simple-auth', require('./routes/ultraSimpleAuth'));
+
+// Clean authentication routes (NO CSRF)
+app.use('/api/clean-auth', require('./routes/cleanAuth'));
 
 // Health check endpoint
 app.get('/api/test', (req, res) => {

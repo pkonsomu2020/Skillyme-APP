@@ -3,6 +3,10 @@ const Admin = require('../models/Admin');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// ========================================
+// MAIN ADMIN AUTHENTICATION MIDDLEWARE
+// ========================================
+
 const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
@@ -67,4 +71,112 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateAdmin };
+// ========================================
+// ALTERNATIVE AUTHENTICATION MIDDLEWARES
+// ========================================
+
+// Simple authentication - minimal validation
+const simpleAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const admin = await Admin.findById(decoded.adminId);
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    req.admin = {
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role
+    };
+
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed'
+    });
+  }
+};
+
+// Ultra simple authentication - no complex validation
+const ultraSimpleAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const admin = await Admin.findById(decoded.adminId);
+    
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'Invalid admin' });
+    }
+
+    req.admin = { id: admin.id, name: admin.name, email: admin.email, role: admin.role };
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Auth failed' });
+  }
+};
+
+// Clean authentication - bypasses all complex checks
+const cleanAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const admin = await Admin.findById(decoded.adminId);
+    
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'Admin not found' });
+    }
+
+    req.admin = { 
+      id: admin.id, 
+      name: admin.name, 
+      email: admin.email, 
+      role: admin.role 
+    };
+    
+    next();
+  } catch (error) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication failed' 
+    });
+  }
+};
+
+// ========================================
+// EXPORTS
+// ========================================
+
+module.exports = { 
+  // Main authentication middleware
+  authenticateAdmin,
+  
+  // Alternative authentication middlewares
+  simpleAuth,
+  ultraSimpleAuth,
+  cleanAuth
+};

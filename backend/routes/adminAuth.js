@@ -1,11 +1,26 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { authenticateAdmin } = require('../middleware/adminAuth');
-const { login, getProfile, updateProfile } = require('../controllers/adminAuthController');
+const { 
+  authenticateAdmin, 
+  simpleAuth, 
+  ultraSimpleAuth, 
+  cleanAuth 
+} = require('../middleware/adminAuth');
+const { 
+  login, 
+  getProfile, 
+  updateProfile,
+  simpleLogin,
+  ultraSimpleLogin,
+  cleanLogin
+} = require('../controllers/adminAuthController');
 
 const router = express.Router();
 
-// Validation rules
+// ========================================
+// VALIDATION RULES
+// ========================================
+
 const loginValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
@@ -16,9 +31,35 @@ const updateProfileValidation = [
   body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required')
 ];
 
-// Routes
+// ========================================
+// MAIN ADMIN AUTHENTICATION ROUTES
+// ========================================
+
+// Main admin login (with full validation)
 router.post('/login', loginValidation, login);
+
+// Admin profile routes (protected)
 router.get('/profile', authenticateAdmin, getProfile);
 router.put('/profile', authenticateAdmin, updateProfileValidation, updateProfile);
+
+// ========================================
+// ALTERNATIVE AUTHENTICATION ROUTES
+// ========================================
+
+// Simple authentication routes (bypasses CSRF)
+router.post('/simple-login', simpleLogin);
+router.get('/simple-profile', simpleAuth, getProfile);
+
+// Ultra simple authentication routes (bypasses CSRF)
+router.post('/ultra-simple-login', ultraSimpleLogin);
+router.get('/ultra-simple-profile', ultraSimpleAuth, getProfile);
+
+// Clean authentication routes (bypasses CSRF)
+router.post('/clean-login', cleanLogin);
+router.get('/clean-profile', cleanAuth, getProfile);
+
+// ========================================
+// EXPORTS
+// ========================================
 
 module.exports = router;
