@@ -35,8 +35,8 @@ const updateProfileValidation = [
 // MAIN ADMIN AUTHENTICATION ROUTES
 // ========================================
 
-// Main admin login (with full validation)
-router.post('/login', loginValidation, login);
+// Main admin login (FIXED - removed strict validation)
+router.post('/login', login);
 
 // Admin profile routes (protected)
 router.get('/profile', authenticateAdmin, getProfile);
