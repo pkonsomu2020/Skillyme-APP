@@ -59,6 +59,25 @@ const getDashboardAnalytics = async (req, res) => {
       throw recentError;
     }
 
+    // Get previous period signups (7-14 days ago) for growth calculation
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const { count: previousSignups, error: previousError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', fourteenDaysAgo.toISOString())
+      .lt('created_at', sevenDaysAgo.toISOString());
+
+    if (previousError) {
+      throw previousError;
+    }
+
+    // Calculate growth rate
+    const growthRate = previousSignups > 0 
+      ? ((recentSignups - previousSignups) / previousSignups) * 100 
+      : recentSignups > 0 ? 100 : 0;
+
     // Get top performing sessions (by attendees)
     const { data: topSessions, error: topSessionsError } = await supabase
       .from('sessions')
@@ -81,7 +100,8 @@ const getDashboardAnalytics = async (req, res) => {
           activeSessions: activeSessions || 0,
           completedSessions: completedSessions || 0,
           totalRevenue: totalRevenue,
-          recentSignups: recentSignups || 0
+          recentSignups: recentSignups || 0,
+          growthRate: growthRate
         },
         topSessions: topSessions || []
       }
@@ -135,9 +155,9 @@ const getSignupTrends = async (req, res) => {
       fieldStats[field] = (fieldStats[field] || 0) + 1;
     });
 
-    // Convert to array format for charts
+    // Convert to array format for charts (weekly format for frontend)
     const dailyData = Object.entries(dailySignups).map(([date, count]) => ({
-      date,
+      name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
       signups: count
     }));
 

@@ -36,14 +36,18 @@ export default function Dashboard() {
             { title: "Total Users", value: overview.totalUsers.toLocaleString(), icon: Users },
             { title: "Active Sessions", value: overview.activeSessions.toString(), icon: Video },
             { title: "Total Revenue", value: `KES ${overview.totalRevenue.toLocaleString()}`, icon: DollarSign },
-            { title: "Growth Rate", value: `${overview.growthRate > 0 ? '+' : ''}${overview.growthRate.toFixed(1)}%`, icon: TrendingUp },
+            { title: "Growth Rate", value: overview.growthRate !== undefined 
+              ? `${overview.growthRate > 0 ? '+' : ''}${overview.growthRate.toFixed(1)}%` 
+              : 'Calculating...', icon: TrendingUp },
           ])
         }
 
         // Load signup trends for chart
         const trendsResponse = await adminApi.analytics.getSignupTrends()
         if (trendsResponse.success && trendsResponse.data) {
-          setChartData(trendsResponse.data)
+          // Handle different data formats from backend
+          const chartData = trendsResponse.data.dailyData || trendsResponse.data || []
+          setChartData(chartData)
         }
 
       } catch (err) {
