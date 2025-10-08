@@ -8,18 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast"
 
 export default function Login() {
-  const [email, setEmail] = useState("admin@skillyme.com")
-  const [password, setPassword] = useState("Skillyme@2025")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [loginMethod, setLoginMethod] = useState<'main' | 'simple' | 'ultra' | 'clean'>('main')
-  const { 
-    login, 
-    simpleLogin, 
-    ultraSimpleLogin, 
-    cleanLogin, 
-    isAuthenticated, 
-    loading 
-  } = useAuth()
+  const { cleanLogin, isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -42,30 +34,13 @@ export default function Login() {
     setIsLoading(true)
 
     try {
-      let success = false
-      
-      // Try different login methods based on selection
-      switch (loginMethod) {
-        case 'main':
-          success = await login(email, password)
-          break
-        case 'simple':
-          success = await simpleLogin(email, password)
-          break
-        case 'ultra':
-          success = await ultraSimpleLogin(email, password)
-          break
-        case 'clean':
-          success = await cleanLogin(email, password)
-          break
-        default:
-          success = await login(email, password)
-      }
+      // Use clean login method (which is working perfectly)
+      const success = await cleanLogin(email, password)
       
       if (success) {
         toast({
           title: "Login Successful",
-          description: `Welcome to Skillyme Admin Dashboard (${loginMethod} method)`,
+          description: "Welcome to Skillyme Admin Dashboard",
         })
         navigate("/dashboard")
       } else {
@@ -117,7 +92,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@skillyme.com"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -135,55 +110,10 @@ export default function Login() {
               />
             </div>
             
-            {/* Login Method Selection */}
-            <div className="space-y-2">
-              <Label>Login Method</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={loginMethod === 'main' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setLoginMethod('main')}
-                >
-                  Main
-                </Button>
-                <Button
-                  type="button"
-                  variant={loginMethod === 'simple' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setLoginMethod('simple')}
-                >
-                  Simple
-                </Button>
-                <Button
-                  type="button"
-                  variant={loginMethod === 'ultra' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setLoginMethod('ultra')}
-                >
-                  Ultra
-                </Button>
-                <Button
-                  type="button"
-                  variant={loginMethod === 'clean' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setLoginMethod('clean')}
-                >
-                  Clean
-                </Button>
-              </div>
-            </div>
-            
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : `Login (${loginMethod})`}
+              {isLoading ? "Signing in..." : "Login"}
             </Button>
           </form>
-          
-          <div className="mt-4 text-xs text-muted-foreground text-center">
-            <p>Default credentials:</p>
-            <p>Email: admin@skillyme.com</p>
-            <p>Password: Skillyme@2025</p>
-          </div>
         </CardContent>
       </Card>
     </div>

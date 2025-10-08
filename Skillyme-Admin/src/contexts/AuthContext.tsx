@@ -7,10 +7,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   loading: boolean
-  // Alternative authentication methods
-  simpleLogin: (email: string, password: string) => Promise<boolean>
-  ultraSimpleLogin: (email: string, password: string) => Promise<boolean>
-  cleanLogin: (email: string, password: string) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -63,11 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth()
   }, [])
 
-  // ========================================
-  // MAIN AUTHENTICATION METHODS
-  // ========================================
-
-  // Main login method (with full validation)
+  // Clean login method (using the working clean authentication)
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true)
@@ -78,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true
       }
       
-      const response = await adminApi.auth.login(email, password)
+      // Use clean login which is working perfectly
+      const response = await adminApi.auth.cleanLogin(email, password)
       
       if (response.success && response.data?.token) {
         localStorage.setItem("adminToken", response.data.token)
@@ -95,80 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ========================================
-  // ALTERNATIVE AUTHENTICATION METHODS
-  // ========================================
-
-  // Simple login (bypasses complex validation)
-  const simpleLogin = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setLoading(true)
-      
-      const response = await adminApi.auth.simpleLogin(email, password)
-      
-      if (response.success && response.data?.token) {
-        localStorage.setItem("adminToken", response.data.token)
-        setIsAuthenticated(true)
-        setAdmin(response.data.admin)
-        return true
-      }
-      return false
-    } catch (error) {
-      console.error("Simple login failed:", error)
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Ultra simple login (minimal validation)
-  const ultraSimpleLogin = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setLoading(true)
-      
-      const response = await adminApi.auth.ultraSimpleLogin(email, password)
-      
-      if (response.success && response.data?.token) {
-        localStorage.setItem("adminToken", response.data.token)
-        setIsAuthenticated(true)
-        setAdmin(response.data.admin)
-        return true
-      }
-      return false
-    } catch (error) {
-      console.error("Ultra simple login failed:", error)
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Clean login (no CSRF, no complex validation)
-  const cleanLogin = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setLoading(true)
-      
-      const response = await adminApi.auth.cleanLogin(email, password)
-      
-      if (response.success && response.data?.token) {
-        localStorage.setItem("adminToken", response.data.token)
-        setIsAuthenticated(true)
-        setAdmin(response.data.admin)
-        return true
-      }
-      return false
-    } catch (error) {
-      console.error("Clean login failed:", error)
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ========================================
-  // LOGOUT
-  // ========================================
-
   const logout = () => {
     setIsAuthenticated(false)
     setAdmin(null)
@@ -181,10 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       admin, 
       login, 
       logout, 
-      loading,
-      simpleLogin,
-      ultraSimpleLogin,
-      cleanLogin
+      loading
     }}>
       {children}
     </AuthContext.Provider>

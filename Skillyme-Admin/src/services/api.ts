@@ -144,9 +144,9 @@ const apiRequest = async <T>(
 
 // Admin Authentication API
 export const adminAuthApi = {
-  // Main authentication methods
+  // Clean authentication method (working perfectly)
   login: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
-    return apiRequest('/admin/auth/login', {
+    return apiRequest('/admin/auth/clean-login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -163,21 +163,7 @@ export const adminAuthApi = {
     });
   },
 
-  // Alternative authentication methods
-  simpleLogin: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
-    return apiRequest('/admin/auth/simple-login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  },
-
-  ultraSimpleLogin: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
-    return apiRequest('/admin/auth/ultra-simple-login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  },
-
+  // Clean login method (alias for consistency)
   cleanLogin: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
     return apiRequest('/admin/auth/clean-login', {
       method: 'POST',
