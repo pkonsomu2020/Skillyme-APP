@@ -11,7 +11,7 @@ export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { cleanLogin, isAuthenticated, loading } = useAuth()
+  const { login, isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -34,8 +34,10 @@ export default function Login() {
     setIsLoading(true)
 
     try {
+      console.log("🔍 DEBUG: Login page - attempting login with:", { email, password: "***" })
       // Use clean login method (which is working perfectly)
-      const success = await cleanLogin(email, password)
+      const success = await login(email, password)
+      console.log("🔍 DEBUG: Login page - login result:", success)
       
       if (success) {
         toast({
