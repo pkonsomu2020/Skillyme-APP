@@ -79,8 +79,7 @@ class EmailService {
             'X-Priority': '3',
             'X-MSMail-Priority': 'Normal',
             'Importance': 'Normal',
-            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>',
-            'X-SG-EID': 'skillyme-transaction'
+            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
           },
           // Add categories for better deliverability
           categories: ['transaction', 'skillyme-notification'],

@@ -150,6 +150,7 @@ const login = async (req, res) => {
     // Find user
     const user = await User.findByEmail(email);
     if (!user) {
+      console.log(`❌ Login failed for ${email}: User not found`);
       await ErrorHandler.logError(new Error('User not found'), {
         endpoint: '/api/auth/login',
         email
@@ -166,6 +167,7 @@ const login = async (req, res) => {
     // Enhanced password verification with integrity check
     const isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
     if (!isPasswordValid) {
+      console.log(`❌ Login failed for ${email}: Invalid password`);
       await ErrorHandler.logError(new Error('Invalid password'), {
         endpoint: '/api/auth/login',
         email,
@@ -179,6 +181,8 @@ const login = async (req, res) => {
         message: 'Invalid credentials'
       });
     }
+    
+    console.log(`✅ Login successful for ${email}`);
     
     // Log successful login
     await TransactionLogger.logUserLogin(email, user.id, true);

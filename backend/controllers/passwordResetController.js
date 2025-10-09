@@ -29,15 +29,23 @@ const forgotPassword = async (req, res) => {
     const token = PasswordReset.generateToken();
     const expiresAt = PasswordReset.getExpirationTime();
 
-    // Delete any existing reset tokens for this user
-    await PasswordReset.deleteByUserId(user.id);
+    // Try to delete any existing reset tokens for this user
+    try {
+      await PasswordReset.deleteByUserId(user.id);
+    } catch (deleteError) {
+      console.log('Could not delete existing reset tokens:', deleteError.message);
+    }
 
     // Create new reset token
     try {
       await PasswordReset.create(user.id, token, expiresAt);
     } catch (resetError) {
       console.log('Password reset token creation failed:', resetError.message);
-      // Continue without failing the request
+      // Return success anyway to not reveal system issues
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, we have sent a password reset link.'
+      });
     }
 
     // Send reset email
