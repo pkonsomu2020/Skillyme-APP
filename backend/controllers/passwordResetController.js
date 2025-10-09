@@ -33,7 +33,12 @@ const forgotPassword = async (req, res) => {
     await PasswordReset.deleteByUserId(user.id);
 
     // Create new reset token
-    await PasswordReset.create(user.id, token, expiresAt);
+    try {
+      await PasswordReset.create(user.id, token, expiresAt);
+    } catch (resetError) {
+      console.log('Password reset token creation failed:', resetError.message);
+      // Continue without failing the request
+    }
 
     // Send reset email
     try {

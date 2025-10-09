@@ -108,19 +108,13 @@ const register = async (req, res) => {
         user: {
           id: user.id,
           name: user.name,
-          preferred_name: user.preferred_name,
           email: user.email,
           phone: user.phone,
           country: user.country,
           county: user.county,
           field_of_study: user.field_of_study,
-          course_of_study: user.course_of_study,
-          degree: user.degree,
-          year_of_study: user.year_of_study,
-          primary_field_interest: user.primary_field_interest,
           institution: user.institution,
-          level_of_study: user.level_of_study,
-          signup_source: user.signup_source
+          level_of_study: user.level_of_study
         }
       }
     });
