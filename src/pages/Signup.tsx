@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const Signup = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -100,6 +101,12 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      console.log("Form already submitting, ignoring submission");
+      return;
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match!");
       return;
@@ -128,7 +135,7 @@ const Signup = () => {
       passwordErrors.push('Password must contain at least one number');
     }
     
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)) {
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one special character');
     }
     
@@ -171,6 +178,9 @@ const Signup = () => {
     }
 
     try {
+      setIsSubmitting(true);
+      console.log("🚀 Starting registration process...");
+      
       // Prepare data for API
       const userData = {
         name: formData.name,
@@ -192,17 +202,29 @@ const Signup = () => {
         signup_source: formData.signupSource || "Direct"
       };
 
-      const success = await register(userData);
+      console.log("📤 Sending registration data:", { ...userData, password: "***" });
+      
+      // Add timeout to prevent hanging
+      const registrationPromise = register(userData);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Registration timeout. Please try again.")), 30000)
+      );
+      
+      const success = await Promise.race([registrationPromise, timeoutPromise]);
       
       if (success) {
+        console.log("✅ Registration successful!");
         toast.success("Account created successfully!");
         navigate("/dashboard");
       } else {
+        console.log("❌ Registration failed");
         toast.error("Registration failed. Please try again.");
       }
     } catch (error) {
-      // PERFORMANCE: Removed excessive error logging
+      console.error("❌ Registration error:", error);
       toast.error(error.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -271,7 +293,7 @@ const Signup = () => {
                   <SelectTrigger id="country">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                     {countries.map((country) => (
                       <SelectItem key={country} value={country}>{country}</SelectItem>
                     ))}
@@ -288,7 +310,7 @@ const Signup = () => {
                   <SelectTrigger id="county">
                     <SelectValue placeholder="Select county" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                     {counties.map((county) => (
                       <SelectItem key={county} value={county}>{county}</SelectItem>
                     ))}
@@ -315,7 +337,7 @@ const Signup = () => {
                   <SelectTrigger id="levelOfStudy">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                     {levelsOfStudy.map((level) => (
                       <SelectItem key={level} value={level}>{level}</SelectItem>
                     ))}
@@ -382,7 +404,7 @@ const Signup = () => {
                     <SelectTrigger id="degree">
                       <SelectValue placeholder="Select degree type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                       {degrees.map((degree) => (
                         <SelectItem key={degree} value={degree}>{degree}</SelectItem>
                       ))}
@@ -398,7 +420,7 @@ const Signup = () => {
                     <SelectTrigger id="yearOfStudy">
                       <SelectValue placeholder="Select year" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                       {yearsOfStudy.map((year) => (
                         <SelectItem key={year} value={year}>{year}</SelectItem>
                       ))}
@@ -412,7 +434,7 @@ const Signup = () => {
                     <SelectTrigger id="primaryFieldInterest">
                       <SelectValue placeholder="Select your interest" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                       {primaryFieldInterests.map((interest) => (
                         <SelectItem key={interest} value={interest}>{interest}</SelectItem>
                       ))}
@@ -427,7 +449,7 @@ const Signup = () => {
                   <SelectTrigger id="signupSource">
                     <SelectValue placeholder="Select how you heard about us" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
                     {signupSources.map((source) => (
                       <SelectItem key={source} value={source}>{source}</SelectItem>
                     ))}
@@ -461,7 +483,7 @@ const Signup = () => {
                               (/[A-Z]/.test(formData.password) ? 1 : 0) +
                               (/[a-z]/.test(formData.password) ? 1 : 0) +
                               (/\d/.test(formData.password) ? 1 : 0) +
-                              (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 1 : 0) +
+                              (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? 1 : 0) +
                               (!/(.)\1{2,}/.test(formData.password) ? 1 : 0) +
                               (!/123|abc|qwe|asd|zxc/i.test(formData.password) ? 1 : 0)
                             ));
@@ -501,8 +523,8 @@ const Signup = () => {
                       <span>{/\d/.test(formData.password) ? '✓' : '○'}</span>
                       One number
                     </li>
-                    <li className={`flex items-center gap-2 ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? '✓' : '○'}</span>
+                    <li className={`flex items-center gap-2 ${/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? '✓' : '○'}</span>
                       One special character
                     </li>
                     <li className={`flex items-center gap-2 ${!/(.)\1{2,}/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
@@ -536,8 +558,14 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button type="submit" variant="hero" className="w-full" size="lg">
-              Create Account
+            <Button 
+              type="submit" 
+              variant="hero" 
+              className="w-full" 
+              size="lg"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
