@@ -55,10 +55,15 @@ class EmailService {
       return { success: true, messageId: 'dev-mode-' + Date.now() };
     }
 
+    console.log('📧 [EMAIL SERVICE] Attempting to send email to:', sanitizedTo);
+    console.log('📧 [EMAIL SERVICE] SendGrid API Key present:', !!process.env.SENDGRID_API_KEY);
+    console.log('📧 [EMAIL SERVICE] Gmail SMTP configured:', !!this.nodemailerTransporter);
+
     // Email sending in progress
 
     // Send via SendGrid
     if (process.env.SENDGRID_API_KEY) {
+      console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
       // Attempting to send via SendGrid
       try {
         // Use a verified sender email or fallback to a default
@@ -66,32 +71,13 @@ class EmailService {
         
         const msg = {
           to: to,
-          from: {
-            email: fromEmail,
-            name: 'Skillyme'
-          },
+          from: fromEmail, // Simple string format to prevent double display
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
           html: html,
-          // Professional headers to prevent spam
+          // Minimal headers to avoid spam filters
           headers: {
-            'X-Mailer': 'Skillyme Platform',
-            'X-Priority': '3',
-            'X-MSMail-Priority': 'Normal',
-            'Importance': 'Normal',
             'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
-          },
-          // Add categories for better deliverability
-          categories: ['transaction', 'skillyme-notification'],
-          // Add custom args for tracking
-          customArgs: {
-            source: 'skillyme-platform',
-            type: 'transaction-notification'
-          },
-          // Add reply-to for better deliverability
-          replyTo: {
-            email: fromEmail,
-            name: 'Skillyme Support'
           }
         };
 
@@ -100,6 +86,8 @@ class EmailService {
       } catch (error) {
         console.error('❌ SendGrid failed:', error.message);
         console.error('❌ SendGrid error details:', error.response?.body);
+        console.error('❌ SendGrid status code:', error.response?.statusCode);
+        console.error('❌ SendGrid from email:', fromEmail);
         
         // If it's a forbidden error, try with a different approach
         if (error.message.includes('Forbidden') || error.response?.statusCode === 403) {
@@ -130,20 +118,13 @@ class EmailService {
       console.log('📧 [GMAIL SMTP] Attempting to send via Gmail SMTP...');
       try {
         const mailOptions = {
-          from: {
-            name: 'Skillyme Team',
-            address: process.env.GMAIL_USER
-          },
+          from: process.env.GMAIL_USER, // Simple string format
           to: to,
           subject: subject,
           text: text || html.replace(/<[^>]*>/g, ''),
           html: html,
-          // Add headers to prevent spam
+          // Minimal headers to avoid spam filters
           headers: {
-            'X-Priority': '1',
-            'X-MSMail-Priority': 'High',
-            'Importance': 'high',
-            'X-Mailer': 'Skillyme Platform',
             'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
           }
         };
@@ -158,16 +139,16 @@ class EmailService {
 
     // If all methods failed, log the email
     console.log('📧 [FALLBACK] All email methods failed, logging email:');
-    console.log(`   To: ${to}`);
-    console.log(`   Subject: ${subject}`);
-    console.log(`   Content: ${text || html.substring(0, 100)}...`);
+    console.log(`   To: ${sanitizedTo}`);
+    console.log(`   Subject: ${sanitizedSubject}`);
+    console.log(`   Content: ${sanitizedText || sanitizedHtml.substring(0, 100)}...`);
     
     const emailLog = {
       timestamp: new Date().toISOString(),
-      to: to,
-      subject: subject,
-      html: html,
-      text: text,
+      to: sanitizedTo,
+      subject: sanitizedSubject,
+      html: sanitizedHtml,
+      text: sanitizedText,
       status: 'failed_to_send',
       reason: 'No working email service configured'
     };

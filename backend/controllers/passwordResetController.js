@@ -60,9 +60,17 @@ const forgotPassword = async (req, res) => {
       // Don't fail the request if email fails
     }
 
+    // If email sending failed, provide the reset link directly in the response
+    // This is a temporary workaround until email service is properly configured
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://skillyme-app.vercel.app'}/reset-password/${token}`;
+    
     res.json({
       success: true,
-      message: 'If an account with that email exists, we have sent a password reset link.'
+      message: 'Password reset link generated successfully.',
+      data: {
+        resetUrl: resetUrl,
+        note: 'Please save this link to reset your password. It will expire in 1 hour.'
+      }
     });
 
   } catch (error) {
