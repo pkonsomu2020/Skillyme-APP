@@ -181,25 +181,18 @@ const Signup = () => {
       setIsSubmitting(true);
       console.log("🚀 Starting registration process...");
       
-      // Prepare data for API
+      // Prepare data for API - only send fields that exist in database
       const userData = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         country: formData.country,
         county: formData.country === "Kenya" ? formData.county : null,
-        fieldOfStudy: formData.fieldOfStudy,
+        field_of_study: formData.fieldOfStudy,
         institution: formData.institution || null,
-        levelOfStudy: formData.levelOfStudy,
-        password: formData.password,
-        // New enhanced signup fields
-        preferred_name: formData.preferredName || formData.name,
-        date_of_birth: formData.dateOfBirth || null,
-        course_of_study: formData.courseOfStudy || null,
-        degree: formData.degree || null,
-        year_of_study: formData.yearOfStudy || null,
-        primary_field_interest: formData.primaryFieldInterest || formData.fieldOfStudy || null,
-        signup_source: formData.signupSource || "Direct"
+        level_of_study: formData.levelOfStudy,
+        password: formData.password
+        // Note: Enhanced signup fields are not sent as they don't exist in the current database schema
       };
 
       console.log("📤 Sending registration data:", { ...userData, password: "***" });

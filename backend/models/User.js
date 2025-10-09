@@ -32,7 +32,7 @@ class User {
       }
     }
     
-    // Sanitize inputs
+    // Sanitize inputs - only include fields that exist in the database
     const sanitizedData = {
       name: name?.trim()?.substring(0, 255),
       email: email?.trim()?.toLowerCase()?.substring(0, 255),
@@ -42,15 +42,9 @@ class User {
       county: county?.trim()?.substring(0, 100),
       field_of_study: field_of_study?.trim()?.substring(0, 255),
       institution: institution?.trim()?.substring(0, 255),
-      level_of_study: level_of_study?.trim()?.substring(0, 100),
-      // New enhanced signup fields
-      preferred_name: preferred_name?.trim()?.substring(0, 255),
-      date_of_birth: date_of_birth ? new Date(date_of_birth).toISOString().split('T')[0] : null,
-      course_of_study: course_of_study?.trim()?.substring(0, 255),
-      degree: degree?.trim()?.substring(0, 100),
-      year_of_study: year_of_study?.trim()?.substring(0, 50),
-      primary_field_interest: primary_field_interest?.trim()?.substring(0, 255),
-      signup_source: signup_source?.trim()?.substring(0, 255)
+      level_of_study: level_of_study?.trim()?.substring(0, 100)
+      // Note: Enhanced signup fields (preferred_name, date_of_birth, etc.) are not included
+      // as they don't exist in the current database schema
     };
     
     try {
@@ -59,8 +53,7 @@ class User {
         .insert([sanitizedData])
         .select(`
           id, name, email, phone, country, county, field_of_study, institution, level_of_study,
-          preferred_name, date_of_birth, course_of_study, degree, year_of_study, 
-          primary_field_interest, signup_source, created_at, updated_at
+          created_at, updated_at
         `)
         .single();
       

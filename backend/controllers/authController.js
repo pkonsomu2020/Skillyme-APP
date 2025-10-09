@@ -33,9 +33,7 @@ const register = async (req, res) => {
     }
 
     const { 
-      name, email, password, phone, country, county, field_of_study, institution, level_of_study,
-      preferred_name, date_of_birth, course_of_study, degree, year_of_study, 
-      primary_field_interest, signup_source 
+      name, email, password, phone, country, county, field_of_study, institution, level_of_study
     } = req.body;
 
     // Enhanced password validation
@@ -81,15 +79,7 @@ const register = async (req, res) => {
       county,
       field_of_study: field_of_study || 'Not specified',
       institution: institution || 'Not specified',
-      level_of_study: level_of_study || 'High School',
-      // New enhanced signup fields
-      preferred_name: preferred_name || name, // Default to full name if not provided
-      date_of_birth: date_of_birth || null,
-      course_of_study: course_of_study || null,
-      degree: degree || null,
-      year_of_study: year_of_study || null,
-      primary_field_interest: primary_field_interest || field_of_study || 'Not specified',
-      signup_source: signup_source || 'Direct'
+      level_of_study: level_of_study || 'High School'
     };
 
     const user = await User.create(userData);
