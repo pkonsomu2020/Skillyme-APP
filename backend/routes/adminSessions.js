@@ -19,14 +19,11 @@ const sessionValidation = [
   body('date').isISO8601().withMessage('Valid date is required'),
   body('time').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Valid time format (HH:MM) is required'),
   body('google_meet_link').optional().isURL().withMessage('Valid Google Meet URL is required'),
-  body('recruiter').notEmpty().trim().isLength({ min: 2, max: 255 }).withMessage('Recruiter name must be 2-255 characters'),
-  body('company').optional().trim().isLength({ max: 255 }).withMessage('Company name must be less than 255 characters'),
+  body('recruiter').notEmpty().trim().isLength({ min: 2, max: 100 }).withMessage('Recruiter name must be 2-100 characters'),
+  body('company').notEmpty().trim().isLength({ min: 2, max: 100 }).withMessage('Company name must be 2-100 characters'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('paybill_number').optional().trim().isLength({ max: 20 }).withMessage('Paybill number must be less than 20 characters'),
-  body('business_number').optional().trim().isLength({ max: 20 }).withMessage('Business number must be less than 20 characters'),
-  body('max_attendees').optional().isInt({ min: 1 }).withMessage('Max attendees must be a positive integer'),
-  body('poster_url').optional().isURL().withMessage('Valid poster URL is required'),
-  body('thumbnail_url').optional().isURL().withMessage('Valid thumbnail URL is required')
+  body('business_number').optional().trim().isLength({ max: 20 }).withMessage('Business number must be less than 20 characters')
 ];
 
 const updateSessionValidation = [
@@ -35,16 +32,12 @@ const updateSessionValidation = [
   body('date').optional().isISO8601().withMessage('Valid date is required'),
   body('time').optional().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Valid time format (HH:MM) is required'),
   body('google_meet_link').optional().isURL().withMessage('Valid Google Meet URL is required'),
-  body('recruiter').optional().trim().isLength({ min: 2, max: 255 }).withMessage('Recruiter name must be 2-255 characters'),
-  body('company').optional().trim().isLength({ max: 255 }).withMessage('Company name must be less than 255 characters'),
+  body('recruiter').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Recruiter name must be 2-100 characters'),
+  body('company').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Company name must be 2-100 characters'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('paybill_number').optional().trim().isLength({ max: 20 }).withMessage('Paybill number must be less than 20 characters'),
   body('business_number').optional().trim().isLength({ max: 20 }).withMessage('Business number must be less than 20 characters'),
-  body('max_attendees').optional().isInt({ min: 1 }).withMessage('Max attendees must be a positive integer'),
-  body('poster_url').optional().isURL().withMessage('Valid poster URL is required'),
-  body('thumbnail_url').optional().isURL().withMessage('Valid thumbnail URL is required'),
-  body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
-  body('is_completed').optional().isBoolean().withMessage('is_completed must be a boolean')
+  body('is_active').optional().isBoolean().withMessage('is_active must be a boolean')
 ];
 
 const idValidation = [

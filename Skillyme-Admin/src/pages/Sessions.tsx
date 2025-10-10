@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Calendar, DollarSign, Users, MoreVertical, Search, ArrowLeft, Video, Building2, User, CreditCard, Clock } from "lucide-react"
+import { Plus, Calendar, Users, MoreVertical, Search, ArrowLeft, Video, Image, CheckCircle, XCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,12 +87,14 @@ export default function Sessions() {
         return (
           session.id.toString().includes(searchLower) ||
           session.title.toLowerCase().includes(searchLower) ||
-          session.description.toLowerCase().includes(searchLower) ||
-          session.company.toLowerCase().includes(searchLower) ||
+          (session.description && session.description.toLowerCase().includes(searchLower)) ||
+          (session.company && session.company.toLowerCase().includes(searchLower)) ||
           session.recruiter.toLowerCase().includes(searchLower) ||
           session.date.includes(searchLower) ||
           session.time.includes(searchLower) ||
-          session.price.toString().includes(searchLower)
+          session.price.toString().includes(searchLower) ||
+          (session.paybill_number && session.paybill_number.includes(searchLower)) ||
+          (session.business_number && session.business_number.includes(searchLower))
         )
       })
       setFilteredSessions(filtered)
@@ -151,28 +153,7 @@ export default function Sessions() {
     }
   }
 
-  const handleMarkCompleted = async (sessionId: number) => {
-    try {
-      const response = await adminApi.sessions.markSessionCompleted(sessionId)
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: "Session marked as completed",
-        })
-        // Refresh sessions
-        await fetchSessions()
-      } else {
-        throw new Error(response.error || 'Failed to mark session as completed')
-      }
-    } catch (err) {
-      console.error('Failed to mark session as completed:', err)
-      toast({
-        title: "Error",
-        description: "Failed to mark session as completed",
-        variant: "destructive"
-      })
-    }
-  }
+
 
   const handleDeleteSession = async (sessionId: number) => {
     if (!confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
@@ -209,12 +190,11 @@ export default function Sessions() {
     }
   }
 
-  const formatDateTime = (dateString: string, timeString: string) => {
+  const formatDateTime = (dateTimeString: string) => {
     try {
-      const date = new Date(`${dateString}T${timeString}`)
-      return date.toLocaleString()
+      return new Date(dateTimeString).toLocaleString()
     } catch {
-      return `${dateString} ${timeString}`
+      return dateTimeString
     }
   }
 
@@ -285,7 +265,9 @@ export default function Sessions() {
           <div className="flex gap-4 text-sm text-muted-foreground">
             <span>Total: {sessions.length}</span>
             <span>Showing: {filteredSessions.length}</span>
-            <span>Active: {sessions.filter(s => s.is_active && !s.is_completed).length}</span>
+            <span>Active: {sessions.filter(s => s.is_active).length}</span>
+            <span>Completed: {sessions.filter(s => s.is_completed).length}</span>
+            <span>Total Attendees: {sessions.reduce((sum, s) => sum + (s.current_attendees || 0), 0)}</span>
             {lastUpdated && (
               <span className="flex items-center gap-1">
                 <div className={`w-1.5 h-1.5 rounded-full ${syncing ? 'bg-blue-500 animate-spin' : 'bg-green-500'}`}></div>
@@ -349,12 +331,16 @@ export default function Sessions() {
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Time</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Price (KES)</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Google Meet</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Max Attendees</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Current Attendees</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Poster</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Thumbnail</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Paybill</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Business #</th>
-                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Max Attendees</th>
-                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Current</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Status</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Completed</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Created</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Updated</th>
                       <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -380,7 +366,7 @@ export default function Sessions() {
                         <td className="p-3 font-mono text-xs">{formatDate(session.date)}</td>
                         <td className="p-3 font-mono text-xs">{session.time}</td>
                         <td className="p-3 font-mono">
-                          {session.price > 0 ? `KES ${session.price}` : 'Free'}
+                          KES {session.price}
                         </td>
                         <td className="p-3">
                           {session.google_meet_link ? (
@@ -397,31 +383,69 @@ export default function Sessions() {
                             <span className="text-muted-foreground italic">null</span>
                           )}
                         </td>
+                        <td className="p-3 font-mono text-center">
+                          {session.max_attendees || <span className="text-muted-foreground italic">null</span>}
+                        </td>
+                        <td className="p-3 font-mono text-center">
+                          {session.current_attendees || 0}
+                        </td>
+                        <td className="p-3">
+                          {session.poster_url ? (
+                            <a 
+                              href={session.poster_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              <Image className="h-3 w-3" />
+                              View
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground italic">null</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {session.thumbnail_url ? (
+                            <a 
+                              href={session.thumbnail_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              <Image className="h-3 w-3" />
+                              View
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground italic">null</span>
+                          )}
+                        </td>
                         <td className="p-3 font-mono text-xs">
                           {session.paybill_number || <span className="text-muted-foreground italic">null</span>}
                         </td>
                         <td className="p-3 font-mono text-xs">
                           {session.business_number || <span className="text-muted-foreground italic">null</span>}
                         </td>
-                        <td className="p-3 text-center">
-                          {session.max_attendees || <span className="text-muted-foreground italic">∞</span>}
-                        </td>
-                        <td className="p-3 text-center font-mono">
-                          {session.current_attendees || 0}
+                        <td className="p-3">
+                          <Badge variant={session.is_active ? "default" : "secondary"} className="text-xs">
+                            {session.is_active ? "Active" : "Inactive"}
+                          </Badge>
                         </td>
                         <td className="p-3">
-                          <div className="flex flex-col gap-1">
-                            <Badge variant={session.is_active ? "default" : "secondary"} className="text-xs">
-                              {session.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                            {session.is_completed && (
-                              <Badge variant="outline" className="text-xs">
-                                Completed
-                              </Badge>
+                          <div className="flex items-center gap-1">
+                            {session.is_completed ? (
+                              <CheckCircle className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <XCircle className="h-3 w-3 text-gray-400" />
                             )}
+                            <span className="text-xs">
+                              {session.is_completed ? "Yes" : "No"}
+                            </span>
                           </div>
                         </td>
                         <td className="p-3 font-mono text-xs">{formatDate(session.created_at)}</td>
+                        <td className="p-3 font-mono text-xs">
+                          {session.updated_at ? formatDateTime(session.updated_at) : <span className="text-muted-foreground italic">null</span>}
+                        </td>
                         <td className="p-3">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -433,10 +457,6 @@ export default function Sessions() {
                               <DropdownMenuItem>
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Edit Session
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleMarkCompleted(session.id)}>
-                                <Clock className="mr-2 h-4 w-4" />
-                                Mark as Completed
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleToggleActive(session.id, !session.is_active)}>
                                 {session.is_active ? (

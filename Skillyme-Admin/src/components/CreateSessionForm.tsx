@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { CalendarIcon, Clock, DollarSign, Users, Video, Building2, User, CreditCard } from "lucide-react"
+import { CalendarIcon, Clock, DollarSign, Users, Video, Building2, User, CreditCard, Image } from "lucide-react"
 import { adminApi, Session } from "@/services/api"
 
 interface CreateSessionFormProps {
@@ -26,7 +26,9 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
     recruiter: "",
     date: "",
     time: "",
-    max_attendees: ""
+    max_attendees: "",
+    poster_url: "",
+    thumbnail_url: ""
   })
   const { toast } = useToast()
 
@@ -38,7 +40,7 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
   }
 
   const validateForm = () => {
-    const required = ['title', 'recruiter', 'date', 'time']
+    const required = ['title', 'recruiter', 'company', 'date', 'time']
     const missing = required.filter(field => !formData[field as keyof typeof formData].trim())
     
     if (missing.length > 0) {
@@ -98,13 +100,15 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
         description: formData.description.trim(),
         company: formData.company.trim(),
         google_meet_link: formData.google_meet_link.trim() || undefined,
-        price: formData.price ? parseFloat(formData.price) : 0,
+        price: formData.price ? parseFloat(formData.price) : 200.00,
         paybill_number: formData.paybill_number.trim() || undefined,
         business_number: formData.business_number.trim() || undefined,
         recruiter: formData.recruiter.trim(),
         date: formData.date,
         time: formData.time,
-        max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : undefined
+        max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : undefined,
+        poster_url: formData.poster_url.trim() || undefined,
+        thumbnail_url: formData.thumbnail_url.trim() || undefined
       }
 
       const response = await adminApi.sessions.createSession(sessionData)
@@ -196,7 +200,7 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
             <div className="space-y-2">
               <Label htmlFor="company" className="text-sm font-medium flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                Company
+                Company *
               </Label>
               <Input
                 id="company"
@@ -204,6 +208,7 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
                 value={formData.company}
                 onChange={(e) => handleInputChange('company', e.target.value)}
                 className="w-full"
+                required
               />
             </div>
 
@@ -274,7 +279,7 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
                 min="0"
                 step="0.01"
               />
-              <p className="text-xs text-muted-foreground">Leave empty or 0 for free sessions</p>
+              <p className="text-xs text-muted-foreground">Default: KES 200.00 (leave empty for default)</p>
             </div>
 
             <div className="space-y-2">
@@ -306,12 +311,12 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
             </div>
           </div>
 
-          {/* Max Attendees */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Additional Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="max_attendees" className="text-sm font-medium flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Maximum Attendees
+                Max Attendees
               </Label>
               <Input
                 id="max_attendees"
@@ -322,7 +327,37 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
                 className="w-full"
                 min="1"
               />
-              <p className="text-xs text-muted-foreground">Leave empty for unlimited attendees</p>
+              <p className="text-xs text-muted-foreground">Maximum number of attendees allowed</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="poster_url" className="text-sm font-medium flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Poster URL
+              </Label>
+              <Input
+                id="poster_url"
+                type="url"
+                placeholder="https://example.com/poster.jpg"
+                value={formData.poster_url}
+                onChange={(e) => handleInputChange('poster_url', e.target.value)}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="thumbnail_url" className="text-sm font-medium flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Thumbnail URL
+              </Label>
+              <Input
+                id="thumbnail_url"
+                type="url"
+                placeholder="https://example.com/thumb.jpg"
+                value={formData.thumbnail_url}
+                onChange={(e) => handleInputChange('thumbnail_url', e.target.value)}
+                className="w-full"
+              />
             </div>
           </div>
 

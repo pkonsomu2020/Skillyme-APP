@@ -39,7 +39,7 @@ export interface Admin {
 export interface Session {
   id: number;
   title: string;
-  description: string;
+  description?: string;
   date: string;
   time: string;
   google_meet_link?: string;
@@ -48,12 +48,12 @@ export interface Session {
   price: number;
   paybill_number?: string;
   business_number?: string;
+  is_active: boolean;
+  is_completed: boolean;
   max_attendees?: number;
   current_attendees?: number;
   poster_url?: string;
   thumbnail_url?: string;
-  is_active: boolean;
-  is_completed: boolean;
   created_at: string;
   updated_at: string;
 }

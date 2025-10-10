@@ -22,8 +22,8 @@ const getAllSessions = async (req, res) => {
       .select(`
         id, title, description, date, time, google_meet_link, 
         recruiter, company, price, paybill_number, business_number,
-        is_active, is_completed, poster_url, thumbnail_url, 
-        max_attendees, current_attendees, created_at, updated_at
+        is_active, is_completed, max_attendees, current_attendees,
+        poster_url, thumbnail_url, created_at, updated_at
       `)
       .order(sort_by, { ascending: sort_order === 'asc' })
       .range(offset, offset + limit - 1);
@@ -116,8 +116,8 @@ const getSessionById = async (req, res) => {
       .select(`
         id, title, description, date, time, google_meet_link,
         recruiter, company, price, paybill_number, business_number,
-        is_active, is_completed, poster_url, thumbnail_url, 
-        max_attendees, current_attendees, created_at, updated_at
+        is_active, is_completed, max_attendees, current_attendees,
+        poster_url, thumbnail_url, created_at, updated_at
       `)
       .eq('id', id)
       .single();
@@ -185,23 +185,21 @@ const createSession = async (req, res) => {
 
     const sessionData = {
       title: title?.trim(),
-      description: description?.trim(),
+      description: description?.trim() || null,
       date,
       time,
-      google_meet_link: google_meet_link?.trim(),
+      google_meet_link: google_meet_link?.trim() || null,
       recruiter: recruiter?.trim(),
       company: company?.trim(),
-      price: parseFloat(price) || 0,
-      paybill_number: paybill_number?.trim(),
-      business_number: business_number?.trim(),
+      price: parseFloat(price) || 0.00,
+      paybill_number: paybill_number?.trim() || null,
+      business_number: business_number?.trim() || null,
       max_attendees: max_attendees ? parseInt(max_attendees) : null,
       current_attendees: 0,
-      poster_url: poster_url?.trim(),
-      thumbnail_url: thumbnail_url?.trim(),
+      poster_url: poster_url?.trim() || null,
+      thumbnail_url: thumbnail_url?.trim() || null,
       is_active: true,
-      is_completed: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      is_completed: false
     };
 
     const { data: session, error } = await supabase
@@ -210,8 +208,8 @@ const createSession = async (req, res) => {
       .select(`
         id, title, description, date, time, google_meet_link,
         recruiter, company, price, paybill_number, business_number,
-        is_active, is_completed, poster_url, thumbnail_url, 
-        max_attendees, current_attendees, created_at, updated_at
+        is_active, is_completed, max_attendees, current_attendees,
+        poster_url, thumbnail_url, created_at, updated_at
       `)
       .single();
 
@@ -279,18 +277,18 @@ const updateSession = async (req, res) => {
     };
 
     if (title !== undefined) updateData.title = title?.trim();
-    if (description !== undefined) updateData.description = description?.trim();
+    if (description !== undefined) updateData.description = description?.trim() || null;
     if (date !== undefined) updateData.date = date;
     if (time !== undefined) updateData.time = time;
-    if (google_meet_link !== undefined) updateData.google_meet_link = google_meet_link?.trim();
+    if (google_meet_link !== undefined) updateData.google_meet_link = google_meet_link?.trim() || null;
     if (recruiter !== undefined) updateData.recruiter = recruiter?.trim();
     if (company !== undefined) updateData.company = company?.trim();
-    if (price !== undefined) updateData.price = parseFloat(price) || 0;
-    if (paybill_number !== undefined) updateData.paybill_number = paybill_number?.trim();
-    if (business_number !== undefined) updateData.business_number = business_number?.trim();
+    if (price !== undefined) updateData.price = parseFloat(price) || 0.00;
+    if (paybill_number !== undefined) updateData.paybill_number = paybill_number?.trim() || null;
+    if (business_number !== undefined) updateData.business_number = business_number?.trim() || null;
     if (max_attendees !== undefined) updateData.max_attendees = max_attendees ? parseInt(max_attendees) : null;
-    if (poster_url !== undefined) updateData.poster_url = poster_url?.trim();
-    if (thumbnail_url !== undefined) updateData.thumbnail_url = thumbnail_url?.trim();
+    if (poster_url !== undefined) updateData.poster_url = poster_url?.trim() || null;
+    if (thumbnail_url !== undefined) updateData.thumbnail_url = thumbnail_url?.trim() || null;
     if (is_active !== undefined) updateData.is_active = Boolean(is_active);
     if (is_completed !== undefined) updateData.is_completed = Boolean(is_completed);
 
@@ -301,8 +299,8 @@ const updateSession = async (req, res) => {
       .select(`
         id, title, description, date, time, google_meet_link,
         recruiter, company, price, paybill_number, business_number,
-        is_active, is_completed, poster_url, thumbnail_url, 
-        max_attendees, current_attendees, created_at, updated_at
+        is_active, is_completed, max_attendees, current_attendees,
+        poster_url, thumbnail_url, created_at, updated_at
       `)
       .single();
 
