@@ -21,9 +21,9 @@ const getAllSessions = async (req, res) => {
       .from('sessions')
       .select(`
         id, title, description, date, time, google_meet_link, 
-        recruiter, company, price, is_active, is_completed,
-        poster_url, thumbnail_url, max_attendees, current_attendees,
-        created_at, updated_at
+        recruiter, company, price, paybill_number, business_number,
+        is_active, is_completed, poster_url, thumbnail_url, 
+        max_attendees, current_attendees, created_at, updated_at
       `)
       .order(sort_by, { ascending: sort_order === 'asc' })
       .range(offset, offset + limit - 1);
@@ -115,9 +115,9 @@ const getSessionById = async (req, res) => {
       .from('sessions')
       .select(`
         id, title, description, date, time, google_meet_link,
-        recruiter, company, price, is_active, is_completed,
-        poster_url, thumbnail_url, max_attendees, current_attendees,
-        created_at, updated_at
+        recruiter, company, price, paybill_number, business_number,
+        is_active, is_completed, poster_url, thumbnail_url, 
+        max_attendees, current_attendees, created_at, updated_at
       `)
       .eq('id', id)
       .single();
@@ -176,6 +176,8 @@ const createSession = async (req, res) => {
       recruiter,
       company,
       price = 0,
+      paybill_number,
+      business_number,
       max_attendees,
       poster_url,
       thumbnail_url
@@ -190,6 +192,8 @@ const createSession = async (req, res) => {
       recruiter: recruiter?.trim(),
       company: company?.trim(),
       price: parseFloat(price) || 0,
+      paybill_number: paybill_number?.trim(),
+      business_number: business_number?.trim(),
       max_attendees: max_attendees ? parseInt(max_attendees) : null,
       current_attendees: 0,
       poster_url: poster_url?.trim(),
@@ -205,9 +209,9 @@ const createSession = async (req, res) => {
       .insert([sessionData])
       .select(`
         id, title, description, date, time, google_meet_link,
-        recruiter, company, price, is_active, is_completed,
-        poster_url, thumbnail_url, max_attendees, current_attendees,
-        created_at, updated_at
+        recruiter, company, price, paybill_number, business_number,
+        is_active, is_completed, poster_url, thumbnail_url, 
+        max_attendees, current_attendees, created_at, updated_at
       `)
       .single();
 
@@ -261,6 +265,8 @@ const updateSession = async (req, res) => {
       recruiter,
       company,
       price,
+      paybill_number,
+      business_number,
       max_attendees,
       poster_url,
       thumbnail_url,
@@ -280,6 +286,8 @@ const updateSession = async (req, res) => {
     if (recruiter !== undefined) updateData.recruiter = recruiter?.trim();
     if (company !== undefined) updateData.company = company?.trim();
     if (price !== undefined) updateData.price = parseFloat(price) || 0;
+    if (paybill_number !== undefined) updateData.paybill_number = paybill_number?.trim();
+    if (business_number !== undefined) updateData.business_number = business_number?.trim();
     if (max_attendees !== undefined) updateData.max_attendees = max_attendees ? parseInt(max_attendees) : null;
     if (poster_url !== undefined) updateData.poster_url = poster_url?.trim();
     if (thumbnail_url !== undefined) updateData.thumbnail_url = thumbnail_url?.trim();
@@ -292,9 +300,9 @@ const updateSession = async (req, res) => {
       .eq('id', id)
       .select(`
         id, title, description, date, time, google_meet_link,
-        recruiter, company, price, is_active, is_completed,
-        poster_url, thumbnail_url, max_attendees, current_attendees,
-        created_at, updated_at
+        recruiter, company, price, paybill_number, business_number,
+        is_active, is_completed, poster_url, thumbnail_url, 
+        max_attendees, current_attendees, created_at, updated_at
       `)
       .single();
 

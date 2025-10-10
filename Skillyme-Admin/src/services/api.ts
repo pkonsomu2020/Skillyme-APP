@@ -46,7 +46,10 @@ export interface Session {
   recruiter: string;
   company: string;
   price: number;
+  paybill_number?: string;
+  business_number?: string;
   max_attendees?: number;
+  current_attendees?: number;
   poster_url?: string;
   thumbnail_url?: string;
   is_active: boolean;
