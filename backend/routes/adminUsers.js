@@ -20,11 +20,11 @@ const statusValidation = [
   body('is_active').isBoolean().withMessage('is_active must be a boolean value')
 ];
 
-// Routes
-router.get('/', getAllUsers);
-router.get('/stats', getUserStats);
-router.get('/filter-options', getFilterOptions);
-router.get('/:id', idValidation, getUserById);
-router.put('/:id/status', idValidation, statusValidation, updateUserStatus);
+// Routes (all protected with admin authentication)
+router.get('/', authenticateAdmin, getAllUsers);
+router.get('/stats', authenticateAdmin, getUserStats);
+router.get('/filter-options', authenticateAdmin, getFilterOptions);
+router.get('/:id', authenticateAdmin, idValidation, getUserById);
+router.put('/:id/status', authenticateAdmin, idValidation, statusValidation, updateUserStatus);
 
 module.exports = router;
