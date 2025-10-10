@@ -1,3 +1,6 @@
+// Load environment variables FIRST
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -8,7 +11,6 @@ const { securityHeaders, httpsRedirect, corsSecurity } = require('./middleware/s
 const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware/csrfProtection');
 // Database connection is now handled by individual models using Supabase
 // const pool = require('./config/database'); // DEPRECATED: Now using Supabase
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
