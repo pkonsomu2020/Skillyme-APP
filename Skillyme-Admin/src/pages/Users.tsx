@@ -42,6 +42,7 @@ export default function Users() {
   useEffect(() => {
     // Don't make API calls if not authenticated or still loading auth
     if (!isAuthenticated || authLoading) {
+      setLoading(false)
       return
     }
 
@@ -64,23 +65,58 @@ export default function Users() {
         
         console.log('📊 Users API response:', response)
         
-        if (response.success && response.data) {
-          console.log('✅ Users loaded successfully:', response.data.users?.length || 0, 'users')
-          setUsers(response.data.users || [])
+        if (response && response.success && response.data && response.data.users) {
+          console.log('✅ Users loaded successfully:', response.data.users.length, 'users')
+          setUsers(response.data.users)
         } else {
-          console.error('❌ Users API failed:', response.error || response.message)
-          setError(response.error || response.message || 'Failed to load users')
+          console.error('❌ Users API failed:', response?.error || response?.message || 'Invalid response format')
+          setError(response?.error || response?.message || 'Failed to load users - invalid response')
         }
       } catch (err) {
         console.error('❌ Failed to load users:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load users')
+        setError(err instanceof Error ? err.message : 'Network error - failed to load users')
       } finally {
         setLoading(false)
       }
     }
 
-    loadUsers()
-  }, [isAuthenticated, authLoading, searchTerm, fieldFilter, institutionFilter])
+    // Add a small delay to ensure auth is fully loaded
+    const timeoutId = setTimeout(loadUsers, 100)
+    return () => clearTimeout(timeoutId)
+  }, [isAuthenticated, authLoading])
+
+  // Handle search/filter changes
+  useEffect(() => {
+    if (!isAuthenticated || authLoading || loading) {
+      return
+    }
+
+    const delayedSearch = setTimeout(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await adminApi.users.getAllUsers({
+          search: searchTerm || undefined,
+          field_of_study: fieldFilter || undefined,
+          institution: institutionFilter || undefined,
+        })
+        
+        if (response && response.success && response.data && response.data.users) {
+          setUsers(response.data.users)
+        } else {
+          setError('Failed to filter users')
+        }
+      } catch (err) {
+        console.error('Filter error:', err)
+        setError('Failed to filter users')
+      } finally {
+        setLoading(false)
+      }
+    }, 500) // Debounce search
+
+    return () => clearTimeout(delayedSearch)
+  }, [searchTerm, fieldFilter, institutionFilter, isAuthenticated, authLoading])
 
   // Handle user actions
   const handleToggleUserStatus = async (userId: number, isActive: boolean) => {

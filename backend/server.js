@@ -43,19 +43,24 @@ app.use(cors({
       callback(null, true);
     } else {
       console.log('🚫 CORS blocked origin:', origin);
+      console.log('🔍 Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['X-CSRF-Token'],
-  optionsSuccessStatus: 200 // For legacy browser support
+  optionsSuccessStatus: 200, // For legacy browser support
+  preflightContinue: false
 }));
 
 // Log CORS configuration
 console.log('🌐 CORS Configuration:');
 console.log('   Allowed Origins:', allowedOrigins);
+console.log('   FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('   ADMIN_URL:', process.env.ADMIN_URL);
+console.log('   ALLOWED_ORIGINS:', process.env.ALLOWED_ORIGINS);
 
 // Rate Limiting
 app.use(generalLimiter);
@@ -119,11 +124,20 @@ app.use('/api/admin/payments', require('./routes/adminPayments'));
 
 // Handle preflight OPTIONS requests
 app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
+  const origin = req.headers.origin;
+  console.log('🔍 OPTIONS request from origin:', origin);
+  
+  if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.sendStatus(200);
+  } else {
+    console.log('🚫 OPTIONS blocked for origin:', origin);
+    res.sendStatus(403);
+  }
 });
 
 // Health check endpoint
