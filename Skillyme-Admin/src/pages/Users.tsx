@@ -3,24 +3,19 @@ import { DashboardLayout } from "@/components/DashboardLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
 import { useToast } from "@/hooks/use-toast"
 import { Search, UserPlus } from "lucide-react"
 import { adminApi, User } from "@/services/api"
 
-interface UserWithStats extends User {
-  status: 'active' | 'inactive' | 'pending'
-  totalBookings: number
-  lastActivity?: string
-  location?: string
-}
+// Use the exact User interface from API without modifications
 
 export default function Users() {
-  const [users, setUsers] = useState<UserWithStats[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filteredUsers, setFilteredUsers] = useState<UserWithStats[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const { toast } = useToast()
 
@@ -37,17 +32,9 @@ export default function Users() {
       const response = await adminApi.users.getAllUsers()
       
       if (response.success && response.data?.users) {
-        // Transform the API data to match our component interface
-        const transformedUsers: UserWithStats[] = response.data.users.map(user => ({
-          ...user,
-          status: 'active' as const, // Default status since it's not in the API
-          totalBookings: 0, // This would need to come from a separate endpoint
-          lastActivity: user.updated_at || user.created_at, // Use updated_at if available
-          location: user.county || user.country,
-        }))
-        
-        setUsers(transformedUsers)
-        setFilteredUsers(transformedUsers)
+        // Use the exact data from the database without any transformation
+        setUsers(response.data.users)
+        setFilteredUsers(response.data.users)
         setLastUpdated(new Date())
       } else {
         console.warn("Unexpected API response format:", response)
@@ -85,18 +72,31 @@ export default function Users() {
     }
   }, [toast, users.length])
 
-  // Filter users based on search term
+  // Filter users based on search term across ALL fields
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredUsers(users)
     } else {
-      const filtered = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.phone && user.phone.includes(searchTerm)) ||
-        (user.field_of_study && user.field_of_study.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.institution && user.institution.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
+      const filtered = users.filter(user => {
+        const searchLower = searchTerm.toLowerCase()
+        return (
+          user.id.toString().includes(searchLower) ||
+          user.name.toLowerCase().includes(searchLower) ||
+          user.email.toLowerCase().includes(searchLower) ||
+          (user.phone && user.phone.toLowerCase().includes(searchLower)) ||
+          user.country.toLowerCase().includes(searchLower) ||
+          (user.county && user.county.toLowerCase().includes(searchLower)) ||
+          user.field_of_study.toLowerCase().includes(searchLower) ||
+          user.institution.toLowerCase().includes(searchLower) ||
+          user.level_of_study.toLowerCase().includes(searchLower) ||
+          (user.preferred_name && user.preferred_name.toLowerCase().includes(searchLower)) ||
+          (user.course_of_study && user.course_of_study.toLowerCase().includes(searchLower)) ||
+          (user.degree && user.degree.toLowerCase().includes(searchLower)) ||
+          (user.year_of_study && user.year_of_study.toLowerCase().includes(searchLower)) ||
+          (user.primary_field_interest && user.primary_field_interest.toLowerCase().includes(searchLower)) ||
+          (user.signup_source && user.signup_source.toLowerCase().includes(searchLower))
+        )
+      })
       setFilteredUsers(filtered)
     }
   }, [searchTerm, users])
@@ -154,14 +154,7 @@ export default function Users() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'inactive': return 'bg-gray-100 text-gray-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
+
 
   const formatDate = (dateString: string) => {
     try {
@@ -215,7 +208,7 @@ export default function Users() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search by name, email, phone, field, or institution..."
+              placeholder="Search across all database fields (ID, name, email, phone, etc.)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -270,19 +263,28 @@ export default function Users() {
               </div>
             ) : (
               <div className="overflow-x-auto border rounded-lg">
-                <table className="w-full border-collapse">
+                <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">ID</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Name</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Email</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Phone</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Location</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Field of Study</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Institution</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Level</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Join Date</th>
-                      <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Status</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">ID</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Name</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Email</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Phone</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Country</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">County</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Field of Study</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Institution</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Level of Study</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Created At</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Updated At</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Password Hash</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Preferred Name</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Date of Birth</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Course of Study</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Degree</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Year of Study</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Primary Field Interest</th>
+                      <th className="text-left p-3 font-semibold text-xs uppercase tracking-wider">Signup Source</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -293,30 +295,27 @@ export default function Users() {
                           index % 2 === 0 ? 'bg-background' : 'bg-muted/5'
                         }`}
                       >
-                        <td className="p-4 font-mono text-sm font-medium">#{user.id}</td>
-                        <td className="p-4 font-medium text-foreground">{user.name}</td>
-                        <td className="p-4 text-sm text-muted-foreground font-mono">{user.email}</td>
-                        <td className="p-4 text-sm font-mono">{user.phone || '—'}</td>
-                        <td className="p-4 text-sm">{user.location || '—'}</td>
-                        <td className="p-4 text-sm">
-                          <span className={user.field_of_study && user.field_of_study !== 'Not specified' 
-                            ? 'text-foreground' 
-                            : 'text-muted-foreground italic'
-                          }>
-                            {user.field_of_study && user.field_of_study !== 'Not specified' 
-                              ? user.field_of_study 
-                              : 'Not specified'
-                            }
-                          </span>
+                        <td className="p-3 font-mono text-sm font-medium">{user.id}</td>
+                        <td className="p-3 font-medium">{user.name}</td>
+                        <td className="p-3 font-mono text-xs">{user.email}</td>
+                        <td className="p-3 font-mono text-xs">{user.phone}</td>
+                        <td className="p-3">{user.country}</td>
+                        <td className="p-3">{user.county || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.field_of_study}</td>
+                        <td className="p-3">{user.institution}</td>
+                        <td className="p-3">{user.level_of_study}</td>
+                        <td className="p-3 font-mono text-xs">{formatDate(user.created_at)}</td>
+                        <td className="p-3 font-mono text-xs">{formatDate(user.updated_at)}</td>
+                        <td className="p-3 font-mono text-xs max-w-32 truncate" title={user.password}>
+                          {user.password ? `${user.password.substring(0, 20)}...` : <span className="text-muted-foreground italic">null</span>}
                         </td>
-                        <td className="p-4 text-sm">{user.institution || '—'}</td>
-                        <td className="p-4 text-sm">{user.level_of_study || '—'}</td>
-                        <td className="p-4 text-sm font-mono">{formatDate(user.created_at)}</td>
-                        <td className="p-4">
-                          <Badge className={getStatusColor(user.status)} variant="secondary">
-                            {user.status}
-                          </Badge>
-                        </td>
+                        <td className="p-3">{user.preferred_name || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3 font-mono text-xs">{user.date_of_birth || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.course_of_study || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.degree || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.year_of_study || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.primary_field_interest || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.signup_source || <span className="text-muted-foreground italic">null</span>}</td>
                       </tr>
                     ))}
                   </tbody>

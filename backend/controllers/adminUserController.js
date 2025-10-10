@@ -23,8 +23,8 @@ const getAllUsers = async (req, res) => {
       .from('users')
       .select(`
         id, name, email, phone, country, county, field_of_study, institution, level_of_study,
-        preferred_name, date_of_birth, course_of_study, degree, year_of_study,
-        primary_field_interest, signup_source, created_at, updated_at
+        created_at, updated_at, password, preferred_name, date_of_birth, course_of_study, 
+        degree, year_of_study, primary_field_interest, signup_source
       `)
       .order(sort_by, { ascending: sort_order === 'asc' })
       .range(offset, offset + limit - 1);

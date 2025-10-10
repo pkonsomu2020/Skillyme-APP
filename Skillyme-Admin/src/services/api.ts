@@ -61,19 +61,20 @@ export interface User {
   email: string;
   phone: string;
   country: string;
-  county?: string;
+  county: string | null;
   field_of_study: string;
   institution: string;
   level_of_study: string;
-  preferred_name?: string;
-  date_of_birth?: string;
-  course_of_study?: string;
-  degree?: string;
-  year_of_study?: string;
-  primary_field_interest?: string;
-  signup_source?: string;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
+  password: string;
+  preferred_name: string | null;
+  date_of_birth: string | null;
+  course_of_study: string | null;
+  degree: string | null;
+  year_of_study: string | null;
+  primary_field_interest: string | null;
+  signup_source: string | null;
 }
 
 export interface DashboardStats {
