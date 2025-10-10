@@ -12,8 +12,7 @@ const {
   updateProfile,
   simpleLogin,
   ultraSimpleLogin,
-  cleanLogin,
-  debugAdmin
+  cleanLogin
 } = require('../controllers/adminAuthController');
 
 const router = express.Router();
@@ -59,12 +58,7 @@ router.get('/ultra-simple-profile', ultraSimpleAuth, getProfile);
 router.post('/clean-login', cleanLogin);
 router.get('/clean-profile', cleanAuth, getProfile);
 
-// ========================================
-// DEBUG ROUTES
-// ========================================
 
-// Debug admin status and create if needed
-router.get('/debug-admin', debugAdmin);
 
 // ========================================
 // EXPORTS

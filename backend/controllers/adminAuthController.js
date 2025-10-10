@@ -186,52 +186,39 @@ const ultraSimpleLogin = async (req, res) => {
 // Clean authentication - no CSRF, no complex validation
 const cleanLogin = async (req, res) => {
   try {
-    console.log('🔍 Clean login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
-    
     const { email, password } = req.body;
 
     if (!email || !password) {
-      console.log('❌ Missing email or password');
       return res.status(400).json({
         success: false,
         message: 'Email and password are required'
       });
     }
 
-    console.log('🔍 Looking for admin with email:', email);
     const admin = await Admin.findByEmail(email);
-    
     if (!admin) {
-      console.log('❌ Admin not found for email:', email);
       return res.status(401).json({
         success: false,
-        message: 'Admin not found'
+        message: 'Invalid credentials'
       });
     }
-
-    console.log('✅ Admin found:', { id: admin.id, email: admin.email, hasPassword: !!admin.password });
     
     const isPasswordValid = await Admin.verifyPassword(admin.password, password);
-    console.log('🔍 Password validation result:', isPasswordValid);
-    
     if (!isPasswordValid) {
-      console.log('❌ Invalid password for admin:', admin.email);
       return res.status(401).json({
         success: false,
-        message: 'Invalid password'
+        message: 'Invalid credentials'
       });
     }
 
-    console.log('✅ Creating JWT token for admin:', admin.id);
     const token = jwt.sign(
       { adminId: admin.id, email: admin.email, role: 'admin' },
       JWT_SECRET
     );
 
-    console.log('✅ Clean login successful for:', admin.email);
     res.json({
       success: true,
-      message: 'Clean login successful',
+      message: 'Login successful',
       data: {
         token,
         admin: {
@@ -243,10 +230,10 @@ const cleanLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Clean login error:', error);
+    console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Clean login failed',
+      message: 'Login failed',
       error: error.message
     });
   }
@@ -300,69 +287,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// ========================================
-// DEBUG AND SETUP METHODS
-// ========================================
 
-// Debug endpoint to check admin status
-const debugAdmin = async (req, res) => {
-  try {
-    const email = 'admin@skillyme.com';
-    console.log('🔍 Checking admin status for:', email);
-    
-    const admin = await Admin.findByEmail(email);
-    
-    if (!admin) {
-      console.log('❌ Admin not found, creating new admin...');
-      
-      // Create the admin
-      const newAdmin = await Admin.create({
-        name: 'Admin User',
-        email: 'admin@skillyme.com',
-        password: 'Skillyme@2025',
-        role: 'admin'
-      });
-      
-      console.log('✅ Admin created successfully:', newAdmin.id);
-      
-      return res.json({
-        success: true,
-        message: 'Admin created successfully',
-        data: {
-          admin: {
-            id: newAdmin.id,
-            name: newAdmin.name,
-            email: newAdmin.email,
-            role: newAdmin.role
-          }
-        }
-      });
-    }
-    
-    console.log('✅ Admin exists:', { id: admin.id, email: admin.email });
-    
-    res.json({
-      success: true,
-      message: 'Admin exists',
-      data: {
-        admin: {
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          role: admin.role,
-          is_active: admin.is_active
-        }
-      }
-    });
-  } catch (error) {
-    console.error('❌ Debug admin error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Debug failed',
-      error: error.message
-    });
-  }
-};
 
 // ========================================
 // EXPORTS
@@ -377,8 +302,5 @@ module.exports = {
   // Alternative authentication methods
   simpleLogin,
   ultraSimpleLogin,
-  cleanLogin,
-  
-  // Debug methods
-  debugAdmin
+  cleanLogin
 };

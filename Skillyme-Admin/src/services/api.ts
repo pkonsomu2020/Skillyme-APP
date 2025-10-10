@@ -186,22 +186,12 @@ const apiRequest = async <T>(
 
 // Admin Authentication API
 export const adminAuthApi = {
-  // Clean authentication method (working perfectly)
+  // Clean authentication method
   login: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
-    if (environment.isDevelopment) {
-      console.log("🔍 DEBUG: adminAuthApi.login called with:", { email, password: "***" });
-      console.log("🔍 DEBUG: Making request to /admin/auth/clean-login");
-    }
-
-    const result = await apiRequest<{ token: string; admin: Admin }>('/admin/auth/clean-login', {
+    return await apiRequest<{ token: string; admin: Admin }>('/admin/auth/clean-login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }, false); // Don't require auth for login
-
-    if (environment.isDevelopment) {
-      console.log("🔍 DEBUG: API response:", result);
-    }
-    return result;
   },
 
   getProfile: async (): Promise<ApiResponse<{ admin: Admin }>> => {
