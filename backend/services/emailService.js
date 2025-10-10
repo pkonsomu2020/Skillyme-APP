@@ -61,79 +61,117 @@ class EmailService {
 
     // Email sending in progress
 
-    // Send via SendGrid
+    // Send via SendGrid with enhanced deliverability
     if (process.env.SENDGRID_API_KEY) {
       console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
-      // Attempting to send via SendGrid
       try {
-        // Use a verified sender email or fallback to a default
-        const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@skillyme.com';
+        const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'skillyme25@gmail.com';
         
         const msg = {
-          to: to,
-          from: fromEmail, // Simple string format to prevent double display
-          subject: subject,
-          text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
-          html: html,
-          // Minimal headers to avoid spam filters
-          headers: {
-            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
+          to: sanitizedTo,
+          from: fromEmail,
+          subject: sanitizedSubject,
+          text: sanitizedText || sanitizedHtml.replace(/<[^>]*>/g, ''),
+          html: sanitizedHtml,
+          
+          // Disable all tracking for better deliverability
+          tracking_settings: {
+            click_tracking: { enable: false },
+            open_tracking: { enable: false },
+            subscription_tracking: { enable: false }
+          },
+          
+          // Disable spam check to avoid false positives
+          mail_settings: {
+            spam_check: { enable: false }
           }
         };
 
+        console.log('📧 [SENDGRID] Sending with enhanced deliverability settings');
+        console.log('   From:', fromEmail);
+        console.log('   To:', sanitizedTo);
+        console.log('   Subject:', sanitizedSubject);
+        
         const result = await sgMail.send(msg);
-        return { success: true, messageId: result[0].headers['x-message-id'] };
+        const messageId = result[0].headers['x-message-id'];
+        
+        console.log('✅ Email sent successfully via SendGrid');
+        console.log('   Message ID:', messageId);
+        console.log('   Status Code:', result[0].statusCode);
+        
+        return { 
+          success: true, 
+          messageId: messageId,
+          provider: 'sendgrid',
+          statusCode: result[0].statusCode
+        };
       } catch (error) {
         console.error('❌ SendGrid failed:', error.message);
-        console.error('❌ SendGrid error details:', error.response?.body);
-        console.error('❌ SendGrid status code:', error.response?.statusCode);
-        console.error('❌ SendGrid from email:', fromEmail);
         
-        // If it's a forbidden error, try with a different approach
-        if (error.message.includes('Forbidden') || error.response?.statusCode === 403) {
-          console.log('📧 [SENDGRID] Forbidden error - trying with different sender configuration...');
+        if (error.response?.body) {
+          console.error('❌ SendGrid error details:', JSON.stringify(error.response.body, null, 2));
           
-          try {
-            // Try with a simpler configuration
-            const simpleMsg = {
-              to: to,
-              from: fromEmail, // Use the same from email
-              subject: subject,
-              text: text || html.replace(/<[^>]*>/g, ''),
-              html: html
-            };
-            
-            const result = await sgMail.send(simpleMsg);
-            console.log('✅ Email sent successfully via SendGrid (fallback):', result[0].headers['x-message-id']);
-            return { success: true, messageId: result[0].headers['x-message-id'] };
-          } catch (fallbackError) {
-            console.error('❌ SendGrid fallback also failed:', fallbackError.message);
+          // Check for specific SendGrid errors
+          const errorBody = error.response.body;
+          if (errorBody.errors) {
+            errorBody.errors.forEach(err => {
+              console.error(`   Error: ${err.message} (${err.field})`);
+            });
           }
         }
+        
+        console.error('❌ SendGrid status code:', error.response?.statusCode);
+        
+        // Continue to Gmail SMTP fallback
       }
     }
 
-    // Try Gmail SMTP as fallback
+    // Try Gmail SMTP as fallback with enhanced deliverability
     if (this.nodemailerTransporter) {
       console.log('📧 [GMAIL SMTP] Attempting to send via Gmail SMTP...');
       try {
         const mailOptions = {
-          from: process.env.GMAIL_USER, // Simple string format
-          to: to,
-          subject: subject,
-          text: text || html.replace(/<[^>]*>/g, ''),
-          html: html,
-          // Minimal headers to avoid spam filters
+          from: process.env.GMAIL_USER, // Simple format
+          to: sanitizedTo, // Simple format
+          replyTo: process.env.GMAIL_USER,
+          subject: sanitizedSubject,
+          text: sanitizedText || sanitizedHtml.replace(/<[^>]*>/g, ''),
+          html: sanitizedHtml,
+          
+          // Minimal headers for inbox delivery
           headers: {
-            'List-Unsubscribe': '<mailto:unsubscribe@skillyme.com>'
-          }
+            'X-Priority': '1',
+            'Importance': 'high',
+            'List-Unsubscribe': `<mailto:${process.env.GMAIL_USER}?subject=Unsubscribe>`
+          },
+          
+          // Message options
+          messageId: `<${Date.now()}.${crypto.randomBytes(8).toString('hex')}@skillyme.com>`,
+          date: new Date(),
+          encoding: 'utf8'
         };
 
+        console.log('📧 [GMAIL SMTP] Sending with enhanced headers');
+        console.log('   From:', process.env.GMAIL_USER);
+        console.log('   To:', sanitizedTo);
+        console.log('   Subject:', sanitizedSubject);
+        
         const result = await this.nodemailerTransporter.sendMail(mailOptions);
-        console.log('✅ Email sent successfully via Gmail SMTP:', result.messageId);
-        return { success: true, messageId: result.messageId };
+        
+        console.log('✅ Email sent successfully via Gmail SMTP');
+        console.log('   Message ID:', result.messageId);
+        console.log('   Response:', result.response);
+        
+        return { 
+          success: true, 
+          messageId: result.messageId,
+          provider: 'gmail-smtp',
+          response: result.response
+        };
       } catch (error) {
         console.error('❌ Gmail SMTP failed:', error.message);
+        console.error('   Error code:', error.code);
+        console.error('   Command:', error.command);
       }
     }
 
@@ -341,72 +379,31 @@ class EmailService {
     return await this.sendEmail(userEmail, subject, html);
   }
 
-  // Email template for password reset
+  // Email template for password reset - Optimized for inbox delivery
   async sendPasswordResetEmail(userEmail, userName, resetUrl) {
-    const subject = 'Password Reset Request - Skillyme Account';
+    const subject = 'Account access';
     
+    // Simple text version for better deliverability
+    const text = `Hi ${userName},
+
+Your password reset link: ${resetUrl}
+
+This link expires in 1 hour.
+
+Thanks,
+Skillyme Team`;
+    
+    // Minimal HTML for better deliverability
     const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Reset - Skillyme</title>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Password Reset Request</h1>
-            <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Skillyme Career Platform</p>
-          </div>
-          
-          <!-- Content -->
-          <div style="padding: 40px 30px;">
-            <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">Hello ${userName},</h2>
-            
-            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-              We received a request to reset the password for your Skillyme account. If you made this request, please click the button below to reset your password.
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background: #667eea; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px; transition: background-color 0.3s;">
-                Reset My Password
-              </a>
-            </div>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 30px 0; border-left: 4px solid #667eea;">
-              <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">
-                <strong>Security Notice:</strong> This password reset link will expire in 1 hour for your security.
-              </p>
-            </div>
-            
-            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
-              If you didn't request this password reset, please ignore this email. Your password will remain unchanged and your account is secure.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #e9ecef; margin: 30px 0;">
-            
-            <p style="color: #999999; font-size: 12px; text-align: center; margin: 0;">
-              If the button doesn't work, copy and paste this link into your browser:<br>
-              <a href="${resetUrl}" style="color: #667eea; word-break: break-all; text-decoration: none;">${resetUrl}</a>
-            </p>
-          </div>
-          
-          <!-- Footer -->
-          <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
-            <p style="color: #999999; font-size: 12px; margin: 0;">
-              © 2024 Skillyme. All rights reserved.<br>
-              This is an automated message, please do not reply to this email.
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
+      <div style="font-family: Arial, sans-serif; font-size: 14px; color: #000;">
+        <p>Hi ${userName},</p>
+        <p>Your password reset link: <a href="${resetUrl}" style="color: #1a0dab;">${resetUrl}</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>Thanks,<br>Skillyme Team</p>
+      </div>
     `;
 
-    return await this.sendEmail(userEmail, subject, html);
+    return await this.sendEmail(userEmail, subject, html, text);
   }
 }
 

@@ -1,10 +1,11 @@
-const supabase = require('../config/supabase');
+const { supabaseServiceRole } = require('../config/supabase');
 const crypto = require('crypto');
 
 class PasswordReset {
   static async create(userId, token, expiresAt) {
     try {
-      const { data, error } = await supabase
+      // Use service role to bypass RLS for password resets
+      const { data, error } = await supabaseServiceRole
         .from('password_resets')
         .insert([{
           user_id: userId,
@@ -25,7 +26,8 @@ class PasswordReset {
 
   static async findByToken(token) {
     try {
-      const { data: rows, error } = await supabase
+      // Use service role to bypass RLS for password resets
+      const { data: rows, error } = await supabaseServiceRole
         .from('password_resets')
         .select(`
           *,
@@ -46,7 +48,8 @@ class PasswordReset {
 
   static async deleteByToken(token) {
     try {
-      const { data, error } = await supabase
+      // Use service role to bypass RLS for password resets
+      const { data, error } = await supabaseServiceRole
         .from('password_resets')
         .delete()
         .eq('token', token)
@@ -63,7 +66,8 @@ class PasswordReset {
 
   static async deleteByUserId(userId) {
     try {
-      const { data, error } = await supabase
+      // Use service role to bypass RLS for password resets
+      const { data, error } = await supabaseServiceRole
         .from('password_resets')
         .delete()
         .eq('user_id', userId)
@@ -80,7 +84,8 @@ class PasswordReset {
 
   static async cleanupExpired() {
     try {
-      const { data, error } = await supabase
+      // Use service role to bypass RLS for password resets
+      const { data, error } = await supabaseServiceRole
         .from('password_resets')
         .delete()
         .lt('expires_at', new Date().toISOString())

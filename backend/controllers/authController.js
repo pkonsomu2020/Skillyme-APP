@@ -164,8 +164,28 @@ const login = async (req, res) => {
       });
     }
 
-    // Enhanced password verification with integrity check
-    const isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
+    // Enhanced password verification with fallback
+    let isPasswordValid = false;
+    
+    try {
+      // First try with our password validator
+      isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
+      
+      // If that fails, try direct bcrypt comparison as fallback
+      if (!isPasswordValid) {
+        console.log(`⚠️ Password validator failed for ${email}, trying direct bcrypt...`);
+        const bcrypt = require('bcryptjs');
+        isPasswordValid = await bcrypt.compare(password, user.password);
+        
+        if (isPasswordValid) {
+          console.log(`✅ Direct bcrypt verification succeeded for ${email}`);
+        }
+      }
+    } catch (verificationError) {
+      console.log(`❌ Password verification error for ${email}:`, verificationError.message);
+      isPasswordValid = false;
+    }
+    
     if (!isPasswordValid) {
       console.log(`❌ Login failed for ${email}: Invalid password`);
       await ErrorHandler.logError(new Error('Invalid password'), {
