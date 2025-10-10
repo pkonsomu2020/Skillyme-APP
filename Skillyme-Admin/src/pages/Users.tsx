@@ -6,56 +6,54 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { Search, UserPlus, Mail, Phone, Calendar, MapPin } from "lucide-react"
+import { adminApi, User } from "@/services/api"
 
-interface User {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  location?: string
-  joinDate: string
+interface UserWithStats extends User {
   status: 'active' | 'inactive' | 'pending'
   totalBookings: number
   lastActivity?: string
+  location?: string
 }
 
 export default function Users() {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<UserWithStats[]>([])
   const { toast } = useToast()
 
-  // Fetch users data
+  // Fetch users data using the API service
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem("adminToken")
       
-      if (!token) {
-        throw new Error("No authentication token found")
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
+      const response = await adminApi.users.getAllUsers()
       
-      if (data.success && Array.isArray(data.data)) {
-        setUsers(data.data)
-        setFilteredUsers(data.data)
+      if (response.success && response.data?.users) {
+        // Transform the API data to match our component interface
+        const transformedUsers: UserWithStats[] = response.data.users.map(user => ({
+          ...user,
+          status: 'active' as const, // Default status since it's not in the API
+          totalBookings: 0, // This would need to come from a separate endpoint
+          lastActivity: user.created_at, // Use created_at as placeholder
+          joinDate: user.created_at,
+          location: user.county || user.country,
+        }))
+        
+        setUsers(transformedUsers)
+        setFilteredUsers(transformedUsers)
       } else {
-        console.warn("Unexpected API response format:", data)
+        console.warn("Unexpected API response format:", response)
         setUsers([])
         setFilteredUsers([])
+        
+        if (!response.success) {
+          toast({
+            title: "Error",
+            description: response.error || "Failed to load users data",
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
       console.error("Error fetching users:", error)
@@ -79,7 +77,9 @@ export default function Users() {
       const filtered = users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.phone && user.phone.includes(searchTerm))
+        (user.phone && user.phone.includes(searchTerm)) ||
+        (user.field_of_study && user.field_of_study.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.institution && user.institution.toLowerCase().includes(searchTerm.toLowerCase()))
       )
       setFilteredUsers(filtered)
     }
@@ -214,8 +214,22 @@ export default function Users() {
                   
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-3 w-3 text-muted-foreground" />
-                    <span>Joined {formatDate(user.joinDate)}</span>
+                    <span>Joined {formatDate(user.created_at)}</span>
                   </div>
+                  
+                  {user.field_of_study && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Field:</span>
+                      <span className="truncate">{user.field_of_study}</span>
+                    </div>
+                  )}
+                  
+                  {user.institution && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Institution:</span>
+                      <span className="truncate">{user.institution}</span>
+                    </div>
+                  )}
                   
                   <div className="pt-2 border-t">
                     <div className="flex justify-between items-center text-sm">
