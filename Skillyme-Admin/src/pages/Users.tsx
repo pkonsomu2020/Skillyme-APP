@@ -62,9 +62,9 @@ export default function Users() {
           field_of_study: fieldFilter || undefined,
           institution: institutionFilter || undefined,
         })
-        
+
         console.log('📊 Users API response:', response)
-        
+
         if (response && response.success && response.data && response.data.users) {
           console.log('✅ Users loaded successfully:', response.data.users.length, 'users')
           setUsers(response.data.users)
@@ -101,7 +101,7 @@ export default function Users() {
           field_of_study: fieldFilter || undefined,
           institution: institutionFilter || undefined,
         })
-        
+
         if (response && response.success && response.data && response.data.users) {
           setUsers(response.data.users)
         } else {
@@ -183,8 +183,8 @@ export default function Users() {
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input 
-              placeholder="Search users..." 
+            <Input
+              placeholder="Search users..."
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -242,38 +242,38 @@ export default function Users() {
                 </TableRow>
               ) : (
                 users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phone}</TableCell>
-                  <TableCell>{user.field_of_study}</TableCell>
-                  <TableCell>{user.institution}</TableCell>
-                  <TableCell>
-                    <Badge variant="default">
-                      Active
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>View History</DropdownMenuItem>
-                        <DropdownMenuItem>Send Email</DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-destructive"
-                          onClick={() => handleToggleUserStatus(user.id, false)}
-                        >
-                          Suspend Account
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone}</TableCell>
+                    <TableCell>{user.field_of_study}</TableCell>
+                    <TableCell>{user.institution}</TableCell>
+                    <TableCell>
+                      <Badge variant="default">
+                        Active
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>View Details</DropdownMenuItem>
+                          <DropdownMenuItem>View History</DropdownMenuItem>
+                          <DropdownMenuItem>Send Email</DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleToggleUserStatus(user.id, false)}
+                          >
+                            Suspend Account
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
             </TableBody>
