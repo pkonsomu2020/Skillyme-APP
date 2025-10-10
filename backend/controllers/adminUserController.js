@@ -314,6 +314,173 @@ const getUserStats = async (req, res) => {
   }
 };
 
+// Delete user (for cleanup purposes)
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // First check if user exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .eq('id', id)
+      .single();
+
+    if (checkError) {
+      if (checkError.code === 'PGRST116') {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      throw checkError;
+    }
+
+    // Delete related records first (to maintain referential integrity)
+    // Delete user sessions
+    const { error: sessionError } = await supabase
+      .from('user_sessions')
+      .delete()
+      .eq('user_id', id);
+
+    if (sessionError) {
+      console.warn('Error deleting user sessions:', sessionError);
+    }
+
+    // Delete payments
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .delete()
+      .eq('user_id', id);
+
+    if (paymentError) {
+      console.warn('Error deleting user payments:', paymentError);
+    }
+
+    // Finally delete the user
+    const { error: deleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully',
+      data: {
+        deletedUser: existingUser
+      }
+    });
+  } catch (error) {
+    await ErrorHandler.logError(error, {
+      endpoint: `/api/admin/users/${req.params.id}`,
+      adminId: req.admin?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete user',
+      error: error.message
+    });
+  }
+};
+
+// Bulk delete test users and reorganize IDs
+const cleanupTestUsers = async (req, res) => {
+  try {
+    // Identify test users based on patterns
+    const testPatterns = [
+      'test.', 'debug.', 'enhanced.', 'schema.test', 'direct.test', 
+      'api.test', 'fixed.test', 'perftest', 'simple.test', '@skillyme.com',
+      'Test User', 'Debug Test User', 'API Test User', 'Schema Test User',
+      'Direct Test User', 'Fixed Test User', 'Performance Test User',
+      'Simple Test User', 'Test Enhanced User'
+    ];
+
+    // Get all users to identify test users
+    const { data: allUsers, error: fetchError } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .order('id', { ascending: true });
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    // Identify test users
+    const testUsers = allUsers.filter(user => {
+      const nameMatch = testPatterns.some(pattern => 
+        user.name.toLowerCase().includes(pattern.toLowerCase())
+      );
+      const emailMatch = testPatterns.some(pattern => 
+        user.email.toLowerCase().includes(pattern.toLowerCase())
+      );
+      return nameMatch || emailMatch;
+    });
+
+    console.log(`Found ${testUsers.length} test users to delete:`, testUsers.map(u => u.email));
+
+    // Delete test users
+    const deletedUsers = [];
+    for (const testUser of testUsers) {
+      try {
+        // Delete related records first
+        await supabase.from('user_sessions').delete().eq('user_id', testUser.id);
+        await supabase.from('payments').delete().eq('user_id', testUser.id);
+        
+        // Delete the user
+        const { error: deleteError } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', testUser.id);
+
+        if (!deleteError) {
+          deletedUsers.push(testUser);
+        }
+      } catch (error) {
+        console.error(`Error deleting user ${testUser.id}:`, error);
+      }
+    }
+
+    // Get remaining users for ID reorganization
+    const { data: remainingUsers, error: remainingError } = await supabase
+      .from('users')
+      .select('id, name, email, phone, country, county, field_of_study, institution, level_of_study, preferred_name, date_of_birth, course_of_study, degree, year_of_study, primary_field_interest, signup_source, created_at, updated_at, password')
+      .order('created_at', { ascending: true });
+
+    if (remainingError) {
+      throw remainingError;
+    }
+
+    // Note: ID reorganization would require more complex operations
+    // For now, we'll just return the cleanup results
+    res.json({
+      success: true,
+      message: 'Test users cleanup completed',
+      data: {
+        deletedCount: deletedUsers.length,
+        deletedUsers: deletedUsers,
+        remainingCount: remainingUsers.length,
+        note: 'ID reorganization requires additional database operations'
+      }
+    });
+  } catch (error) {
+    await ErrorHandler.logError(error, {
+      endpoint: '/api/admin/users/cleanup',
+      adminId: req.admin?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cleanup test users',
+      error: error.message
+    });
+  }
+};
+
 // Get filter options for users
 const getFilterOptions = async (req, res) => {
   try {
@@ -395,5 +562,7 @@ module.exports = {
   getUserById,
   updateUserStatus,
   getUserStats,
-  getFilterOptions
+  getFilterOptions,
+  deleteUser,
+  cleanupTestUsers
 };

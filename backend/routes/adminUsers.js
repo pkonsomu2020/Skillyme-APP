@@ -6,7 +6,9 @@ const {
   getUserById,
   updateUserStatus,
   getUserStats,
-  getFilterOptions
+  getFilterOptions,
+  deleteUser,
+  cleanupTestUsers
 } = require('../controllers/adminUserController');
 
 const router = express.Router();
@@ -24,7 +26,9 @@ const statusValidation = [
 router.get('/', cleanAuth, getAllUsers);
 router.get('/stats', cleanAuth, getUserStats);
 router.get('/filter-options', cleanAuth, getFilterOptions);
+router.post('/cleanup', cleanAuth, cleanupTestUsers);
 router.get('/:id', cleanAuth, idValidation, getUserById);
 router.put('/:id/status', cleanAuth, idValidation, statusValidation, updateUserStatus);
+router.delete('/:id', cleanAuth, idValidation, deleteUser);
 
 module.exports = router;

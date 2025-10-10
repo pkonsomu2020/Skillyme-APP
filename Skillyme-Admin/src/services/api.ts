@@ -72,8 +72,8 @@ export interface User {
   year_of_study?: string;
   primary_field_interest?: string;
   signup_source?: string;
-  // is_active: boolean; // Field doesn't exist in database
   created_at: string;
+  updated_at?: string;
 }
 
 export interface DashboardStats {
@@ -333,6 +333,18 @@ export const usersApi = {
 
   getUserFilterOptions: async (): Promise<ApiResponse<{ field_of_study: string[]; institution: string[] }>> => {
     return apiRequest<{ field_of_study: string[]; institution: string[] }>('/admin/users/filter-options');
+  },
+
+  deleteUser: async (id: number): Promise<ApiResponse<void>> => {
+    return apiRequest<void>(`/admin/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  cleanupTestUsers: async (): Promise<ApiResponse<{ deletedCount: number; deletedUsers: any[]; remainingCount: number }>> => {
+    return apiRequest<{ deletedCount: number; deletedUsers: any[]; remainingCount: number }>('/admin/users/cleanup', {
+      method: 'POST',
+    });
   },
 };
 
