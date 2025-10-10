@@ -24,22 +24,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (token) {
           // Set authenticated state immediately to avoid multiple API calls
           setIsAuthenticated(true)
-          // Verify token with backend in background
+          // Verify token with backend in background (but don't logout on failure)
           try {
             const response = await adminApi.auth.getProfile()
             if (response.success && response.data?.admin) {
               setAdmin(response.data.admin)
             } else {
-              // Invalid token, clear everything
+              console.warn("Profile fetch failed, but keeping token (might be network issue)")
+              // Don't clear token immediately - could be network issue
+              // Only clear if it's a definitive 401 error
+            }
+          } catch (error) {
+            console.warn("Token verification failed (network issue?):", error)
+            // Don't clear token on network errors - only on 401
+            if (error instanceof Error && error.message.includes('401')) {
               localStorage.removeItem("adminToken")
               setIsAuthenticated(false)
               setAdmin(null)
             }
-          } catch (error) {
-            console.error("Token verification failed:", error)
-            localStorage.removeItem("adminToken")
-            setIsAuthenticated(false)
-            setAdmin(null)
           }
         } else {
           // No token, ensure clean state

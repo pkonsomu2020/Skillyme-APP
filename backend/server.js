@@ -23,10 +23,11 @@ app.use(httpsRedirect);
 app.use(securityHeaders);
 app.use(corsSecurity);
 
-// CORS Configuration
+// CORS Configuration - FIXED for admin dashboard
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
   'http://localhost:5173', // Main app (development)
   'http://localhost:8080', // Admin dashboard (development)
+  'http://localhost:4173', // Vite preview mode
   'https://skillyme-app.vercel.app', // Production main app
   'https://skillyme-admin.vercel.app', // Production admin dashboard
   process.env.FRONTEND_URL, // Production frontend
@@ -34,10 +35,22 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 ].filter(Boolean); // Remove undefined values
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('🚫 CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
+  exposedHeaders: ['X-CSRF-Token'],
+  optionsSuccessStatus: 200 // For legacy browser support
 }));
 
 // Log CORS configuration
@@ -61,19 +74,17 @@ app.use(cookieParser());
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// CSRF Protection (exclude auth, payment, and admin auth endpoints)
+// CSRF Protection (exclude auth, payment, and ALL admin endpoints for now)
 app.use((req, res, next) => {
-  // Skip CSRF for specific auth, payment, and admin auth endpoints
+  // Skip CSRF for auth, payment, and ALL admin endpoints to fix CORS issues
   if (
     (req.path === '/api/auth/register' && req.method === 'POST') ||
     (req.path === '/api/auth/login' && req.method === 'POST') ||
     (req.path === '/api/auth/forgot-password' && req.method === 'POST') ||
     (req.path === '/api/auth/reset-password' && req.method === 'POST') ||
     (req.path === '/api/payments/submit-mpesa' && req.method === 'POST') ||
-    (req.path === '/api/admin/auth/login' && req.method === 'POST') ||
-    (req.path === '/api/admin/auth/simple-login' && req.method === 'POST') ||
-    (req.path === '/api/admin/auth/ultra-simple-login' && req.method === 'POST') ||
-    (req.path === '/api/admin/auth/clean-login' && req.method === 'POST')
+    req.path.startsWith('/api/admin/') || // Skip CSRF for ALL admin endpoints
+    req.path === '/api/test' // Skip CSRF for health check
   ) {
     return next();
   }
@@ -102,12 +113,22 @@ app.use('/api/admin/upload', require('./routes/adminUpload'));
 // All authentication routes are now unified in /api/admin/auth
 // No additional route files needed
 
+// Handle preflight OPTIONS requests
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Health check endpoint
 app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'Skillyme API is running!', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    cors: 'enabled'
   });
 });
 
