@@ -12,7 +12,8 @@ const {
   updateProfile,
   simpleLogin,
   ultraSimpleLogin,
-  cleanLogin
+  cleanLogin,
+  debugAdmin
 } = require('../controllers/adminAuthController');
 
 const router = express.Router();
@@ -57,6 +58,13 @@ router.get('/ultra-simple-profile', ultraSimpleAuth, getProfile);
 // Clean authentication routes (bypasses CSRF)
 router.post('/clean-login', cleanLogin);
 router.get('/clean-profile', cleanAuth, getProfile);
+
+// ========================================
+// DEBUG ROUTES
+// ========================================
+
+// Debug admin status and create if needed
+router.get('/debug-admin', debugAdmin);
 
 // ========================================
 // EXPORTS

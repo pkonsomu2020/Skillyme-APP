@@ -1,5 +1,7 @@
 // Admin API Service for Backend Communication
-import environment from '../../config/environment.js';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import environment from '../../config/environment';
 
 const API_BASE_URL = environment.apiConfig.baseURL;
 
@@ -99,17 +101,46 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('adminToken');
 };
 
+// Helper function to validate token (simplified since tokens never expire)
+const validateToken = (): boolean => {
+  const token = getAuthToken();
+  if (!token) return false;
+
+  // Since we removed JWT expiration, just check if token exists and is valid format
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+
+    // Try to parse the payload to ensure it's a valid JWT
+    JSON.parse(atob(parts[1]));
+    return true;
+  } catch (error: unknown) {
+    console.warn('🔐 Invalid token format, removing from storage');
+    localStorage.removeItem('adminToken');
+    return false;
+  }
+};
+
 // Helper function to make API requests
 const apiRequest = async <T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  requireAuth: boolean = true
 ): Promise<ApiResponse<T>> => {
+  // Only validate token if authentication is required (skip for login endpoints)
+  if (requireAuth && !validateToken()) {
+    return {
+      success: false,
+      error: 'Authentication required'
+    };
+  }
+
   const token = getAuthToken();
-  
+
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && requireAuth && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
@@ -118,8 +149,19 @@ const apiRequest = async <T>(
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const data = await response.json();
-    
+
     if (!response.ok) {
+      // Handle 401 Unauthorized - redirect to login
+      if (response.status === 401) {
+        console.warn('🔐 Token expired or invalid, redirecting to login...');
+        localStorage.removeItem('adminToken');
+        window.location.href = '/login';
+        return {
+          success: false,
+          error: 'Authentication required'
+        };
+      }
+
       // Enhanced error logging for debugging
       console.error(`❌ API Error: ${endpoint}`, {
         status: response.status,
@@ -128,12 +170,12 @@ const apiRequest = async <T>(
         hasToken: !!token,
         tokenLength: token?.length || 0
       });
-      
+
       throw new Error(data.message || `HTTP error! status: ${response.status}`);
     }
-    
+
     return data;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ API request failed:', error);
     return {
       success: false,
@@ -146,24 +188,28 @@ const apiRequest = async <T>(
 export const adminAuthApi = {
   // Clean authentication method (working perfectly)
   login: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
-    console.log("🔍 DEBUG: adminAuthApi.login called with:", { email, password: "***" });
-    console.log("🔍 DEBUG: Making request to /admin/auth/clean-login");
-    
-    const result = await apiRequest('/admin/auth/clean-login', {
+    if (environment.isDevelopment) {
+      console.log("🔍 DEBUG: adminAuthApi.login called with:", { email, password: "***" });
+      console.log("🔍 DEBUG: Making request to /admin/auth/clean-login");
+    }
+
+    const result = await apiRequest<{ token: string; admin: Admin }>('/admin/auth/clean-login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    });
-    
-    console.log("🔍 DEBUG: API response:", result);
+    }, false); // Don't require auth for login
+
+    if (environment.isDevelopment) {
+      console.log("🔍 DEBUG: API response:", result);
+    }
     return result;
   },
 
   getProfile: async (): Promise<ApiResponse<{ admin: Admin }>> => {
-    return apiRequest('/admin/auth/profile');
+    return apiRequest<{ admin: Admin }>('/admin/auth/profile');
   },
 
   updateProfile: async (updates: Partial<Admin>): Promise<ApiResponse<{ admin: Admin }>> => {
-    return apiRequest('/admin/auth/profile', {
+    return apiRequest<{ admin: Admin }>('/admin/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
@@ -171,29 +217,29 @@ export const adminAuthApi = {
 
   // Clean login method (alias for consistency)
   cleanLogin: async (email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> => {
-    return apiRequest('/admin/auth/clean-login', {
+    return apiRequest<{ token: string; admin: Admin }>('/admin/auth/clean-login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    });
+    }, false); // Don't require auth for login
   },
 };
 
 // Dashboard Analytics API
 export const analyticsApi = {
   getDashboardStats: async (): Promise<ApiResponse<{ overview: DashboardStats }>> => {
-    return apiRequest('/admin/analytics/dashboard');
+    return apiRequest<{ overview: DashboardStats }>('/admin/analytics/dashboard');
   },
 
   getSignupTrends: async (): Promise<ApiResponse<any[]>> => {
-    return apiRequest('/admin/analytics/signup-trends');
+    return apiRequest<any[]>('/admin/analytics/signup-trends');
   },
 
   getSessionPerformance: async (): Promise<ApiResponse<any[]>> => {
-    return apiRequest('/admin/analytics/session-performance');
+    return apiRequest<any[]>('/admin/analytics/session-performance');
   },
 
   getUserDemographics: async (): Promise<ApiResponse<{ fieldOfStudy: any[]; signupSource: any[] }>> => {
-    return apiRequest('/admin/analytics/user-demographics');
+    return apiRequest<{ fieldOfStudy: any[]; signupSource: any[] }>('/admin/analytics/user-demographics');
   },
 };
 
@@ -215,50 +261,50 @@ export const sessionsApi = {
         }
       });
     }
-    
+
     const queryString = queryParams.toString();
-    return apiRequest(`/admin/sessions${queryString ? `?${queryString}` : ''}`);
+    return apiRequest<{ sessions: Session[]; count: number }>(`/admin/sessions${queryString ? `?${queryString}` : ''}`);
   },
 
   getSessionById: async (id: number): Promise<ApiResponse<Session>> => {
-    return apiRequest(`/admin/sessions/${id}`);
+    return apiRequest<Session>(`/admin/sessions/${id}`);
   },
 
   createSession: async (sessionData: Partial<Session>): Promise<ApiResponse<Session>> => {
-    return apiRequest('/admin/sessions', {
+    return apiRequest<Session>('/admin/sessions', {
       method: 'POST',
       body: JSON.stringify(sessionData),
     });
   },
 
   updateSession: async (id: number, updates: Partial<Session>): Promise<ApiResponse<Session>> => {
-    return apiRequest(`/admin/sessions/${id}`, {
+    return apiRequest<Session>(`/admin/sessions/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
   },
 
   deleteSession: async (id: number): Promise<ApiResponse<void>> => {
-    return apiRequest(`/admin/sessions/${id}`, {
+    return apiRequest<void>(`/admin/sessions/${id}`, {
       method: 'DELETE',
     });
   },
 
   markSessionCompleted: async (id: number): Promise<ApiResponse<Session>> => {
-    return apiRequest(`/admin/sessions/${id}/complete`, {
+    return apiRequest<Session>(`/admin/sessions/${id}/complete`, {
       method: 'PUT',
     });
   },
 
   toggleSessionActive: async (id: number, isActive: boolean): Promise<ApiResponse<Session>> => {
-    return apiRequest(`/admin/sessions/${id}/toggle-active`, {
+    return apiRequest<Session>(`/admin/sessions/${id}/toggle-active`, {
       method: 'PUT',
       body: JSON.stringify({ is_active: isActive }),
     });
   },
 
   getSessionAttendees: async (id: number): Promise<ApiResponse<any[]>> => {
-    return apiRequest(`/admin/sessions/${id}/attendees`);
+    return apiRequest<any[]>(`/admin/sessions/${id}/attendees`);
   },
 };
 
@@ -279,24 +325,24 @@ export const usersApi = {
         }
       });
     }
-    
+
     const queryString = queryParams.toString();
-    return apiRequest(`/admin/users${queryString ? `?${queryString}` : ''}`);
+    return apiRequest<{ users: User[]; count: number }>(`/admin/users${queryString ? `?${queryString}` : ''}`);
   },
 
   getUserById: async (id: number): Promise<ApiResponse<User>> => {
-    return apiRequest(`/admin/users/${id}`);
+    return apiRequest<User>(`/admin/users/${id}`);
   },
 
   toggleUserStatus: async (id: number, isActive: boolean): Promise<ApiResponse<User>> => {
-    return apiRequest(`/admin/users/${id}/status`, {
+    return apiRequest<User>(`/admin/users/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ is_active: isActive }),
     });
   },
 
   getUserFilterOptions: async (): Promise<ApiResponse<{ field_of_study: string[]; institution: string[] }>> => {
-    return apiRequest('/admin/users/filter-options');
+    return apiRequest<{ field_of_study: string[]; institution: string[] }>('/admin/users/filter-options');
   },
 };
 
@@ -310,7 +356,7 @@ export const notificationsApi = {
     sessionId?: number;
     fieldOfStudy?: string;
   }): Promise<ApiResponse<{ successfulSends: number; failedSends: number }>> => {
-    return apiRequest('/admin/notifications/send', {
+    return apiRequest<{ successfulSends: number; failedSends: number }>('/admin/notifications/send', {
       method: 'POST',
       body: JSON.stringify(notificationData),
     });
@@ -328,9 +374,9 @@ export const notificationsApi = {
         }
       });
     }
-    
+
     const queryString = queryParams.toString();
-    return apiRequest(`/admin/notifications/history${queryString ? `?${queryString}` : ''}`);
+    return apiRequest<{ notifications: Notification[]; count: number }>(`/admin/notifications/history${queryString ? `?${queryString}` : ''}`);
   },
 };
 
@@ -339,9 +385,9 @@ export const uploadApi = {
   uploadSessionPoster: async (file: File): Promise<ApiResponse<{ url: string }>> => {
     const formData = new FormData();
     formData.append('session_poster', file);
-    
+
     const token = getAuthToken();
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/admin/upload/session-poster`, {
         method: 'POST',
@@ -350,15 +396,15 @@ export const uploadApi = {
         },
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
-      
+
       return data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Upload failed:', error);
       return {
         success: false,
@@ -370,9 +416,9 @@ export const uploadApi = {
   uploadSessionThumbnail: async (file: File): Promise<ApiResponse<{ url: string }>> => {
     const formData = new FormData();
     formData.append('session_thumbnail', file);
-    
+
     const token = getAuthToken();
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/admin/upload/session-thumbnail`, {
         method: 'POST',
@@ -381,15 +427,15 @@ export const uploadApi = {
         },
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
-      
+
       return data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Upload failed:', error);
       return {
         success: false,
