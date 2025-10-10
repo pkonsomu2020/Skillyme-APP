@@ -50,20 +50,30 @@ export default function Users() {
         setLoading(true)
         setError(null)
 
+        console.log('🔍 Loading users with params:', {
+          search: searchTerm || undefined,
+          field_of_study: fieldFilter || undefined,
+          institution: institutionFilter || undefined,
+        })
+
         const response = await adminApi.users.getAllUsers({
           search: searchTerm || undefined,
           field_of_study: fieldFilter || undefined,
           institution: institutionFilter || undefined,
         })
         
+        console.log('📊 Users API response:', response)
+        
         if (response.success && response.data) {
-          setUsers(response.data.users)
+          console.log('✅ Users loaded successfully:', response.data.users?.length || 0, 'users')
+          setUsers(response.data.users || [])
         } else {
-          setError('Failed to load users')
+          console.error('❌ Users API failed:', response.error || response.message)
+          setError(response.error || response.message || 'Failed to load users')
         }
       } catch (err) {
-        console.error('Failed to load users:', err)
-        setError('Failed to load users')
+        console.error('❌ Failed to load users:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load users')
       } finally {
         setLoading(false)
       }
@@ -126,7 +136,11 @@ export default function Users() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
+            <div className="font-medium">Error loading users:</div>
+            <div className="text-sm mt-1">{error}</div>
+            <div className="text-xs mt-2 text-red-600">
+              Check the browser console for more details. Try refreshing the page.
+            </div>
           </div>
         )}
 

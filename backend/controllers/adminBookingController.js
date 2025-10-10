@@ -20,8 +20,7 @@ const getAllBookings = async (req, res) => {
       .select(`
         id, user_id, session_id, attendance_status, feedback, created_at,
         users!inner(id, name, email, phone, field_of_study, institution),
-        sessions!inner(id, title, date, time, recruiter, company, price),
-        payments!inner(payment_id, amount, status, mpesa_code, submission_date)
+        sessions!inner(id, title, date, time, recruiter, company, price)
       `)
       .order(sort_by, { ascending: sort_order === 'asc' })
       .range(offset, offset + limit - 1);
@@ -96,8 +95,7 @@ const getBookingById = async (req, res) => {
       .select(`
         id, user_id, session_id, attendance_status, feedback, created_at,
         users!inner(id, name, email, phone, field_of_study, institution, county, country),
-        sessions!inner(id, title, description, date, time, recruiter, company, price, google_meet_link),
-        payments!inner(payment_id, amount, actual_amount, status, mpesa_code, submission_date, full_mpesa_message)
+        sessions!inner(id, title, description, date, time, recruiter, company, price, google_meet_link)
       `)
       .eq('id', id)
       .single();
@@ -112,9 +110,20 @@ const getBookingById = async (req, res) => {
       throw error;
     }
 
+    // Get payment info separately if needed
+    const { data: payment } = await supabase
+      .from('payments')
+      .select('payment_id, amount, actual_amount, status, mpesa_code, submission_date, full_mpesa_message')
+      .eq('user_id', booking.user_id)
+      .eq('session_id', booking.session_id)
+      .single();
+
     res.json({
       success: true,
-      data: { booking }
+      data: { 
+        booking,
+        payment: payment || null
+      }
     });
   } catch (error) {
     await ErrorHandler.logError(error, {
