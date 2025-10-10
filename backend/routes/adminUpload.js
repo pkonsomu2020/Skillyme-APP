@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { authenticateAdmin } = require('../middleware/adminAuth');
+const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
 const {
   upload,
   uploadSessionPoster,
@@ -16,10 +16,10 @@ const sessionIdValidation = [
   body('session_id').isInt({ min: 1 }).withMessage('Valid session ID is required')
 ];
 
-// Routes
-router.post('/session-poster', sessionIdValidation, upload.single('poster'), uploadSessionPoster);
-router.post('/session-thumbnail', sessionIdValidation, upload.single('thumbnail'), uploadSessionThumbnail);
-router.delete('/session-poster', sessionIdValidation, deleteSessionPoster);
-router.get('/stats', getUploadStats);
+// Routes (protected with clean authentication)
+router.post('/session-poster', cleanAuth, sessionIdValidation, upload.single('poster'), uploadSessionPoster);
+router.post('/session-thumbnail', cleanAuth, sessionIdValidation, upload.single('thumbnail'), uploadSessionThumbnail);
+router.delete('/session-poster', cleanAuth, sessionIdValidation, deleteSessionPoster);
+router.get('/stats', cleanAuth, getUploadStats);
 
 module.exports = router;

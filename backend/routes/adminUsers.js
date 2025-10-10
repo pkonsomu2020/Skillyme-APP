@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { authenticateAdmin } = require('../middleware/adminAuth');
+const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
 const {
   getAllUsers,
   getUserById,
@@ -20,11 +20,11 @@ const statusValidation = [
   body('is_active').isBoolean().withMessage('is_active must be a boolean value')
 ];
 
-// Routes (all protected with admin authentication)
-router.get('/', authenticateAdmin, getAllUsers);
-router.get('/stats', authenticateAdmin, getUserStats);
-router.get('/filter-options', authenticateAdmin, getFilterOptions);
-router.get('/:id', authenticateAdmin, idValidation, getUserById);
-router.put('/:id/status', authenticateAdmin, idValidation, statusValidation, updateUserStatus);
+// Routes (all protected with clean admin authentication)
+router.get('/', cleanAuth, getAllUsers);
+router.get('/stats', cleanAuth, getUserStats);
+router.get('/filter-options', cleanAuth, getFilterOptions);
+router.get('/:id', cleanAuth, idValidation, getUserById);
+router.put('/:id/status', cleanAuth, idValidation, statusValidation, updateUserStatus);
 
 module.exports = router;

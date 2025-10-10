@@ -1,6 +1,6 @@
 const express = require('express');
 const { query } = require('express-validator');
-const { authenticateAdmin } = require('../middleware/adminAuth');
+const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
 const {
   getDashboardAnalytics,
   getSignupTrends,
@@ -18,13 +18,13 @@ const periodValidation = [
   query('period').optional().isInt({ min: 1, max: 365 }).withMessage('Period must be between 1 and 365 days')
 ];
 
-// Routes
-router.get('/dashboard', getDashboardAnalytics);
-router.get('/signup-trends', periodValidation, getSignupTrends);
-router.get('/sessions', getSessionAnalytics);
-router.get('/users', getUserAnalytics);
-router.get('/revenue', periodValidation, getRevenueAnalytics);
-router.get('/user-demographics', getUserDemographics);
-router.get('/session-performance', getSessionPerformance);
+// Routes (protected with clean authentication)
+router.get('/dashboard', cleanAuth, getDashboardAnalytics);
+router.get('/signup-trends', cleanAuth, periodValidation, getSignupTrends);
+router.get('/sessions', cleanAuth, getSessionAnalytics);
+router.get('/users', cleanAuth, getUserAnalytics);
+router.get('/revenue', cleanAuth, periodValidation, getRevenueAnalytics);
+router.get('/user-demographics', cleanAuth, getUserDemographics);
+router.get('/session-performance', cleanAuth, getSessionPerformance);
 
 module.exports = router;

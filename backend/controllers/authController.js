@@ -87,15 +87,14 @@ const register = async (req, res) => {
     // Log successful registration
     await TransactionLogger.logUserRegistration(userData, user.id);
 
-    // Generate JWT token
+    // Generate JWT token (NO EXPIRATION - permanent token)
     const token = jwt.sign(
       { 
         userId: user.id, 
         email: user.email,
         role: 'user'
       },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      JWT_SECRET
     );
 
     // User object is ready for response
@@ -207,15 +206,14 @@ const login = async (req, res) => {
     // Log successful login
     await TransactionLogger.logUserLogin(email, user.id, true);
 
-    // Generate JWT token
+    // Generate JWT token (NO EXPIRATION - permanent token)
     const token = jwt.sign(
       { 
         userId: user.id, 
         email: user.email,
         role: 'user'
       },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      JWT_SECRET
     );
 
     res.json({

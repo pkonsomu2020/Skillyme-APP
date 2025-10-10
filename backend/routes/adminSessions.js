@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { authenticateAdmin } = require('../middleware/adminAuth');
+const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
 const {
   getAllSessions,
   getSessionById,
@@ -47,12 +47,12 @@ const idValidation = [
   param('id').isInt({ min: 1 }).withMessage('Valid session ID is required')
 ];
 
-// Routes
-router.get('/', getAllSessions);
-router.get('/:id', idValidation, getSessionById);
-router.post('/', sessionValidation, createSession);
-router.put('/:id', idValidation, updateSessionValidation, updateSession);
-router.delete('/:id', idValidation, deleteSession);
-router.get('/:id/attendees', idValidation, getSessionAttendees);
+// Routes (protected with clean authentication)
+router.get('/', cleanAuth, getAllSessions);
+router.get('/:id', cleanAuth, idValidation, getSessionById);
+router.post('/', cleanAuth, sessionValidation, createSession);
+router.put('/:id', cleanAuth, idValidation, updateSessionValidation, updateSession);
+router.delete('/:id', cleanAuth, idValidation, deleteSession);
+router.get('/:id/attendees', cleanAuth, idValidation, getSessionAttendees);
 
 module.exports = router;

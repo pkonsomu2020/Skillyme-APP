@@ -11,7 +11,8 @@ if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
   console.error('❌ CRITICAL: JWT_SECRET not properly configured!');
   process.exit(1);
 }
-const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
+// JWT_EXPIRE removed - tokens will never expire for admin dashboard
+// const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 
 // ========================================
 // MAIN ADMIN AUTHENTICATION METHODS
@@ -54,15 +55,14 @@ const login = async (req, res) => {
     // Log successful login
     await TransactionLogger.logAdminLogin(email, admin.id, true);
 
-    // Generate JWT token
+    // Generate JWT token (NO EXPIRATION - permanent token)
     const token = jwt.sign(
       { 
         adminId: admin.id, 
         email: admin.email,
         role: 'admin'
       },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      JWT_SECRET
     );
 
     res.json({
@@ -126,8 +126,7 @@ const simpleLogin = async (req, res) => {
         email: admin.email,
         role: 'admin'
       },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      JWT_SECRET
     );
 
     res.json({
@@ -167,8 +166,7 @@ const ultraSimpleLogin = async (req, res) => {
 
     const token = jwt.sign(
       { adminId: admin.id, email: admin.email, role: 'admin' },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      JWT_SECRET
     );
 
     res.json({
@@ -208,8 +206,7 @@ const cleanLogin = async (req, res) => {
 
     const token = jwt.sign(
       { adminId: admin.id, email: admin.email, role: 'admin' },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      JWT_SECRET
     );
 
     res.json({

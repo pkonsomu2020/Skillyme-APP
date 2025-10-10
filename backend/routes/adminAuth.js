@@ -38,9 +38,9 @@ const updateProfileValidation = [
 // Main admin login (FIXED - removed strict validation)
 router.post('/login', login);
 
-// Admin profile routes (protected)
-router.get('/profile', authenticateAdmin, getProfile);
-router.put('/profile', authenticateAdmin, updateProfileValidation, updateProfile);
+// Admin profile routes (protected with clean auth)
+router.get('/profile', cleanAuth, getProfile);
+router.put('/profile', cleanAuth, updateProfileValidation, updateProfile);
 
 // ========================================
 // ALTERNATIVE AUTHENTICATION ROUTES
