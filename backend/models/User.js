@@ -48,6 +48,11 @@ class User {
     };
     
     try {
+      console.log('🔍 [USER CREATE DEBUG] Sanitized data:', {
+        ...sanitizedData,
+        password: sanitizedData.password ? '[REDACTED]' : 'MISSING'
+      });
+      
       const { data, error } = await supabase
         .from('users')
         .insert([sanitizedData])
@@ -58,6 +63,7 @@ class User {
         .single();
       
       if (error) {
+        console.error('❌ [USER CREATE DEBUG] Supabase error:', error);
         // Handle specific Supabase errors
         if (error.code === '23505') {
           throw new Error('User with this email already exists');
@@ -65,9 +71,10 @@ class User {
         throw error;
       }
       
+      console.log('✅ [USER CREATE DEBUG] User created successfully:', data.id);
       return data;
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('❌ [USER CREATE DEBUG] Error creating user:', error);
       throw error;
     }
   }

@@ -101,7 +101,7 @@ class PasswordValidator {
       }
       
       // Check if hash format is valid
-      if (!hashedPassword.startsWith('$2a$') && !hashedPassword.startsWith('$2b$')) {
+      if (!hashedPassword.startsWith('$2a') && !hashedPassword.startsWith('$2b')) {
         console.error('Invalid password hash format');
         return false;
       }

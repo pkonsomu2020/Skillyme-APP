@@ -1,11 +1,9 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const PasswordValidator = require('../middleware/passwordValidation');
 const ErrorHandler = require('../middleware/errorHandler');
 const TransactionLogger = require('../middleware/transactionLogger');
-const HashIntegrityChecker = require('../middleware/hashIntegrity');
 
 // SECURITY: Strong JWT secret validation
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -13,13 +11,20 @@ if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET === 'your_super_secret_j
   console.error('❌ CRITICAL: JWT_SECRET must be at least 32 characters and properly configured!');
   process.exit(1);
 }
-const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
+
 
 // Register user
 const register = async (req, res) => {
   try {
+    // Log the incoming request data for debugging
+    console.log('🔍 [REGISTER DEBUG] Incoming request body:', {
+      ...req.body,
+      password: req.body.password ? '[REDACTED]' : 'MISSING'
+    });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ [REGISTER DEBUG] Validation errors:', errors.array());
       await ErrorHandler.logError(new Error('Validation failed'), {
         endpoint: '/api/auth/register',
         errors: errors.array()
@@ -167,19 +172,8 @@ const login = async (req, res) => {
     let isPasswordValid = false;
     
     try {
-      // First try with our password validator
+      // Use password validator for verification
       isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
-      
-      // If that fails, try direct bcrypt comparison as fallback
-      if (!isPasswordValid) {
-        console.log(`⚠️ Password validator failed for ${email}, trying direct bcrypt...`);
-        const bcrypt = require('bcryptjs');
-        isPasswordValid = await bcrypt.compare(password, user.password);
-        
-        if (isPasswordValid) {
-          console.log(`✅ Direct bcrypt verification succeeded for ${email}`);
-        }
-      }
     } catch (verificationError) {
       console.log(`❌ Password verification error for ${email}:`, verificationError.message);
       isPasswordValid = false;
