@@ -361,8 +361,9 @@ export const notificationsApi = {
     recipients: string;
     sessionId?: number;
     fieldOfStudy?: string;
-  }): Promise<ApiResponse<{ successfulSends: number; failedSends: number }>> => {
-    return apiRequest<{ successfulSends: number; failedSends: number }>('/admin/notifications/send', {
+    institution?: string;
+  }): Promise<ApiResponse<{ totalRecipients: number; successful: number; failed: number }>> => {
+    return apiRequest<{ totalRecipients: number; successful: number; failed: number }>('/admin/notifications/send', {
       method: 'POST',
       body: JSON.stringify(notificationData),
     });
@@ -383,6 +384,10 @@ export const notificationsApi = {
 
     const queryString = queryParams.toString();
     return apiRequest<{ notifications: Notification[]; count: number }>(`/admin/notifications/history${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getRecipientOptions: async (): Promise<ApiResponse<{ fieldsOfStudy: string[]; institutions: string[] }>> => {
+    return apiRequest<{ fieldsOfStudy: string[]; institutions: string[] }>('/admin/notifications/recipient-options');
   },
 };
 

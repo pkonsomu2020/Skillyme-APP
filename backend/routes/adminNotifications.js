@@ -4,7 +4,8 @@ const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
 const {
   sendNotification,
   getNotificationHistory,
-  sendSessionReminder
+  sendSessionReminder,
+  getRecipientOptions
 } = require('../controllers/adminNotificationController');
 
 const router = express.Router();
@@ -34,5 +35,6 @@ const paginationValidation = [
 router.post('/send', cleanAuth, notificationValidation, sendNotification);
 router.get('/history', cleanAuth, paginationValidation, getNotificationHistory);
 router.post('/session-reminder', cleanAuth, sessionReminderValidation, sendSessionReminder);
+router.get('/recipient-options', cleanAuth, getRecipientOptions);
 
 module.exports = router;
