@@ -119,33 +119,12 @@ const sendNotification = async (req, res) => {
         // Create personalized message
         const personalizedMessage = message.replace(/\{name\}/g, recipientName);
 
-        await emailService.sendEmail({
-          to: user.email,
-          subject: subject,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
-                <h1 style="color: white; margin: 0;">Skillyme</h1>
-              </div>
-              <div style="padding: 30px; background: #f8f9fa;">
-                <h2 style="color: #333; margin-bottom: 20px;">${subject}</h2>
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  ${personalizedMessage.replace(/\n/g, '<br>')}
-                </div>
-                <div style="margin-top: 20px; text-align: center;">
-                  <p style="color: #666; font-size: 14px;">
-                    Best regards,<br>
-                    The Skillyme Team
-                  </p>
-                </div>
-              </div>
-              <div style="background: #333; color: white; padding: 15px; text-align: center; font-size: 12px;">
-                <p>© 2024 Skillyme. All rights reserved.</p>
-              </div>
-            </div>
-          `,
-          text: personalizedMessage
-        });
+        await emailService.sendNotificationEmail(
+          user.email,
+          recipientName,
+          subject,
+          personalizedMessage
+        );
 
         return { success: true, email: user.email };
       } catch (error) {
@@ -358,24 +337,12 @@ const sendSessionReminder = async (req, res) => {
         const recipientName = user.preferred_name || user.name;
         const personalizedMessage = message.replace(/\{name\}/g, recipientName);
 
-        await emailService.sendEmail({
-          to: user.email,
-          subject: subject,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
-                <h1 style="color: white; margin: 0;">Skillyme</h1>
-              </div>
-              <div style="padding: 30px; background: #f8f9fa;">
-                <h2 style="color: #333; margin-bottom: 20px;">${subject}</h2>
-                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  ${personalizedMessage.replace(/\n/g, '<br>')}
-                </div>
-              </div>
-            </div>
-          `,
-          text: personalizedMessage
-        });
+        await emailService.sendNotificationEmail(
+          user.email,
+          recipientName,
+          subject,
+          personalizedMessage
+        );
 
         return { success: true, email: user.email };
       } catch (error) {
