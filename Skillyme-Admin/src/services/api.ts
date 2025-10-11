@@ -100,6 +100,46 @@ export interface Notification {
   created_at: string;
 }
 
+export interface Booking {
+  id: number;
+  user_id: number;
+  session_id: number;
+  booking_status: 'pending' | 'confirmed' | 'cancelled';
+  payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_method?: string;
+  amount_paid?: number;
+  booking_date: string;
+  created_at: string;
+  updated_at: string;
+  users: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    field_of_study: string;
+    institution: string;
+  };
+  sessions: {
+    id: number;
+    title: string;
+    company: string;
+    recruiter: string;
+    datetime: string;
+    price: number;
+    description?: string;
+    google_meet_link?: string;
+  };
+}
+
+export interface BookingStats {
+  totalBookings: number;
+  recentBookings: number;
+  bookingStatusCounts: Record<string, number>;
+  paymentStatusCounts: Record<string, number>;
+  totalRevenue: number;
+  averageBookingValue: number;
+}
+
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
   return localStorage.getItem('adminToken');
@@ -363,9 +403,20 @@ export const notificationsApi = {
     fieldOfStudy?: string;
     institution?: string;
   }): Promise<ApiResponse<{ totalRecipients: number; successful: number; failed: number }>> => {
+    // Map frontend camelCase to backend snake_case
+    const backendData = {
+      type: notificationData.type,
+      subject: notificationData.subject,
+      message: notificationData.message,
+      recipients: notificationData.recipients,
+      session_id: notificationData.sessionId,
+      field_of_study: notificationData.fieldOfStudy,
+      institution: notificationData.institution,
+    };
+
     return apiRequest<{ totalRecipients: number; successful: number; failed: number }>('/admin/notifications/send', {
       method: 'POST',
-      body: JSON.stringify(notificationData),
+      body: JSON.stringify(backendData),
     });
   },
 
@@ -456,6 +507,53 @@ export const uploadApi = {
   },
 };
 
+// Bookings Management API
+export const bookingsApi = {
+  getAllBookings: async (params?: {
+    search?: string;
+    booking_status?: string;
+    payment_status?: string;
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<{ bookings: Booking[]; pagination: { page: number; limit: number; total: number; pages: number } }>> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+
+    const queryString = queryParams.toString();
+    return apiRequest<{ bookings: Booking[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`/admin/bookings${queryString ? `?${queryString}` : ''}`);
+  },
+
+  updateBookingStatus: async (id: number, updates: {
+    booking_status?: string;
+    payment_status?: string;
+    notes?: string;
+  }): Promise<ApiResponse<Booking>> => {
+    return apiRequest<Booking>(`/admin/bookings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  getBookingStats: async (): Promise<ApiResponse<BookingStats>> => {
+    return apiRequest<BookingStats>('/admin/bookings/stats');
+  },
+
+  sendBookingReminder: async (id: number, message?: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiRequest<{ message: string }>(`/admin/bookings/${id}/reminder`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: adminAuthApi,
@@ -463,5 +561,6 @@ export const adminApi = {
   sessions: sessionsApi,
   users: usersApi,
   notifications: notificationsApi,
+  bookings: bookingsApi,
   upload: uploadApi,
 };

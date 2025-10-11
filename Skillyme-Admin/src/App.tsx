@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Sessions from "./pages/Sessions";
 import Users from "./pages/Users";
 import Notifications from "./pages/Notifications";
+import Bookings from "./pages/Bookings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bookings"
+                  element={
+                    <ProtectedRoute>
+                      <Bookings />
                     </ProtectedRoute>
                   }
                 />

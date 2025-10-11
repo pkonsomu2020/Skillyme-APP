@@ -405,6 +405,213 @@ Skillyme Team`;
 
     return await this.sendEmail(userEmail, subject, html, text);
   }
+
+  // Send booking confirmation email
+  async sendBookingConfirmationEmail(userEmail, userName, sessionDetails, amountPaid) {
+    const subject = `Booking Confirmed: ${sessionDetails.title}`;
+    
+    const sessionDate = new Date(sessionDetails.datetime).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    const sessionTime = new Date(sessionDetails.datetime).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Skillyme</h1>
+          <p style="color: #6b7280; margin: 5px 0 0 0;">Career Development Platform</p>
+        </div>
+        
+        <div style="background-color: #f0f9ff; padding: 25px; border-radius: 8px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
+          <h2 style="color: #1e40af; margin: 0 0 15px 0; font-size: 24px;">🎉 Booking Confirmed!</h2>
+          <p style="color: #374151; font-size: 16px; margin: 0;">
+            Great news! Your booking has been confirmed and you're all set for the session.
+          </p>
+        </div>
+
+        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+          <h3 style="color: #111827; margin: 0 0 20px 0; font-size: 20px;">Session Details</h3>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Session:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.title}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Company:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.company}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Recruiter:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.recruiter}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Date:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDate}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Time:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionTime}</span>
+          </div>
+          
+          ${amountPaid ? `
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Amount Paid:</strong>
+            <span style="color: #059669; margin-left: 10px; font-weight: 600;">KES ${amountPaid.toLocaleString()}</span>
+          </div>
+          ` : ''}
+          
+          ${sessionDetails.google_meet_link ? `
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px;">
+            <strong style="color: #374151;">Join Link:</strong>
+            <br>
+            <a href="${sessionDetails.google_meet_link}" style="color: #2563eb; text-decoration: none; word-break: break-all;">
+              ${sessionDetails.google_meet_link}
+            </a>
+          </div>
+          ` : ''}
+        </div>
+
+        <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
+          <h4 style="color: #92400e; margin: 0 0 10px 0;">Important Reminders:</h4>
+          <ul style="color: #92400e; margin: 0; padding-left: 20px;">
+            <li>Join the session 5-10 minutes early</li>
+            <li>Ensure you have a stable internet connection</li>
+            <li>Prepare any questions you'd like to ask</li>
+            <li>Have your resume ready if applicable</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <p style="color: #6b7280; font-size: 16px; margin: 0 0 20px 0;">
+            We're excited to have you join this session!
+          </p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 14px; margin: 0;">
+              Best regards,<br>
+              <strong>The Skillyme Team</strong><br>
+              <a href="mailto:support@skillyme.co.ke" style="color: #2563eb;">support@skillyme.co.ke</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return await this.sendEmail(userEmail, subject, html);
+  }
+
+  // Send booking reminder email
+  async sendBookingReminderEmail(userEmail, userName, sessionDetails, customMessage = '') {
+    const subject = `Reminder: ${sessionDetails.title} - Tomorrow`;
+    
+    const sessionDate = new Date(sessionDetails.datetime).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    const sessionTime = new Date(sessionDetails.datetime).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Skillyme</h1>
+          <p style="color: #6b7280; margin: 5px 0 0 0;">Career Development Platform</p>
+        </div>
+        
+        <div style="background-color: #fef3c7; padding: 25px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
+          <h2 style="color: #92400e; margin: 0 0 15px 0; font-size: 24px;">⏰ Session Reminder</h2>
+          <p style="color: #92400e; font-size: 16px; margin: 0;">
+            Hi ${userName}! This is a friendly reminder about your upcoming session.
+          </p>
+        </div>
+
+        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+          <h3 style="color: #111827; margin: 0 0 20px 0; font-size: 20px;">Session Details</h3>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Session:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.title}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Company:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.company}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Date:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionDate}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #374151;">Time:</strong>
+            <span style="color: #6b7280; margin-left: 10px;">${sessionTime}</span>
+          </div>
+          
+          ${sessionDetails.google_meet_link ? `
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px;">
+            <strong style="color: #374151;">Join Link:</strong>
+            <br>
+            <a href="${sessionDetails.google_meet_link}" style="color: #2563eb; text-decoration: none; word-break: break-all;">
+              ${sessionDetails.google_meet_link}
+            </a>
+          </div>
+          ` : ''}
+        </div>
+
+        ${customMessage ? `
+        <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
+          <h4 style="color: #1e40af; margin: 0 0 10px 0;">Special Message:</h4>
+          <p style="color: #374151; margin: 0; font-style: italic;">
+            "${customMessage}"
+          </p>
+        </div>
+        ` : ''}
+
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+          <h4 style="color: #374151; margin: 0 0 10px 0;">Pre-Session Checklist:</h4>
+          <ul style="color: #6b7280; margin: 0; padding-left: 20px;">
+            <li>Test your internet connection</li>
+            <li>Prepare your questions</li>
+            <li>Join 5-10 minutes early</li>
+            <li>Have a quiet environment ready</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <p style="color: #6b7280; font-size: 16px; margin: 0 0 20px 0;">
+            Looking forward to seeing you there!
+          </p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 14px; margin: 0;">
+              Best regards,<br>
+              <strong>The Skillyme Team</strong><br>
+              <a href="mailto:support@skillyme.co.ke" style="color: #2563eb;">support@skillyme.co.ke</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return await this.sendEmail(userEmail, subject, html);
+  }
 }
 
 module.exports = new EmailService();

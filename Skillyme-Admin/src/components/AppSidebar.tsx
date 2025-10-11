@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Video, Bell, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, Video, Bell, Calendar, LogOut } from "lucide-react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
 import {
@@ -17,6 +17,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Sessions", url: "/sessions", icon: Video },
   { title: "Users", url: "/users", icon: Users },
+  { title: "Bookings", url: "/bookings", icon: Calendar },
   { title: "Notifications", url: "/notifications", icon: Bell },
 ]
 
