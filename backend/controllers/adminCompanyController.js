@@ -161,16 +161,6 @@ const getCompanyByName = async (req, res) => {
       throw paymentsError;
     }
 
-    // Get booking data for this company's sessions
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('user_sessions')
-      .select('session_id, attendance_status, created_at')
-      .in('session_id', sessionIds);
-
-    if (bookingsError) {
-      throw bookingsError;
-    }
-
     // Calculate company statistics
     const stats = {
       name: decodedName,
@@ -178,8 +168,6 @@ const getCompanyByName = async (req, res) => {
       active_sessions: sessions.filter(s => s.is_active && !s.is_completed).length,
       completed_sessions: sessions.filter(s => s.is_completed).length,
       total_revenue: payments.reduce((sum, p) => sum + (p.amount || 0), 0),
-      total_bookings: bookings.length,
-      attended_bookings: bookings.filter(b => b.attendance_status === 'attended').length,
       recruiters: [...new Set(sessions.map(s => s.recruiter))],
       first_session: sessions[sessions.length - 1]?.created_at,
       last_session: sessions[0]?.created_at
@@ -202,8 +190,7 @@ const getCompanyByName = async (req, res) => {
       data: {
         company: stats,
         sessions,
-        revenueData,
-        recentBookings: bookings.slice(0, 10)
+        revenueData
       }
     });
   } catch (error) {

@@ -114,7 +114,7 @@ app.use('/api/admin/users', require('./routes/adminUsers'));
 app.use('/api/admin/analytics', require('./routes/adminAnalytics'));
 app.use('/api/admin/notifications', require('./routes/adminNotifications'));
 app.use('/api/admin/upload', require('./routes/adminUpload'));
-app.use('/api/admin/bookings', require('./routes/adminBookings'));
+
 app.use('/api/admin/companies', require('./routes/adminCompanies'));
 app.use('/api/admin/session-registrations', require('./routes/adminSessionRegistrations'));
 app.use('/api/admin/payments', require('./routes/adminPayments'));

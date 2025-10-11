@@ -64,9 +64,9 @@ class EmailService {
     if (process.env.SENDGRID_API_KEY) {
       try {
         console.log('📧 [SENDGRID] Attempting to send via SendGrid...');
-        
+
         const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'skillyme25@gmail.com';
-        
+
         const msg = {
           to: sanitizedTo,
           from: {
@@ -76,14 +76,14 @@ class EmailService {
           subject: sanitizedSubject,
           text: sanitizedText || sanitizedHtml.replace(/<[^>]*>/g, ''),
           html: sanitizedHtml,
-          
+
           // Enhanced deliverability settings
           tracking_settings: {
             click_tracking: { enable: false },
             open_tracking: { enable: false },
             subscription_tracking: { enable: false }
           },
-          
+
           mail_settings: {
             spam_check: { enable: false }
           }
@@ -94,33 +94,33 @@ class EmailService {
           to: sanitizedTo,
           subject: sanitizedSubject
         });
-        
+
         const result = await sgMail.send(msg);
         const messageId = result[0].headers['x-message-id'];
-        
+
         console.log('✅ [SENDGRID] Email sent successfully');
         console.log('   Message ID:', messageId);
         console.log('   Status Code:', result[0].statusCode);
-        
-        return { 
-          success: true, 
+
+        return {
+          success: true,
           messageId: messageId,
           provider: 'sendgrid',
           statusCode: result[0].statusCode
         };
       } catch (error) {
         console.error('❌ [SENDGRID] Failed to send email:', error.message);
-        
+
         if (error.response?.body) {
           console.error('❌ [SENDGRID] Error details:', JSON.stringify(error.response.body, null, 2));
-          
+
           if (error.response.body.errors) {
             error.response.body.errors.forEach(err => {
               console.error(`   Error: ${err.message} (${err.field})`);
             });
           }
         }
-        
+
         console.log('📧 [SENDGRID] Falling back to Gmail SMTP...');
       }
     }
@@ -129,7 +129,7 @@ class EmailService {
     if (this.nodemailerTransporter) {
       try {
         console.log('📧 [GMAIL SMTP] Attempting to send via Gmail SMTP...');
-        
+
         const mailOptions = {
           from: `"Skillyme Team" <${process.env.GMAIL_USER}>`,
           to: sanitizedTo,
@@ -137,13 +137,13 @@ class EmailService {
           subject: sanitizedSubject,
           text: sanitizedText || sanitizedHtml.replace(/<[^>]*>/g, ''),
           html: sanitizedHtml,
-          
+
           headers: {
             'X-Priority': '1',
             'Importance': 'high',
             'List-Unsubscribe': `<mailto:${process.env.GMAIL_USER}?subject=Unsubscribe>`
           },
-          
+
           messageId: `<${Date.now()}.${crypto.randomBytes(8).toString('hex')}@skillyme.com>`,
           date: new Date(),
           encoding: 'utf8'
@@ -154,15 +154,15 @@ class EmailService {
           to: sanitizedTo,
           subject: sanitizedSubject
         });
-        
+
         const result = await this.nodemailerTransporter.sendMail(mailOptions);
-        
+
         console.log('✅ [GMAIL SMTP] Email sent successfully');
         console.log('   Message ID:', result.messageId);
         console.log('   Response:', result.response);
-        
-        return { 
-          success: true, 
+
+        return {
+          success: true,
           messageId: result.messageId,
           provider: 'gmail-smtp',
           response: result.response
@@ -179,10 +179,10 @@ class EmailService {
     console.log(`   To: ${sanitizedTo}`);
     console.log(`   Subject: ${sanitizedSubject}`);
     console.log(`   Content preview: ${(sanitizedText || sanitizedHtml.replace(/<[^>]*>/g, '')).substring(0, 100)}...`);
-    
+
     // Return success to prevent breaking the application flow
-    return { 
-      success: true, 
+    return {
+      success: true,
       messageId: 'logged-' + Date.now(),
       provider: 'fallback-log',
       note: 'Email logged due to service unavailability'
@@ -199,7 +199,7 @@ class EmailService {
     }
 
     const subject = `Registration Received: ${sessionName}`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -249,10 +249,10 @@ class EmailService {
     }
 
     let subject, html;
-    
+
     if (status === 'paid') {
       subject = `Payment Confirmed - ${sessionName} Access Granted`;
-      
+
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -308,7 +308,7 @@ class EmailService {
       `;
     } else if (status === 'failed') {
       subject = `Payment Issue - ${sessionName}`;
-      
+
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -355,7 +355,7 @@ class EmailService {
     } else {
       // For amount_mismatch or other statuses
       subject = `Payment Review Required - ${sessionName}`;
-      
+
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -411,7 +411,7 @@ class EmailService {
     }
 
     const subject = 'Reset Your Skillyme Password';
-    
+
     const text = `Hi ${userName},
 
 You requested to reset your password for your Skillyme account.
@@ -424,7 +424,7 @@ If you didn't request this, please ignore this email.
 
 Thanks,
 Skillyme Team`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -471,17 +471,17 @@ Skillyme Team`;
   // Send notification email (for admin notifications)
   async sendNotificationEmail(userEmail, userName, subject, message) {
     if (!userEmail || !subject || !message) {
-      console.error('📧 [ERROR] Missing parameters for notification email:', { 
-        userEmail: !!userEmail, 
-        subject: !!subject, 
-        message: !!message 
+      console.error('📧 [ERROR] Missing parameters for notification email:', {
+        userEmail: !!userEmail,
+        subject: !!subject,
+        message: !!message
       });
       return { success: false, error: 'Missing required parameters' };
     }
 
     // Replace {name} placeholder with actual user name
     const personalizedMessage = message.replace(/{name}/g, userName || 'there');
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -508,222 +508,7 @@ Skillyme Team`;
     return await this.sendEmail(userEmail, subject, html);
   }
 
-  // Send booking confirmation email
-  async sendBookingConfirmationEmail(userEmail, userName, sessionDetails, amountPaid) {
-    if (!userEmail || !userName || !sessionDetails) {
-      console.error('📧 [ERROR] Missing parameters for booking confirmation email');
-      return { success: false, error: 'Missing required parameters' };
-    }
 
-    const subject = `Booking Confirmed: ${sessionDetails.title}`;
-    
-    const sessionDate = new Date(sessionDetails.datetime).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    
-    const sessionTime = new Date(sessionDetails.datetime).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Skillyme</h1>
-          <p style="color: #6b7280; margin: 5px 0 0 0;">Career Development Platform</p>
-        </div>
-        
-        <div style="background-color: #f0f9ff; padding: 25px; border-radius: 8px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
-          <h2 style="color: #1e40af; margin: 0 0 15px 0; font-size: 24px;">🎉 Booking Confirmed!</h2>
-          <p style="color: #374151; font-size: 16px; margin: 0;">
-            Great news! Your booking has been confirmed and you're all set for the session.
-          </p>
-        </div>
-
-        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
-          <h3 style="color: #111827; margin: 0 0 20px 0; font-size: 20px;">Session Details</h3>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Session:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.title}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Company:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.company}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Recruiter:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.recruiter}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Date:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDate}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Time:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionTime}</span>
-          </div>
-          
-          ${amountPaid ? `
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Amount Paid:</strong>
-            <span style="color: #059669; margin-left: 10px; font-weight: 600;">KES ${amountPaid.toLocaleString()}</span>
-          </div>
-          ` : ''}
-          
-          ${sessionDetails.google_meet_link ? `
-          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px;">
-            <strong style="color: #374151;">Join Link:</strong>
-            <br>
-            <a href="${sessionDetails.google_meet_link}" style="color: #2563eb; text-decoration: none; word-break: break-all;">
-              ${sessionDetails.google_meet_link}
-            </a>
-          </div>
-          ` : ''}
-        </div>
-
-        <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
-          <h4 style="color: #92400e; margin: 0 0 10px 0;">Important Reminders:</h4>
-          <ul style="color: #92400e; margin: 0; padding-left: 20px;">
-            <li>Join the session 5-10 minutes early</li>
-            <li>Ensure you have a stable internet connection</li>
-            <li>Prepare any questions you'd like to ask</li>
-            <li>Have your resume ready if applicable</li>
-          </ul>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <p style="color: #6b7280; font-size: 16px; margin: 0 0 20px 0;">
-            We're excited to have you join this session!
-          </p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 14px; margin: 0;">
-              Best regards,<br>
-              <strong>The Skillyme Team</strong><br>
-              <a href="mailto:skillyme25@gmail.com" style="color: #2563eb;">skillyme25@gmail.com</a>
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
-
-    return await this.sendEmail(userEmail, subject, html);
-  }
-
-  // Send booking reminder email
-  async sendBookingReminderEmail(userEmail, userName, sessionDetails, customMessage = '') {
-    if (!userEmail || !userName || !sessionDetails) {
-      console.error('📧 [ERROR] Missing parameters for booking reminder email');
-      return { success: false, error: 'Missing required parameters' };
-    }
-
-    const subject = `Reminder: ${sessionDetails.title} - Coming Up Soon`;
-    
-    const sessionDate = new Date(sessionDetails.datetime).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    
-    const sessionTime = new Date(sessionDetails.datetime).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Skillyme</h1>
-          <p style="color: #6b7280; margin: 5px 0 0 0;">Career Development Platform</p>
-        </div>
-        
-        <div style="background-color: #fef3c7; padding: 25px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
-          <h2 style="color: #92400e; margin: 0 0 15px 0; font-size: 24px;">⏰ Session Reminder</h2>
-          <p style="color: #92400e; font-size: 16px; margin: 0;">
-            Hi ${userName}! This is a friendly reminder about your upcoming session.
-          </p>
-        </div>
-
-        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
-          <h3 style="color: #111827; margin: 0 0 20px 0; font-size: 20px;">Session Details</h3>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Session:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.title}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Company:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDetails.company}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Date:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionDate}</span>
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #374151;">Time:</strong>
-            <span style="color: #6b7280; margin-left: 10px;">${sessionTime}</span>
-          </div>
-          
-          ${sessionDetails.google_meet_link ? `
-          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 20px;">
-            <strong style="color: #374151;">Join Link:</strong>
-            <br>
-            <a href="${sessionDetails.google_meet_link}" style="color: #2563eb; text-decoration: none; word-break: break-all;">
-              ${sessionDetails.google_meet_link}
-            </a>
-          </div>
-          ` : ''}
-        </div>
-
-        ${customMessage ? `
-        <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
-          <h4 style="color: #1e40af; margin: 0 0 10px 0;">Special Message:</h4>
-          <p style="color: #374151; margin: 0; font-style: italic;">
-            "${customMessage}"
-          </p>
-        </div>
-        ` : ''}
-
-        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-          <h4 style="color: #374151; margin: 0 0 10px 0;">Pre-Session Checklist:</h4>
-          <ul style="color: #6b7280; margin: 0; padding-left: 20px;">
-            <li>Test your internet connection</li>
-            <li>Prepare your questions</li>
-            <li>Join 5-10 minutes early</li>
-            <li>Have a quiet environment ready</li>
-          </ul>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <p style="color: #6b7280; font-size: 16px; margin: 0 0 20px 0;">
-            Looking forward to seeing you there!
-          </p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 14px; margin: 0;">
-              Best regards,<br>
-              <strong>The Skillyme Team</strong><br>
-              <a href="mailto:skillyme25@gmail.com" style="color: #2563eb;">skillyme25@gmail.com</a>
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
-
-    return await this.sendEmail(userEmail, subject, html);
-  }
 }
 
 module.exports = new EmailService();
