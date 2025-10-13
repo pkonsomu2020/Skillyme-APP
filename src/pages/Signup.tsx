@@ -34,41 +34,41 @@ const Signup = () => {
   });
 
   const countries = [
-    "Kenya", "Nigeria", "South Africa", "Ghana", "Uganda", "Tanzania", "Ethiopia", 
-    "Morocco", "Algeria", "Egypt", "Tunisia", "Libya", "Sudan", "Angola", "Mozambique", 
-    "Madagascar", "Cameroon", "Côte d'Ivoire", "Niger", "Burkina Faso", "Mali", "Malawi", 
+    "Kenya", "Nigeria", "South Africa", "Ghana", "Uganda", "Tanzania", "Ethiopia",
+    "Morocco", "Algeria", "Egypt", "Tunisia", "Libya", "Sudan", "Angola", "Mozambique",
+    "Madagascar", "Cameroon", "Côte d'Ivoire", "Niger", "Burkina Faso", "Mali", "Malawi",
     "Zambia", "Somalia", "Senegal", "Chad", "Sierra Leone", "Liberia", "Central African Republic",
-    "Mauritania", "Eritrea", "Gambia", "Botswana", "Gabon", "Lesotho", "Guinea-Bissau", 
-    "Equatorial Guinea", "Mauritius", "Eswatini", "Djibouti", "Fiji", "Comoros", "Cape Verde", 
+    "Mauritania", "Eritrea", "Gambia", "Botswana", "Gabon", "Lesotho", "Guinea-Bissau",
+    "Equatorial Guinea", "Mauritius", "Eswatini", "Djibouti", "Fiji", "Comoros", "Cape Verde",
     "São Tomé and Príncipe", "Seychelles", "Other"
   ];
 
   const counties = [
-    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa", 
-    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi", 
-    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu", 
-    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa", 
-    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua", 
-    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi", 
+    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
+    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
+    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
+    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
+    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
     "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
-  ];  
+  ];
 
   const levelsOfStudy = ["High School", "Undergraduate", "Graduate", "Postgraduate"];
 
   // New enhanced signup options
   const degrees = [
-    "Certificate", "Diploma", "Bachelor's Degree", "Master's Degree", 
+    "Certificate", "Diploma", "Bachelor's Degree", "Master's Degree",
     "PhD/Doctorate", "Professional Qualification", "Other"
   ];
 
   const yearsOfStudy = [
-    "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", 
+    "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year",
     "6th Year", "Graduate", "Postgraduate", "Other"
   ];
 
   const primaryFieldInterests = [
     "Technology & Software Development",
-    "Business & Entrepreneurship", 
+    "Business & Entrepreneurship",
     "Healthcare & Medicine",
     "Education & Teaching",
     "Law & Legal Services",
@@ -100,13 +100,13 @@ const Signup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent multiple submissions
     if (isSubmitting) {
       console.log("Form already submitting, ignoring submission");
       return;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match!");
       return;
@@ -114,58 +114,58 @@ const Signup = () => {
 
     // Enhanced password validation to match backend requirements
     const passwordErrors = [];
-    
+
     if (formData.password.length < 8) {
       passwordErrors.push('Password must be at least 8 characters long');
     }
-    
+
     if (formData.password.length > 128) {
       passwordErrors.push('Password must be less than 128 characters');
     }
-    
+
     if (!/[a-z]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one lowercase letter');
     }
-    
+
     if (!/[A-Z]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one uppercase letter');
     }
-    
+
     if (!/[0-9]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one number');
     }
-    
+
     if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one special character');
     }
-    
+
     // Check for common passwords
     const commonPasswords = [
       'password', 'password123', '123456', 'admin', 'test', 'user',
       'qwerty', 'abc123', 'letmein', 'welcome', 'monkey', 'dragon',
       'master', 'hello', 'login', 'pass', '123456789', 'password1'
     ];
-    
+
     if (commonPasswords.includes(formData.password.toLowerCase())) {
       passwordErrors.push('Password is too common. Please choose a more secure password');
     }
-    
+
     // Check for sequential characters
     const sequences = ['123', '234', '345', '456', '567', '678', '789', '890',
-                      'abc', 'bcd', 'cde', 'def', 'efg', 'fgh', 'ghi', 'hij',
-                      'jkl', 'klm', 'lmn', 'mno', 'nop', 'opq', 'pqr', 'qrs',
-                      'rst', 'stu', 'tuv', 'uvw', 'vwx', 'wxy', 'xyz'];
-    
+      'abc', 'bcd', 'cde', 'def', 'efg', 'fgh', 'ghi', 'hij',
+      'jkl', 'klm', 'lmn', 'mno', 'nop', 'opq', 'pqr', 'qrs',
+      'rst', 'stu', 'tuv', 'uvw', 'vwx', 'wxy', 'xyz'];
+
     const lowerPassword = formData.password.toLowerCase();
     if (sequences.some(seq => lowerPassword.includes(seq))) {
       passwordErrors.push('Password contains sequential characters (e.g., 123, abc)');
     }
-    
+
     // Check for repeated characters
     if (/(.)\1{2,}/.test(formData.password)) {
       passwordErrors.push('Password contains too many repeated characters');
     }
-    
+
     if (passwordErrors.length > 0) {
       toast.error(passwordErrors[0]); // Show first error
       return;
@@ -180,14 +180,14 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
       console.log("🚀 Starting registration process...");
-      
+
       // Prepare data for API - only send fields that exist in database
       const userData = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         country: formData.country,
-        county: formData.country === "Kenya" ? formData.county : undefined,
+        county: formData.country === "Kenya" ? formData.county : "",
         field_of_study: formData.fieldOfStudy,
         institution: formData.institution || null,
         level_of_study: formData.levelOfStudy,
@@ -196,15 +196,15 @@ const Signup = () => {
       };
 
       console.log("📤 Sending registration data:", { ...userData, password: "***" });
-      
+
       // Add timeout to prevent hanging
       const registrationPromise = register(userData);
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Registration timeout. Please try again.")), 30000)
       );
-      
+
       const success = await Promise.race([registrationPromise, timeoutPromise]);
-      
+
       if (success) {
         console.log("✅ Registration successful!");
         toast.success("Account created successfully!");
@@ -230,10 +230,10 @@ const Signup = () => {
       <Card className="w-full max-w-2xl shadow-elegant">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
-            <img 
-              src="/Skillyme LOGO.jpg" 
-              alt="Skillyme Logo" 
-              className="w-full h-full object-cover" 
+            <img
+              src="/Skillyme LOGO.jpg"
+              alt="Skillyme Logo"
+              className="w-full h-full object-cover"
             />
           </div>
           <CardTitle className="text-3xl">Create Your Account</CardTitle>
@@ -352,7 +352,7 @@ const Signup = () => {
             {/* Enhanced Signup Fields */}
             <div className="border-t pt-6 mt-6">
               <h3 className="text-lg font-semibold mb-4 text-primary">Additional Information</h3>
-              
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="preferredName">Preferred Name (Display Name)</Label>
@@ -483,15 +483,14 @@ const Signup = () => {
                             return (
                               <div
                                 key={level}
-                                className={`w-2 h-2 rounded-full ${
-                                  level <= strength 
-                                    ? strength <= 2 
-                                      ? 'bg-red-500' 
-                                      : strength <= 3 
-                                        ? 'bg-yellow-500' 
-                                        : 'bg-green-500'
-                                    : 'bg-gray-300'
-                                }`}
+                                className={`w-2 h-2 rounded-full ${level <= strength
+                                  ? strength <= 2
+                                    ? 'bg-red-500'
+                                    : strength <= 3
+                                      ? 'bg-yellow-500'
+                                      : 'bg-green-500'
+                                  : 'bg-gray-300'
+                                  }`}
                               />
                             );
                           })}
@@ -551,10 +550,10 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              variant="hero" 
-              className="w-full" 
+            <Button
+              type="submit"
+              variant="hero"
+              className="w-full"
               size="lg"
               disabled={isSubmitting}
             >

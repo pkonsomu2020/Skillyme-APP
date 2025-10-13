@@ -36,6 +36,8 @@ const register = async (req, res) => {
         errors: errors.array()
       });
     }
+    
+    console.log('✅ [REGISTER DEBUG] Express validation passed');
 
     const { 
       name, email, password, phone, country, county, field_of_study, institution, level_of_study
@@ -62,8 +64,10 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
+    console.log('🔍 [REGISTER DEBUG] Checking if user exists:', email);
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
+      console.log('❌ [REGISTER DEBUG] User already exists:', email);
       await ErrorHandler.logError(new Error('User already exists'), {
         endpoint: '/api/auth/register',
         email
@@ -74,6 +78,7 @@ const register = async (req, res) => {
         message: 'User already exists with this email'
       });
     }
+    console.log('✅ [REGISTER DEBUG] User does not exist, proceeding with registration');
 
     // Hash password with enhanced security
     const hashedPassword = await PasswordValidator.hashPassword(password);
