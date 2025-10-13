@@ -40,7 +40,9 @@ const register = async (req, res) => {
     console.log('✅ [REGISTER DEBUG] Express validation passed');
 
     const { 
-      name, email, password, phone, country, county, field_of_study, institution, level_of_study
+      name, email, password, phone, country, county, field_of_study, institution, level_of_study,
+      preferred_name, date_of_birth, course_of_study, degree, year_of_study,
+      primary_field_interest, signup_source
     } = req.body;
 
     // Enhanced password validation
@@ -93,7 +95,15 @@ const register = async (req, res) => {
       county,
       field_of_study: field_of_study || 'Not specified',
       institution: institution || 'Not specified',
-      level_of_study: level_of_study || 'High School'
+      level_of_study: level_of_study || 'High School',
+      // Enhanced signup fields
+      preferred_name,
+      date_of_birth,
+      course_of_study,
+      degree,
+      year_of_study,
+      primary_field_interest,
+      signup_source
     };
 
     const user = await User.create(userData);
@@ -127,7 +137,14 @@ const register = async (req, res) => {
           county: user.county,
           field_of_study: user.field_of_study,
           institution: user.institution,
-          level_of_study: user.level_of_study
+          level_of_study: user.level_of_study,
+          preferred_name: user.preferred_name,
+          date_of_birth: user.date_of_birth,
+          course_of_study: user.course_of_study,
+          degree: user.degree,
+          year_of_study: user.year_of_study,
+          primary_field_interest: user.primary_field_interest,
+          signup_source: user.signup_source
         }
       }
     });

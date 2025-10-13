@@ -32,19 +32,25 @@ class User {
       }
     }
 
-    // Sanitize inputs - only include fields that exist in the database
+    // Sanitize inputs - include all fields that exist in the database
     const sanitizedData = {
       name: name?.trim()?.substring(0, 255),
       email: email?.trim()?.toLowerCase()?.substring(0, 255),
       password, // Will be hashed by bcrypt
       phone: phone?.trim()?.substring(0, 50),
       country: country?.trim()?.substring(0, 100),
-      county: (county && county.trim()) ? county.trim().substring(0, 100) : 'Not specified', // Default value for empty county
+      county: (county && county.trim()) ? county.trim().substring(0, 100) : 'Not specified',
       field_of_study: field_of_study?.trim()?.substring(0, 255),
       institution: institution?.trim()?.substring(0, 255),
-      level_of_study: level_of_study?.trim()?.substring(0, 100)
-      // Note: Enhanced signup fields (preferred_name, date_of_birth, etc.) are not included
-      // as they don't exist in the current database schema
+      level_of_study: level_of_study?.trim()?.substring(0, 100),
+      // Enhanced signup fields (now included as they exist in the database)
+      preferred_name: preferred_name?.trim()?.substring(0, 100) || null,
+      date_of_birth: date_of_birth || null,
+      course_of_study: course_of_study?.trim()?.substring(0, 255) || null,
+      degree: degree?.trim()?.substring(0, 100) || null,
+      year_of_study: year_of_study?.trim()?.substring(0, 50) || null,
+      primary_field_interest: primary_field_interest?.trim()?.substring(0, 255) || null,
+      signup_source: signup_source?.trim()?.substring(0, 100) || null
     };
 
     try {
@@ -58,7 +64,8 @@ class User {
         .insert([sanitizedData])
         .select(`
           id, name, email, phone, country, county, field_of_study, institution, level_of_study,
-          created_at, updated_at
+          preferred_name, date_of_birth, course_of_study, degree, year_of_study,
+          primary_field_interest, signup_source, created_at, updated_at
         `)
         .single();
 
