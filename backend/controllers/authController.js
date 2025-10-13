@@ -42,8 +42,12 @@ const register = async (req, res) => {
     } = req.body;
 
     // Enhanced password validation
+    console.log('🔍 [REGISTER DEBUG] Validating password...');
     const passwordValidation = PasswordValidator.validatePassword(password);
+    console.log('🔍 [REGISTER DEBUG] Password validation result:', passwordValidation);
+    
     if (!passwordValidation.isValid) {
+      console.log('❌ [REGISTER DEBUG] Password validation failed:', passwordValidation.errors);
       await ErrorHandler.logError(new Error('Password validation failed'), {
         endpoint: '/api/auth/register',
         email,

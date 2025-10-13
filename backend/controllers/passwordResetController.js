@@ -38,9 +38,12 @@ const forgotPassword = async (req, res) => {
 
     // Create new reset token
     try {
+      console.log('🔍 [PASSWORD RESET DEBUG] Creating reset token for user:', user.id);
       await PasswordReset.create(user.id, token, expiresAt);
+      console.log('✅ [PASSWORD RESET DEBUG] Reset token created successfully');
     } catch (resetError) {
-      console.log('Password reset token creation failed:', resetError.message);
+      console.error('❌ [PASSWORD RESET DEBUG] Token creation failed:', resetError);
+      
       // Return success anyway to not reveal system issues
       return res.json({
         success: true,
