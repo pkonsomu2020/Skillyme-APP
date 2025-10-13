@@ -187,7 +187,7 @@ const Signup = () => {
         email: formData.email,
         phone: formData.phone,
         country: formData.country,
-        county: formData.country === "Kenya" ? formData.county : null,
+        county: formData.country === "Kenya" ? formData.county : undefined,
         field_of_study: formData.fieldOfStudy,
         institution: formData.institution || null,
         level_of_study: formData.levelOfStudy,

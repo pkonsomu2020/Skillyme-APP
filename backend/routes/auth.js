@@ -13,7 +13,7 @@ const registerValidation = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('phone').trim().isLength({ min: 5 }).withMessage('Phone number is required'),
   body('country').trim().isLength({ min: 2 }).withMessage('Country is required'),
-  body('county').optional().trim().isLength({ min: 2 }).withMessage('County must be at least 2 characters'),
+  body('county').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('County must be at least 2 characters'),
   body('field_of_study').trim().isLength({ min: 1 }).withMessage('Field of study is required'),
   body('institution').optional().trim().isLength({ min: 1 }).withMessage('Institution is required'),
   body('level_of_study').isIn(['High School', 'Undergraduate', 'Graduate', 'Postgraduate']).withMessage('Invalid level of study')
@@ -28,7 +28,7 @@ const updateProfileValidation = [
   body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
   body('country').optional().trim().isLength({ min: 2 }).withMessage('Country must be at least 2 characters'),
-  body('county').optional().trim().isLength({ min: 2 }).withMessage('County must be at least 2 characters')
+  body('county').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('County must be at least 2 characters')
 ];
 
 // Routes

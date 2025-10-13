@@ -3,24 +3,24 @@ const supabase = require('../config/supabase');
 class User {
   static async create(userData) {
     // SECURITY: Input validation and sanitization
-    const { 
+    const {
       name, email, password, phone, country, county, field_of_study, institution, level_of_study,
-      preferred_name, date_of_birth, course_of_study, degree, year_of_study, 
-      primary_field_interest, signup_source 
+      preferred_name, date_of_birth, course_of_study, degree, year_of_study,
+      primary_field_interest, signup_source
     } = userData;
-    
+
     // Validate required fields
     if (!name || !email || !password) {
       throw new Error('Missing required fields: name, email, password');
     }
-    
+
     // Validate date of birth if provided
     if (date_of_birth) {
       const birthDate = new Date(date_of_birth);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      
+
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         // Adjust age if birthday hasn't occurred this year
         const actualAge = age - 1;
@@ -31,7 +31,7 @@ class User {
         throw new Error('Users must be at least 13 years old to register');
       }
     }
-    
+
     // Sanitize inputs - only include fields that exist in the database
     const sanitizedData = {
       name: name?.trim()?.substring(0, 255),
@@ -39,20 +39,20 @@ class User {
       password, // Will be hashed by bcrypt
       phone: phone?.trim()?.substring(0, 50),
       country: country?.trim()?.substring(0, 100),
-      county: county?.trim()?.substring(0, 100),
+      county: (county && county.trim()) ? county.trim().substring(0, 100) : 'Not specified', // Default value for empty county
       field_of_study: field_of_study?.trim()?.substring(0, 255),
       institution: institution?.trim()?.substring(0, 255),
       level_of_study: level_of_study?.trim()?.substring(0, 100)
       // Note: Enhanced signup fields (preferred_name, date_of_birth, etc.) are not included
       // as they don't exist in the current database schema
     };
-    
+
     try {
       console.log('🔍 [USER CREATE DEBUG] Sanitized data:', {
         ...sanitizedData,
         password: sanitizedData.password ? '[REDACTED]' : 'MISSING'
       });
-      
+
       const { data, error } = await supabase
         .from('users')
         .insert([sanitizedData])
@@ -61,7 +61,7 @@ class User {
           created_at, updated_at
         `)
         .single();
-      
+
       if (error) {
         console.error('❌ [USER CREATE DEBUG] Supabase error:', error);
         // Handle specific Supabase errors
@@ -70,7 +70,7 @@ class User {
         }
         throw error;
       }
-      
+
       console.log('✅ [USER CREATE DEBUG] User created successfully:', data.id);
       return data;
     } catch (error) {
@@ -84,18 +84,18 @@ class User {
     if (!email || typeof email !== 'string') {
       throw new Error('Invalid email parameter');
     }
-    
+
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email.trim().toLowerCase())
         .single();
-      
+
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
         throw error;
       }
-      
+
       return data || null;
     } catch (error) {
       console.error('Error finding user by email:', error);
@@ -110,11 +110,11 @@ class User {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
-      
+
       return data || null;
     } catch (error) {
       console.error('Error finding user by ID:', error);
@@ -132,11 +132,11 @@ class User {
         })
         .eq('id', id)
         .select();
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data && data.length > 0;
     } catch (error) {
       console.error('Error updating user:', error);
@@ -159,11 +159,11 @@ class User {
         })
         .eq('id', userId)
         .select();
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data && data.length > 0;
     } catch (error) {
       console.error('Error updating password:', error);
@@ -177,11 +177,11 @@ class User {
       const { data, error } = await supabase
         .from('user_analytics')
         .select('*');
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error getting user analytics:', error);
@@ -195,11 +195,11 @@ class User {
       const { data, error } = await supabase
         .from('signup_source_stats')
         .select('*');
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error getting signup source stats:', error);
@@ -213,11 +213,11 @@ class User {
       const { data, error } = await supabase
         .from('field_interest_stats')
         .select('*');
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error getting field interest stats:', error);
@@ -254,11 +254,11 @@ class User {
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error getting users with details:', error);
