@@ -7,14 +7,14 @@ const getAllUsers = async (req, res) => {
   try {
     const { 
       page = 1, 
-      limit = 10, 
+      limit = 1000, // Default to high limit to show all users
       search,
       field_of_study,
       institution,
       county,
       status = 'active',
-      sort_by = 'created_at',
-      sort_order = 'desc'
+      sort_by = 'id', // Sort by ID to show users from 1 onwards
+      sort_order = 'asc' // Ascending order to show oldest first
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -26,8 +26,12 @@ const getAllUsers = async (req, res) => {
         created_at, updated_at, password, preferred_name, date_of_birth, course_of_study, 
         degree, year_of_study, primary_field_interest, signup_source
       `)
-      .order(sort_by, { ascending: sort_order === 'asc' })
-      .range(offset, offset + limit - 1);
+      .order(sort_by, { ascending: sort_order === 'asc' });
+
+    // Only apply pagination if limit is reasonable (less than 1000)
+    if (limit < 1000) {
+      query = query.range(offset, offset + limit - 1);
+    }
 
     // Apply filters
     if (status === 'active') {
@@ -481,6 +485,48 @@ const cleanupTestUsers = async (req, res) => {
   }
 };
 
+// Debug endpoint to get all users without pagination
+const getAllUsersDebug = async (req, res) => {
+  try {
+    console.log('🔍 [DEBUG] Fetching ALL users from database...');
+    
+    const { data: allUsers, error } = await supabase
+      .from('users')
+      .select(`
+        id, name, email, phone, country, county, field_of_study, institution, level_of_study,
+        created_at, updated_at, password, preferred_name, date_of_birth, course_of_study, 
+        degree, year_of_study, primary_field_interest, signup_source
+      `)
+      .order('id', { ascending: true }); // Order by ID ascending
+
+    if (error) {
+      throw error;
+    }
+
+    console.log(`✅ [DEBUG] Found ${allUsers.length} total users`);
+    console.log(`🔍 [DEBUG] User IDs: ${allUsers.map(u => u.id).join(', ')}`);
+
+    res.json({
+      success: true,
+      message: `Found ${allUsers.length} users total`,
+      data: {
+        users: allUsers,
+        count: allUsers.length,
+        userIds: allUsers.map(u => u.id),
+        firstUser: allUsers[0],
+        lastUser: allUsers[allUsers.length - 1]
+      }
+    });
+  } catch (error) {
+    console.error('❌ [DEBUG] Error fetching all users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch all users',
+      error: error.message
+    });
+  }
+};
+
 // Get filter options for users
 const getFilterOptions = async (req, res) => {
   try {
@@ -559,6 +605,7 @@ const getFilterOptions = async (req, res) => {
 
 module.exports = {
   getAllUsers,
+  getAllUsersDebug,
   getUserById,
   updateUserStatus,
   getUserStats,

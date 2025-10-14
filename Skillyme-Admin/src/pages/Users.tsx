@@ -29,7 +29,10 @@ export default function Users() {
         setSyncing(true)
       }
       
-      const response = await adminApi.users.getAllUsers()
+      const response = await adminApi.users.getAllUsers({
+        limit: 1000, // Request all users
+        page: 1
+      })
       
       if (response.success && response.data?.users) {
         // Use the exact data from the database without any transformation

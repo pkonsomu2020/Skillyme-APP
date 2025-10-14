@@ -3,6 +3,7 @@ const { body, param } = require('express-validator');
 const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
 const {
   getAllUsers,
+  getAllUsersDebug,
   getUserById,
   updateUserStatus,
   getUserStats,
@@ -24,6 +25,7 @@ const statusValidation = [
 
 // Routes (all protected with clean admin authentication)
 router.get('/', cleanAuth, getAllUsers);
+router.get('/debug/all', cleanAuth, getAllUsersDebug);
 router.get('/stats', cleanAuth, getUserStats);
 router.get('/filter-options', cleanAuth, getFilterOptions);
 router.post('/cleanup', cleanAuth, cleanupTestUsers);
