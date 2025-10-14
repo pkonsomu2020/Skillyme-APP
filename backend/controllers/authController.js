@@ -12,24 +12,17 @@ if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET === 'your_super_secret_j
   process.exit(1);
 }
 
-
 // Register user
 const register = async (req, res) => {
   try {
-    // Log the incoming request data for debugging
-    console.log('🔍 [REGISTER DEBUG] Incoming request body:', {
+    console.log('🔍 [REGISTER] Incoming request body:', {
       ...req.body,
       password: req.body.password ? '[REDACTED]' : 'MISSING'
     });
     
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('❌ [REGISTER DEBUG] Validation errors:', errors.array());
-      await ErrorHandler.logError(new Error('Validation failed'), {
-        endpoint: '/api/auth/register',
-        errors: errors.array()
-      });
-      
+      console.log('❌ [REGISTER] Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -37,8 +30,9 @@ const register = async (req, res) => {
       });
     }
     
-    console.log('✅ [REGISTER DEBUG] Express validation passed');
+    console.log('✅ [REGISTER] Express validation passed');
 
+    // Extract ALL fields that match CSV columns
     const { 
       name, email, password, phone, country, county, field_of_study, institution, level_of_study,
       preferred_name, date_of_birth, course_of_study, degree, year_of_study,
@@ -46,18 +40,12 @@ const register = async (req, res) => {
     } = req.body;
 
     // Enhanced password validation
-    console.log('🔍 [REGISTER DEBUG] Validating password...');
+    console.log('🔍 [REGISTER] Validating password...');
     const passwordValidation = PasswordValidator.validatePassword(password);
-    console.log('🔍 [REGISTER DEBUG] Password validation result:', passwordValidation);
+    console.log('🔍 [REGISTER] Password validation result:', passwordValidation);
     
     if (!passwordValidation.isValid) {
-      console.log('❌ [REGISTER DEBUG] Password validation failed:', passwordValidation.errors);
-      await ErrorHandler.logError(new Error('Password validation failed'), {
-        endpoint: '/api/auth/register',
-        email,
-        passwordErrors: passwordValidation.errors
-      });
-      
+      console.log('❌ [REGISTER] Password validation failed:', passwordValidation.errors);
       return res.status(400).json({
         success: false,
         message: 'Password does not meet security requirements',
@@ -66,26 +54,21 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
-    console.log('🔍 [REGISTER DEBUG] Checking if user exists:', email);
+    console.log('🔍 [REGISTER] Checking if user exists:', email);
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
-      console.log('❌ [REGISTER DEBUG] User already exists:', email);
-      await ErrorHandler.logError(new Error('User already exists'), {
-        endpoint: '/api/auth/register',
-        email
-      });
-      
+      console.log('❌ [REGISTER] User already exists:', email);
       return res.status(400).json({
         success: false,
         message: 'User already exists with this email'
       });
     }
-    console.log('✅ [REGISTER DEBUG] User does not exist, proceeding with registration');
+    console.log('✅ [REGISTER] User does not exist, proceeding with registration');
 
     // Hash password with enhanced security
     const hashedPassword = await PasswordValidator.hashPassword(password);
 
-    // Create user with transaction logging
+    // Create user data matching CSV structure exactly
     const userData = {
       name,
       email,
@@ -93,10 +76,9 @@ const register = async (req, res) => {
       phone,
       country,
       county,
-      field_of_study: field_of_study || 'Not specified',
-      institution: institution || 'Not specified',
-      level_of_study: level_of_study || 'High School',
-      // Enhanced signup fields
+      field_of_study,
+      institution,
+      level_of_study,
       preferred_name,
       date_of_birth,
       course_of_study,
@@ -106,12 +88,17 @@ const register = async (req, res) => {
       signup_source
     };
 
+    console.log('🔍 [REGISTER] Creating user with data:', {
+      ...userData,
+      password: '[REDACTED]'
+    });
+
     const user = await User.create(userData);
     
     // Log successful registration
     await TransactionLogger.logUserRegistration(userData, user.id);
 
-    // Generate JWT token (NO EXPIRATION - permanent token)
+    // Generate JWT token
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -121,7 +108,7 @@ const register = async (req, res) => {
       JWT_SECRET
     );
 
-    // User object is ready for response
+    console.log('✅ [REGISTER] Registration successful for user ID:', user.id);
 
     res.status(201).json({
       success: true,
@@ -144,17 +131,25 @@ const register = async (req, res) => {
           degree: user.degree,
           year_of_study: user.year_of_study,
           primary_field_interest: user.primary_field_interest,
-          signup_source: user.signup_source
+          signup_source: user.signup_source,
+          created_at: user.created_at,
+          updated_at: user.updated_at
         }
       }
     });
   } catch (error) {
+    console.error('❌ [REGISTER] Registration error:', error);
+    
     await ErrorHandler.logError(error, {
       endpoint: '/api/auth/register',
       email: req.body?.email
     });
     
-    return ErrorHandler.handleAuthError(error, res);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Registration failed. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -163,11 +158,6 @@ const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      await ErrorHandler.logError(new Error('Login validation failed'), {
-        endpoint: '/api/auth/login',
-        errors: errors.array()
-      });
-      
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -181,24 +171,16 @@ const login = async (req, res) => {
     const user = await User.findByEmail(email);
     if (!user) {
       console.log(`❌ Login failed for ${email}: User not found`);
-      await ErrorHandler.logError(new Error('User not found'), {
-        endpoint: '/api/auth/login',
-        email
-      });
-      
-      await TransactionLogger.logUserLogin(email, null, false);
-      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Enhanced password verification with fallback
+    // Enhanced password verification
     let isPasswordValid = false;
     
     try {
-      // Use password validator for verification
       isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
     } catch (verificationError) {
       console.log(`❌ Password verification error for ${email}:`, verificationError.message);
@@ -207,14 +189,6 @@ const login = async (req, res) => {
     
     if (!isPasswordValid) {
       console.log(`❌ Login failed for ${email}: Invalid password`);
-      await ErrorHandler.logError(new Error('Invalid password'), {
-        endpoint: '/api/auth/login',
-        email,
-        userId: user.id
-      });
-      
-      await TransactionLogger.logUserLogin(email, user.id, false);
-      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -222,11 +196,8 @@ const login = async (req, res) => {
     }
     
     console.log(`✅ Login successful for ${email}`);
-    
-    // Log successful login
-    await TransactionLogger.logUserLogin(email, user.id, true);
 
-    // Generate JWT token (NO EXPIRATION - permanent token)
+    // Generate JWT token
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -252,12 +223,12 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    await ErrorHandler.logError(error, {
-      endpoint: '/api/auth/login',
-      email: req.body?.email
+    console.error('❌ Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Login failed. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
-    
-    return ErrorHandler.handleAuthError(error, res);
   }
 };
 
@@ -271,7 +242,6 @@ const getProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch profile',
@@ -306,7 +276,6 @@ const updateProfile = async (req, res) => {
       });
     }
   } catch (error) {
-    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Profile update failed',

@@ -12,25 +12,31 @@ const Signup = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form data matching CSV structure exactly
   const [formData, setFormData] = useState({
+    // Required fields
     name: "",
     email: "",
-    phone: "",
-    country: "",
-    county: "",
-    fieldOfStudy: "",
-    institution: "",
-    levelOfStudy: "",
     password: "",
     confirmPassword: "",
-    // New enhanced signup fields
-    preferredName: "",
-    dateOfBirth: "",
-    courseOfStudy: "",
+    phone: "",
+    country: "",
+    
+    // Optional basic fields
+    county: "",
+    field_of_study: "",
+    institution: "",
+    level_of_study: "",
+    
+    // Enhanced fields (matching CSV columns exactly)
+    preferred_name: "",
+    date_of_birth: "",
+    course_of_study: "",
     degree: "",
-    yearOfStudy: "",
-    primaryFieldInterest: "",
-    signupSource: "",
+    year_of_study: "",
+    primary_field_interest: "",
+    signup_source: ""
   });
 
   const countries = [
@@ -55,7 +61,6 @@ const Signup = () => {
 
   const levelsOfStudy = ["High School", "Undergraduate", "Graduate", "Postgraduate"];
 
-  // New enhanced signup options
   const degrees = [
     "Certificate", "Diploma", "Bachelor's Degree", "Master's Degree",
     "PhD/Doctorate", "Professional Qualification", "Other"
@@ -101,9 +106,7 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prevent multiple submissions
     if (isSubmitting) {
-      console.log("Form already submitting, ignoring submission");
       return;
     }
 
@@ -112,7 +115,7 @@ const Signup = () => {
       return;
     }
 
-    // Enhanced password validation to match backend requirements
+    // Enhanced password validation
     const passwordErrors = [];
 
     if (formData.password.length < 8) {
@@ -139,35 +142,8 @@ const Signup = () => {
       passwordErrors.push('Password must contain at least one special character');
     }
 
-    // Check for common passwords
-    const commonPasswords = [
-      'password', 'password123', '123456', 'admin', 'test', 'user',
-      'qwerty', 'abc123', 'letmein', 'welcome', 'monkey', 'dragon',
-      'master', 'hello', 'login', 'pass', '123456789', 'password1'
-    ];
-
-    if (commonPasswords.includes(formData.password.toLowerCase())) {
-      passwordErrors.push('Password is too common. Please choose a more secure password');
-    }
-
-    // Check for sequential characters
-    const sequences = ['123', '234', '345', '456', '567', '678', '789', '890',
-      'abc', 'bcd', 'cde', 'def', 'efg', 'fgh', 'ghi', 'hij',
-      'jkl', 'klm', 'lmn', 'mno', 'nop', 'opq', 'pqr', 'qrs',
-      'rst', 'stu', 'tuv', 'uvw', 'vwx', 'wxy', 'xyz'];
-
-    const lowerPassword = formData.password.toLowerCase();
-    if (sequences.some(seq => lowerPassword.includes(seq))) {
-      passwordErrors.push('Password contains sequential characters (e.g., 123, abc)');
-    }
-
-    // Check for repeated characters
-    if (/(.)\1{2,}/.test(formData.password)) {
-      passwordErrors.push('Password contains too many repeated characters');
-    }
-
     if (passwordErrors.length > 0) {
-      toast.error(passwordErrors[0]); // Show first error
+      toast.error(passwordErrors[0]);
       return;
     }
 
@@ -181,36 +157,37 @@ const Signup = () => {
       setIsSubmitting(true);
       console.log("🚀 Starting registration process...");
 
-      // Prepare data for API - including enhanced signup fields
+      // Prepare data matching CSV structure exactly
       const userData = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        country: formData.country,
-        county: formData.country === "Kenya" ? formData.county : "",
-        field_of_study: formData.fieldOfStudy,
-        institution: formData.institution || null,
-        level_of_study: formData.levelOfStudy,
+        // Required fields
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        // Enhanced signup fields (now included as they exist in the database)
-        preferred_name: formData.preferredName || null,
-        date_of_birth: formData.dateOfBirth || null,
-        course_of_study: formData.courseOfStudy || null,
+        phone: formData.phone.trim(),
+        country: formData.country,
+        
+        // Optional fields - send empty string as null for proper database handling
+        county: formData.county || null,
+        field_of_study: formData.field_of_study || null,
+        institution: formData.institution || null,
+        level_of_study: formData.level_of_study || null,
+        
+        // Enhanced fields - matching CSV columns exactly
+        preferred_name: formData.preferred_name || null,
+        date_of_birth: formData.date_of_birth || null,
+        course_of_study: formData.course_of_study || null,
         degree: formData.degree || null,
-        year_of_study: formData.yearOfStudy || null,
-        primary_field_interest: formData.primaryFieldInterest || null,
-        signup_source: formData.signupSource || null
+        year_of_study: formData.year_of_study || null,
+        primary_field_interest: formData.primary_field_interest || null,
+        signup_source: formData.signup_source || null
       };
 
-      console.log("📤 Sending registration data:", { ...userData, password: "***" });
+      console.log("📤 Sending registration data:", { 
+        ...userData, 
+        password: "***" 
+      });
 
-      // Add timeout to prevent hanging
-      const registrationPromise = register(userData);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Registration timeout. Please try again.")), 30000)
-      );
-
-      const success = await Promise.race([registrationPromise, timeoutPromise]);
+      const success = await register(userData);
 
       if (success) {
         console.log("✅ Registration successful!");
@@ -250,6 +227,7 @@ const Signup = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Required Fields */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name *</Label>
@@ -319,22 +297,22 @@ const Signup = () => {
               </div>
             )}
 
+            {/* Basic Optional Fields */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fieldOfStudy">Field of Study *</Label>
+                <Label htmlFor="field_of_study">Field of Study</Label>
                 <Input
-                  id="fieldOfStudy"
+                  id="field_of_study"
                   placeholder="Computer Science"
-                  value={formData.fieldOfStudy}
-                  onChange={(e) => handleChange("fieldOfStudy", e.target.value)}
-                  required
+                  value={formData.field_of_study}
+                  onChange={(e) => handleChange("field_of_study", e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="levelOfStudy">Level of Study *</Label>
-                <Select value={formData.levelOfStudy} onValueChange={(value) => handleChange("levelOfStudy", value)} required>
-                  <SelectTrigger id="levelOfStudy">
+                <Label htmlFor="level_of_study">Level of Study</Label>
+                <Select value={formData.level_of_study} onValueChange={(value) => handleChange("level_of_study", value)}>
+                  <SelectTrigger id="level_of_study">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -356,45 +334,40 @@ const Signup = () => {
               />
             </div>
 
-            {/* Enhanced Signup Fields */}
+            {/* Enhanced Fields Section */}
             <div className="border-t pt-6 mt-6">
               <h3 className="text-lg font-semibold mb-4 text-primary">Additional Information</h3>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="preferredName">Preferred Name (Display Name)</Label>
+                  <Label htmlFor="preferred_name">Preferred Name</Label>
                   <Input
-                    id="preferredName"
+                    id="preferred_name"
                     placeholder="Johnny"
-                    value={formData.preferredName}
-                    onChange={(e) => handleChange("preferredName", e.target.value)}
+                    value={formData.preferred_name}
+                    onChange={(e) => handleChange("preferred_name", e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Label htmlFor="date_of_birth">Date of Birth</Label>
                   <Input
-                    id="dateOfBirth"
+                    id="date_of_birth"
                     type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+                    value={formData.date_of_birth}
+                    onChange={(e) => handleChange("date_of_birth", e.target.value)}
                   />
-                  {formData.dateOfBirth && (
-                    <p className="text-xs text-muted-foreground">
-                      {new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear()} years old
-                    </p>
-                  )}
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="courseOfStudy">Course of Study</Label>
+                  <Label htmlFor="course_of_study">Course of Study</Label>
                   <Input
-                    id="courseOfStudy"
+                    id="course_of_study"
                     placeholder="Bachelor of Science in Computer Science"
-                    value={formData.courseOfStudy}
-                    onChange={(e) => handleChange("courseOfStudy", e.target.value)}
+                    value={formData.course_of_study}
+                    onChange={(e) => handleChange("course_of_study", e.target.value)}
                   />
                 </div>
 
@@ -415,9 +388,9 @@ const Signup = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="yearOfStudy">Year of Study</Label>
-                  <Select value={formData.yearOfStudy} onValueChange={(value) => handleChange("yearOfStudy", value)}>
-                    <SelectTrigger id="yearOfStudy">
+                  <Label htmlFor="year_of_study">Year of Study</Label>
+                  <Select value={formData.year_of_study} onValueChange={(value) => handleChange("year_of_study", value)}>
+                    <SelectTrigger id="year_of_study">
                       <SelectValue placeholder="Select year" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -429,9 +402,9 @@ const Signup = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="primaryFieldInterest">Primary Field of Interest</Label>
-                  <Select value={formData.primaryFieldInterest} onValueChange={(value) => handleChange("primaryFieldInterest", value)}>
-                    <SelectTrigger id="primaryFieldInterest">
+                  <Label htmlFor="primary_field_interest">Primary Field of Interest</Label>
+                  <Select value={formData.primary_field_interest} onValueChange={(value) => handleChange("primary_field_interest", value)}>
+                    <SelectTrigger id="primary_field_interest">
                       <SelectValue placeholder="Select your interest" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -444,9 +417,9 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signupSource">How did you hear about Skillyme?</Label>
-                <Select value={formData.signupSource} onValueChange={(value) => handleChange("signupSource", value)}>
-                  <SelectTrigger id="signupSource">
+                <Label htmlFor="signup_source">How did you hear about Skillyme?</Label>
+                <Select value={formData.signup_source} onValueChange={(value) => handleChange("signup_source", value)}>
+                  <SelectTrigger id="signup_source">
                     <SelectValue placeholder="Select how you heard about us" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -458,6 +431,7 @@ const Signup = () => {
               </div>
             </div>
 
+            {/* Password Fields */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
@@ -469,73 +443,6 @@ const Signup = () => {
                   onChange={(e) => handleChange("password", e.target.value)}
                   required
                 />
-                {/* Password Requirements */}
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">Password Requirements:</p>
-                    {formData.password && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs">Strength:</span>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4].map((level) => {
-                            const strength = Math.min(4, Math.floor(
-                              (formData.password.length >= 8 ? 1 : 0) +
-                              (/[A-Z]/.test(formData.password) ? 1 : 0) +
-                              (/[a-z]/.test(formData.password) ? 1 : 0) +
-                              (/\d/.test(formData.password) ? 1 : 0) +
-                              (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? 1 : 0) +
-                              (!/(.)\1{2,}/.test(formData.password) ? 1 : 0) +
-                              (!/123|abc|qwe|asd|zxc/i.test(formData.password) ? 1 : 0)
-                            ));
-                            return (
-                              <div
-                                key={level}
-                                className={`w-2 h-2 rounded-full ${level <= strength
-                                  ? strength <= 2
-                                    ? 'bg-red-500'
-                                    : strength <= 3
-                                      ? 'bg-yellow-500'
-                                      : 'bg-green-500'
-                                  : 'bg-gray-300'
-                                  }`}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <ul className="space-y-1 text-xs">
-                    <li className={`flex items-center gap-2 ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{formData.password.length >= 8 ? '✓' : '○'}</span>
-                      At least 8 characters
-                    </li>
-                    <li className={`flex items-center gap-2 ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{/[A-Z]/.test(formData.password) ? '✓' : '○'}</span>
-                      One uppercase letter
-                    </li>
-                    <li className={`flex items-center gap-2 ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{/[a-z]/.test(formData.password) ? '✓' : '○'}</span>
-                      One lowercase letter
-                    </li>
-                    <li className={`flex items-center gap-2 ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{/\d/.test(formData.password) ? '✓' : '○'}</span>
-                      One number
-                    </li>
-                    <li className={`flex items-center gap-2 ${/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? '✓' : '○'}</span>
-                      One special character
-                    </li>
-                    <li className={`flex items-center gap-2 ${!/(.)\1{2,}/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{!/(.)\1{2,}/.test(formData.password) ? '✓' : '○'}</span>
-                      No repeated characters (e.g., 111, aaa)
-                    </li>
-                    <li className={`flex items-center gap-2 ${!/123|abc|qwe|asd|zxc/i.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                      <span>{!/123|abc|qwe|asd|zxc/i.test(formData.password) ? '✓' : '○'}</span>
-                      No sequential characters (e.g., 123, abc)
-                    </li>
-                  </ul>
-                </div>
               </div>
 
               <div className="space-y-2">
