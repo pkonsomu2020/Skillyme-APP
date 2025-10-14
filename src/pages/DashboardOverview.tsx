@@ -16,7 +16,7 @@ const DashboardOverview = () => {
   const [stats, setStats] = useState<DashboardStats>({
     availableSessions: 0,
     sessionsJoined: 0,
-    sessionCost: 200,
+    sessionCost: 0,
     recruiters: 0
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -151,7 +151,7 @@ const DashboardOverview = () => {
               <div>
                 <h4 className="font-semibold mb-1">Join a Session</h4>
                 <p className="text-sm text-muted-foreground">
-                  Pay 200 KES via M-Pesa and submit your transaction code
+                  Sessions are now FREE! Simply register and join directly
                 </p>
               </div>
             </div>

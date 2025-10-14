@@ -37,7 +37,7 @@ const Landing = () => {
               <div className="flex items-center gap-6 pt-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-primary" />
-                  <span className="text-sm">Only 200 KES per session</span>
+                  <span className="text-sm">Join sessions for free</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-primary" />

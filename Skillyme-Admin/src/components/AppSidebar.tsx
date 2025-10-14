@@ -34,8 +34,12 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">S</span>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-glow shadow-lg ring-2 ring-primary/20 overflow-hidden">
+            <img 
+              src="/Skillyme LOGO.jpg" 
+              alt="Skillyme Logo" 
+              className="w-full h-full object-cover" 
+            />
           </div>
           <span className="text-xl font-semibold text-primary">Skillyme</span>
         </div>

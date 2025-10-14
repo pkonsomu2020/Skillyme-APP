@@ -79,8 +79,12 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-            <span className="text-3xl font-bold text-primary-foreground">S</span>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-glow shadow-lg ring-2 ring-primary/20 overflow-hidden">
+            <img 
+              src="/Skillyme LOGO.jpg" 
+              alt="Skillyme Logo" 
+              className="w-full h-full object-cover" 
+            />
           </div>
           <div>
             <CardTitle className="text-2xl">Skillyme Admin</CardTitle>
