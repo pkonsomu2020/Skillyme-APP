@@ -443,6 +443,73 @@ const Signup = () => {
                   onChange={(e) => handleChange("password", e.target.value)}
                   required
                 />
+                {/* Password Requirements */}
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Password Requirements:</p>
+                    {formData.password && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">Strength:</span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map((level) => {
+                            const strength = Math.min(4, Math.floor(
+                              (formData.password.length >= 8 ? 1 : 0) +
+                              (/[A-Z]/.test(formData.password) ? 1 : 0) +
+                              (/[a-z]/.test(formData.password) ? 1 : 0) +
+                              (/\d/.test(formData.password) ? 1 : 0) +
+                              (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? 1 : 0) +
+                              (!/(.)\1{2,}/.test(formData.password) ? 1 : 0) +
+                              (!/123|abc|qwe|asd|zxc/i.test(formData.password) ? 1 : 0)
+                            ));
+                            return (
+                              <div
+                                key={level}
+                                className={`w-2 h-2 rounded-full ${level <= strength
+                                  ? strength <= 2
+                                    ? 'bg-red-500'
+                                    : strength <= 3
+                                      ? 'bg-yellow-500'
+                                      : 'bg-green-500'
+                                  : 'bg-gray-300'
+                                  }`}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <ul className="space-y-1 text-xs">
+                    <li className={`flex items-center gap-2 ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{formData.password.length >= 8 ? '✓' : '○'}</span>
+                      At least 8 characters
+                    </li>
+                    <li className={`flex items-center gap-2 ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{/[A-Z]/.test(formData.password) ? '✓' : '○'}</span>
+                      One uppercase letter
+                    </li>
+                    <li className={`flex items-center gap-2 ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{/[a-z]/.test(formData.password) ? '✓' : '○'}</span>
+                      One lowercase letter
+                    </li>
+                    <li className={`flex items-center gap-2 ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{/\d/.test(formData.password) ? '✓' : '○'}</span>
+                      One number
+                    </li>
+                    <li className={`flex items-center gap-2 ${/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? '✓' : '○'}</span>
+                      One special character
+                    </li>
+                    <li className={`flex items-center gap-2 ${!/(.)\1{2,}/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{!/(.)\1{2,}/.test(formData.password) ? '✓' : '○'}</span>
+                      No repeated characters (e.g., 111, aaa)
+                    </li>
+                    <li className={`flex items-center gap-2 ${!/123|abc|qwe|asd|zxc/i.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span>{!/123|abc|qwe|asd|zxc/i.test(formData.password) ? '✓' : '○'}</span>
+                      No sequential characters (e.g., 123, abc)
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               <div className="space-y-2">
