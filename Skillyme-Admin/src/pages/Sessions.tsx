@@ -106,17 +106,7 @@ export default function Sessions() {
     fetchSessions()
   }, [fetchSessions])
 
-  // Auto-sync sessions data every 15 seconds from Supabase database
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchSessions()
-    }, 15000) // Sync every 15 seconds
-
-    // Cleanup interval on component unmount
-    return () => {
-      clearInterval(interval)
-    }
-  }, [fetchSessions])
+  // Auto-sync removed from Sessions page to prevent interference with form creation
 
   // Handle session creation
   const handleSessionCreated = (newSession: Session) => {
@@ -268,12 +258,6 @@ export default function Sessions() {
             <span>Active: {sessions.filter(s => s.is_active).length}</span>
             <span>Completed: {sessions.filter(s => s.is_completed).length}</span>
             <span>Total Attendees: {sessions.reduce((sum, s) => sum + (s.current_attendees || 0), 0)}</span>
-            {lastUpdated && (
-              <span className="flex items-center gap-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${syncing ? 'bg-blue-500 animate-spin' : 'bg-green-500'}`}></div>
-                {syncing ? 'Syncing...' : `Last synced: ${lastUpdated.toLocaleTimeString()}`}
-              </span>
-            )}
           </div>
         </div>
 
@@ -284,12 +268,8 @@ export default function Sessions() {
               <div>
                 <CardTitle className="text-xl">Career Sessions Database</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Complete sessions data from Supabase database - Auto-syncs every 15 seconds
+                  Complete sessions data from Supabase database
                 </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-blue-500 animate-spin' : 'bg-green-500 animate-pulse'}`}></div>
-                {syncing ? 'Syncing...' : 'Auto-sync active'}
               </div>
             </div>
           </CardHeader>
