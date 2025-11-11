@@ -23,13 +23,16 @@ app.use(httpsRedirect);
 app.use(securityHeaders);
 app.use(corsSecurity);
 
-// CORS Configuration - FIXED for admin dashboard
+// CORS Configuration - Updated for production domains
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
   'http://localhost:5173', // Main app (development)
   'http://localhost:8080', // Admin dashboard (development)
   'http://localhost:4173', // Vite preview mode
-  'https://skillyme-app.vercel.app', // Production main app
-  'https://skillyme-admin.vercel.app', // Production admin dashboard
+  'https://skillyme-app.vercel.app', // Production main app (Vercel)
+  'https://skillyme-admin.vercel.app', // Production admin dashboard (Vercel)
+  'https://skillyme.africa', // Production main app (Custom Domain)
+  'https://www.skillyme.africa', // Production main app with www (Custom Domain)
+  'https://admin.skillyme.africa', // Production admin dashboard (Custom Domain)
   process.env.FRONTEND_URL, // Production frontend
   process.env.ADMIN_URL // Production admin URL
 ].filter(Boolean); // Remove undefined values
@@ -105,6 +108,7 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/sessions', require('./routes/sessions'));
 // MySQL setup route removed - now using Supabase
 app.use('/api/diagnostic', require('./routes/diagnostic'));
+app.use('/api/debug', require('./routes/debug'));
 app.use('/secure-access', require('./routes/secureAccess'));
 
 // Admin routes
