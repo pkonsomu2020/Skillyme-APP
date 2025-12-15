@@ -3,6 +3,7 @@ import { Calendar, Award, CheckCircle, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import apiService from "@/services/api";
 import { useState, useEffect } from "react";
+import TopLeaderboard from "@/components/TopLeaderboard";
 
 interface DashboardStats {
   pointsEarned: number;
@@ -127,61 +128,71 @@ const DashboardOverview = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-xl font-bold mb-4">Quick Start Guide</h3>
-          <div className="space-y-4">
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
-              <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
-                1
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">Browse Sessions</h4>
-                <p className="text-sm text-muted-foreground">
-                  Check out upcoming career sessions from top companies
-                </p>
-              </div>
-            </div>
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Column - Quick Actions */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-bold mb-4">Quick Start Guide</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">Browse Sessions</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Check out upcoming career sessions from top companies
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
-              <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
-                2
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">Join a Session</h4>
-                <p className="text-sm text-muted-foreground">
-                  Pay 200 KES via M-Pesa and submit your transaction code
-                </p>
-              </div>
-            </div>
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">Join a Session</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Pay 200 KES via M-Pesa and submit your transaction code
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
-              <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
-                3
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">Receive Session Link</h4>
-                <p className="text-sm text-muted-foreground">
-                  Get your Google Meet link directly from the session page
-                </p>
-              </div>
-            </div>
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">Receive Session Link</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Get your Google Meet link directly from the session page
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
-              <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
-                4
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold flex-shrink-0">
+                    4
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">Connect & Learn</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Join the session, interact with recruiters, and explore opportunities
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h4 className="font-semibold mb-1">Connect & Learn</h4>
-                <p className="text-sm text-muted-foreground">
-                  Join the session, interact with recruiters, and explore opportunities
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Right Column - Leaderboard */}
+        <div className="lg:col-span-1">
+          <TopLeaderboard />
+        </div>
+      </div>
     </div>
   );
 };

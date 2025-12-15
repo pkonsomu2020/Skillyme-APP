@@ -180,8 +180,10 @@ class ApiService {
     return this.request('/assignments/user/points');
   }
 
-  async getLeaderboard(limit = 10) {
-    return this.request(`/assignments/leaderboard?limit=${limit}`);
+  async getLeaderboard(limit = 10, period = null) {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (period) params.append('period', period);
+    return this.request(`/assignments/leaderboard?${params.toString()}`);
   }
 
   // Check if user is authenticated

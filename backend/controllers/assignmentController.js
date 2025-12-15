@@ -167,15 +167,50 @@ const getUserPoints = async (req, res) => {
   }
 };
 
-// Get points leaderboard
+// Get points leaderboard with filters
 const getLeaderboard = async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
-    const leaderboard = await UserPoints.getLeaderboard(parseInt(limit));
+    const { 
+      limit = 10, 
+      period = 'all', // 'weekly', 'monthly', 'all'
+      target_group = 'all', // 'form4', 'undergraduate', 'all'
+      metric = 'points' // 'points', 'assignments'
+    } = req.query;
+
+    const userId = req.user?.id;
+
+    // Get leaderboard data
+    const leaderboard = await UserPoints.getLeaderboard({
+      limit: parseInt(limit),
+      period,
+      target_group,
+      metric
+    });
+
+    // Add rank numbers to leaderboard entries
+    const rankedLeaderboard = leaderboard.map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+      name: entry.users?.name || 'Unknown User',
+      total_points: entry.total_points || entry.period_points || entry.assignments_completed || 0,
+      level_name: entry.level_name || UserPoints.calculateLevel(entry.total_points || 0)
+    }));
+
+    // Get statistics
+    const stats = await UserPoints.getLeaderboardStats(period, userId);
 
     res.json({
       success: true,
-      data: { leaderboard }
+      data: { 
+        leaderboard: rankedLeaderboard,
+        stats,
+        filters: {
+          period,
+          target_group,
+          metric,
+          limit: parseInt(limit)
+        }
+      }
     });
   } catch (error) {
     console.error('Error fetching leaderboard:', error);

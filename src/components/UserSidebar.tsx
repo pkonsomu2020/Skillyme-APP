@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Search, Video, MessageSquare, Phone, FileText } from "lucide-react";
+import { LayoutDashboard, Search, Video, MessageSquare, Phone, FileText, Trophy } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Sessions", url: "/dashboard/sessions", icon: Video },
   { title: "Assignments", url: "/dashboard/assignments", icon: FileText },
+  { title: "Leaderboard", url: "/dashboard/leaderboard", icon: Trophy },
   { title: "Find Recruiters", url: "/dashboard/find-recruiters", icon: Search },
   { title: "Community", url: "/dashboard/community", icon: MessageSquare },
   { title: "Contact", url: "/dashboard/contact", icon: Phone },
