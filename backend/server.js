@@ -61,7 +61,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // CSRF Protection (exclude auth, payment, and admin auth endpoints)
 app.use((req, res, next) => {
-  // Skip CSRF for specific auth, payment, and admin auth endpoints
+  // Skip CSRF for specific auth, payment, admin, and user assignment endpoints
   if (
     (req.path === '/api/auth/register' && req.method === 'POST') ||
     (req.path === '/api/auth/login' && req.method === 'POST') ||
@@ -71,7 +71,15 @@ app.use((req, res, next) => {
     (req.path === '/api/admin/auth/login' && req.method === 'POST') ||
     (req.path === '/api/admin/auth/simple-login' && req.method === 'POST') ||
     (req.path === '/api/admin/auth/ultra-simple-login' && req.method === 'POST') ||
-    (req.path === '/api/admin/auth/clean-login' && req.method === 'POST')
+    (req.path === '/api/admin/auth/clean-login' && req.method === 'POST') ||
+    req.path.startsWith('/api/admin/assignments') ||
+    req.path.startsWith('/api/admin/sessions') ||
+    req.path.startsWith('/api/admin/users') ||
+    req.path.startsWith('/api/admin/notifications') ||
+    req.path.startsWith('/api/admin/upload') ||
+    req.path.startsWith('/api/admin/analytics') ||
+    req.path.startsWith('/api/assignments') ||
+    req.path.startsWith('/api/dashboard')
   ) {
     return next();
   }
