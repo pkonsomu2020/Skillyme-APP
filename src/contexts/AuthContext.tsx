@@ -131,6 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Clear all stored authentication data
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
     // User state cleared
   };
 
@@ -145,16 +146,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         try {
           const userData = JSON.parse(storedUser);
           setUser(userData);
+          
+          // Optionally verify the token is still valid by fetching profile
+          try {
+            await fetchUserProfile();
+          } catch (error) {
+            // If profile fetch fails, the token might be expired
+            console.log('Token validation failed, clearing auth state');
+            apiService.logout();
+            setUser(null);
+            localStorage.removeItem('user');
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('authToken');
+          }
         } catch (error) {
-          // PERFORMANCE: Removed excessive error logging
           // Clear invalid data
           localStorage.removeItem('user');
           localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('authToken');
         }
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
     
     checkAuthState();
