@@ -154,6 +154,36 @@ class ApiService {
     return data.csrfToken;
   }
 
+  // Assignment methods
+  async getAssignments(sessionId = null) {
+    const endpoint = sessionId ? `/assignments?session_id=${sessionId}` : '/assignments';
+    return this.request(endpoint);
+  }
+
+  async getAssignmentById(id) {
+    return this.request(`/assignments/${id}`);
+  }
+
+  async submitAssignment(assignmentId, submissionData) {
+    return this.request(`/assignments/${assignmentId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(submissionData),
+    });
+  }
+
+  async getUserSubmissions(status = null) {
+    const endpoint = status ? `/assignments/user/submissions?status=${status}` : '/assignments/user/submissions';
+    return this.request(endpoint);
+  }
+
+  async getUserPoints() {
+    return this.request('/assignments/user/points');
+  }
+
+  async getLeaderboard(limit = 10) {
+    return this.request(`/assignments/leaderboard?limit=${limit}`);
+  }
+
   // Check if user is authenticated
   isAuthenticated() {
     return !!this.getAuthToken();

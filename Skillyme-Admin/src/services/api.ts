@@ -473,6 +473,92 @@ export const uploadApi = {
 
 
 
+// Assignments Management API
+export const assignmentsApi = {
+  getAllAssignments: async (params?: {
+    session_id?: number;
+    difficulty_level?: string;
+    is_active?: boolean;
+  }): Promise<ApiResponse<{ assignments: any[] }>> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    
+    const queryString = queryParams.toString();
+    return apiRequest(`/admin/assignments${queryString ? `?${queryString}` : ''}`);
+  },
+
+  createAssignment: async (assignmentData: {
+    title: string;
+    description: string;
+    instructions?: string;
+    session_id?: number;
+    difficulty_level: 'easy' | 'medium' | 'hard';
+    points_reward?: number;
+    submission_type: 'text' | 'link' | 'file' | 'mixed';
+    due_date?: string;
+  }): Promise<ApiResponse<{ assignment: any }>> => {
+    return apiRequest('/admin/assignments', {
+      method: 'POST',
+      body: JSON.stringify(assignmentData),
+    });
+  },
+
+  updateAssignment: async (id: number, updates: any): Promise<ApiResponse<{ assignment: any }>> => {
+    return apiRequest(`/admin/assignments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  deleteAssignment: async (id: number): Promise<ApiResponse<void>> => {
+    return apiRequest(`/admin/assignments/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getAllSubmissions: async (params?: {
+    assignment_id?: number;
+    status?: string;
+  }): Promise<ApiResponse<{ submissions: any[] }>> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    
+    const queryString = queryParams.toString();
+    return apiRequest(`/admin/assignments/submissions${queryString ? `?${queryString}` : ''}`);
+  },
+
+  reviewSubmission: async (id: number, reviewData: {
+    status: 'approved' | 'rejected' | 'needs_revision';
+    admin_feedback?: string;
+    points_earned?: number;
+  }): Promise<ApiResponse<{ submission: any }>> => {
+    return apiRequest(`/admin/assignments/submissions/${id}/review`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData),
+    });
+  },
+
+  getAssignmentStats: async (id: number): Promise<ApiResponse<{ stats: any }>> => {
+    return apiRequest(`/admin/assignments/${id}/stats`);
+  },
+
+  getPlatformStats: async (): Promise<ApiResponse<{ stats: any }>> => {
+    return apiRequest('/admin/assignments/platform/stats');
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: adminAuthApi,
@@ -480,6 +566,6 @@ export const adminApi = {
   sessions: sessionsApi,
   users: usersApi,
   notifications: notificationsApi,
-
   upload: uploadApi,
+  assignments: assignmentsApi,
 };

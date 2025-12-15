@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Sessions from "./pages/Sessions";
+import Assignments from "./pages/Assignments";
 import Users from "./pages/Users";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
@@ -48,6 +49,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <Sessions />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/assignments"
+                  element={
+                    <ProtectedRoute>
+                      <Assignments />
                     </ProtectedRoute>
                   }
                 />

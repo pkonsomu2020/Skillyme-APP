@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserSidebar } from "@/components/UserSidebar";
 import DashboardOverview from "./DashboardOverview";
 import Sessions from "./Sessions";
+import Assignments from "./Assignments";
 import FindRecruiters from "./FindRecruiters";
 import Community from "./Community";
 import Contact from "./Contact";
@@ -52,6 +53,7 @@ const Dashboard = () => {
               <Routes>
                 <Route index element={<DashboardOverview />} />
                 <Route path="sessions" element={<Sessions />} />
+                <Route path="assignments" element={<Assignments />} />
                 <Route path="find-recruiters" element={<FindRecruiters />} />
                 <Route path="community" element={<Community />} />
                 <Route path="contact" element={<Contact />} />
