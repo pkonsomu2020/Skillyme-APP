@@ -122,18 +122,42 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
         due_date: formData.due_date || undefined
       }
 
+      console.log('🚀 Creating assignment with data:', assignmentData)
+
       const response = await adminApi.assignments.createAssignment(assignmentData)
 
+      console.log('📊 Assignment creation response:', response)
+
       if (response.success && response.data) {
+        toast({
+          title: "Success!",
+          description: "Assignment created successfully"
+        })
         onAssignmentCreated(response.data.assignment)
       } else {
-        throw new Error(response.error || 'Failed to create assignment')
+        console.error('❌ Assignment creation failed:', response)
+        throw new Error(response.error || response.message || 'Failed to create assignment')
       }
     } catch (error) {
-      console.error('Assignment creation error:', error)
+      console.error('❌ Assignment creation error:', error)
+      
+      // More detailed error handling
+      let errorMessage = "Failed to create assignment"
+      
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
+      // Check for network errors
+      if (errorMessage.includes('fetch')) {
+        errorMessage = "Network error. Please check your connection and try again."
+      }
+      
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create assignment",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {

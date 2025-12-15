@@ -1,9 +1,11 @@
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const PasswordValidator = require('../middleware/passwordValidation');
 const ErrorHandler = require('../middleware/errorHandler');
 const TransactionLogger = require('../middleware/transactionLogger');
+const HashIntegrityChecker = require('../middleware/hashIntegrity');
 
 // SECURITY: Strong JWT secret validation
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -11,41 +13,38 @@ if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET === 'your_super_secret_j
   console.error('❌ CRITICAL: JWT_SECRET must be at least 32 characters and properly configured!');
   process.exit(1);
 }
+const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
 
 // Register user
 const register = async (req, res) => {
   try {
-    console.log('🔍 [REGISTER] Incoming request body:', {
-      ...req.body,
-      password: req.body.password ? '[REDACTED]' : 'MISSING'
-    });
-    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('❌ [REGISTER] Validation errors:', errors.array());
+      await ErrorHandler.logError(new Error('Validation failed'), {
+        endpoint: '/api/auth/register',
+        errors: errors.array()
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
     }
-    
-    console.log('✅ [REGISTER] Express validation passed');
 
-    // Extract ALL fields that match CSV columns
     const { 
-      name, email, password, phone, country, county, field_of_study, institution, level_of_study,
-      preferred_name, date_of_birth, course_of_study, degree, year_of_study,
-      primary_field_interest, signup_source
+      name, email, password, phone, country, county, field_of_study, institution, level_of_study
     } = req.body;
 
     // Enhanced password validation
-    console.log('🔍 [REGISTER] Validating password...');
     const passwordValidation = PasswordValidator.validatePassword(password);
-    console.log('🔍 [REGISTER] Password validation result:', passwordValidation);
-    
     if (!passwordValidation.isValid) {
-      console.log('❌ [REGISTER] Password validation failed:', passwordValidation.errors);
+      await ErrorHandler.logError(new Error('Password validation failed'), {
+        endpoint: '/api/auth/register',
+        email,
+        passwordErrors: passwordValidation.errors
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Password does not meet security requirements',
@@ -54,21 +53,23 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
-    console.log('🔍 [REGISTER] Checking if user exists:', email);
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
-      console.log('❌ [REGISTER] User already exists:', email);
+      await ErrorHandler.logError(new Error('User already exists'), {
+        endpoint: '/api/auth/register',
+        email
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'User already exists with this email'
       });
     }
-    console.log('✅ [REGISTER] User does not exist, proceeding with registration');
 
     // Hash password with enhanced security
     const hashedPassword = await PasswordValidator.hashPassword(password);
 
-    // Create user data matching CSV structure exactly
+    // Create user with transaction logging
     const userData = {
       name,
       email,
@@ -76,24 +77,21 @@ const register = async (req, res) => {
       phone,
       country,
       county,
-      field_of_study,
-      institution,
-      level_of_study,
-      preferred_name,
-      date_of_birth,
-      course_of_study,
-      degree,
-      year_of_study,
-      primary_field_interest,
-      signup_source
+      field_of_study: field_of_study || 'Not specified',
+      institution: institution || 'Not specified',
+      level_of_study: level_of_study || 'High School'
     };
 
-    console.log('🔍 [REGISTER] Creating user with data:', {
-      ...userData,
-      password: '[REDACTED]'
-    });
-
     const user = await User.create(userData);
+    
+    // Initialize user points for leaderboard
+    try {
+      const UserPoints = require('../models/UserPoints');
+      await UserPoints.initializeUserPoints(user.id);
+    } catch (pointsError) {
+      console.warn('Failed to initialize user points:', pointsError);
+      // Don't fail registration if points initialization fails
+    }
     
     // Log successful registration
     await TransactionLogger.logUserRegistration(userData, user.id);
@@ -105,10 +103,11 @@ const register = async (req, res) => {
         email: user.email,
         role: 'user'
       },
-      JWT_SECRET
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
     );
 
-    console.log('✅ [REGISTER] Registration successful for user ID:', user.id);
+    // User object is ready for response
 
     res.status(201).json({
       success: true,
@@ -124,32 +123,17 @@ const register = async (req, res) => {
           county: user.county,
           field_of_study: user.field_of_study,
           institution: user.institution,
-          level_of_study: user.level_of_study,
-          preferred_name: user.preferred_name,
-          date_of_birth: user.date_of_birth,
-          course_of_study: user.course_of_study,
-          degree: user.degree,
-          year_of_study: user.year_of_study,
-          primary_field_interest: user.primary_field_interest,
-          signup_source: user.signup_source,
-          created_at: user.created_at,
-          updated_at: user.updated_at
+          level_of_study: user.level_of_study
         }
       }
     });
   } catch (error) {
-    console.error('❌ [REGISTER] Registration error:', error);
-    
     await ErrorHandler.logError(error, {
       endpoint: '/api/auth/register',
       email: req.body?.email
     });
     
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Registration failed. Please try again.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return ErrorHandler.handleAuthError(error, res);
   }
 };
 
@@ -158,6 +142,11 @@ const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      await ErrorHandler.logError(new Error('Login validation failed'), {
+        endpoint: '/api/auth/login',
+        errors: errors.array()
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -171,24 +160,31 @@ const login = async (req, res) => {
     const user = await User.findByEmail(email);
     if (!user) {
       console.log(`❌ Login failed for ${email}: User not found`);
+      await ErrorHandler.logError(new Error('User not found'), {
+        endpoint: '/api/auth/login',
+        email
+      });
+      
+      await TransactionLogger.logUserLogin(email, null, false);
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Enhanced password verification
-    let isPasswordValid = false;
-    
-    try {
-      isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
-    } catch (verificationError) {
-      console.log(`❌ Password verification error for ${email}:`, verificationError.message);
-      isPasswordValid = false;
-    }
-    
+    // Enhanced password verification with integrity check
+    const isPasswordValid = await PasswordValidator.verifyPassword(user.password, password);
     if (!isPasswordValid) {
       console.log(`❌ Login failed for ${email}: Invalid password`);
+      await ErrorHandler.logError(new Error('Invalid password'), {
+        endpoint: '/api/auth/login',
+        email,
+        userId: user.id
+      });
+      
+      await TransactionLogger.logUserLogin(email, user.id, false);
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -196,6 +192,9 @@ const login = async (req, res) => {
     }
     
     console.log(`✅ Login successful for ${email}`);
+    
+    // Log successful login
+    await TransactionLogger.logUserLogin(email, user.id, true);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -204,7 +203,8 @@ const login = async (req, res) => {
         email: user.email,
         role: 'user'
       },
-      JWT_SECRET
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE }
     );
 
     res.json({
@@ -223,12 +223,12 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Login failed. Please try again.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    await ErrorHandler.logError(error, {
+      endpoint: '/api/auth/login',
+      email: req.body?.email
     });
+    
+    return ErrorHandler.handleAuthError(error, res);
   }
 };
 
@@ -242,6 +242,7 @@ const getProfile = async (req, res) => {
       }
     });
   } catch (error) {
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Failed to fetch profile',
@@ -276,6 +277,7 @@ const updateProfile = async (req, res) => {
       });
     }
   } catch (error) {
+    // PERFORMANCE: Removed excessive error logging
     res.status(500).json({
       success: false,
       message: 'Profile update failed',

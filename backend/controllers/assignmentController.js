@@ -179,6 +179,17 @@ const getLeaderboard = async (req, res) => {
 
     const userId = req.user?.id;
 
+    // Initialize user points if they don't exist (for existing users)
+    if (userId) {
+      try {
+        await UserPoints.getUserPoints(userId);
+      } catch (error) {
+        // If user points don't exist, initialize them
+        console.log(`Initializing points for user ${userId}`);
+        await UserPoints.initializeUserPoints(userId);
+      }
+    }
+
     // Get leaderboard data
     const leaderboard = await UserPoints.getLeaderboard({
       limit: parseInt(limit),

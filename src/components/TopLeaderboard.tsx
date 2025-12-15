@@ -35,9 +35,17 @@ const TopLeaderboard = () => {
         if (response.data.stats?.your_rank) {
           setUserRank(response.data.stats.your_rank);
         }
+      } else {
+        console.warn('Leaderboard fetch failed:', response.error);
+        // Set empty state instead of failing
+        setTopUsers([]);
+        setUserRank(null);
       }
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
+      // Set empty state instead of failing
+      setTopUsers([]);
+      setUserRank(null);
     } finally {
       setIsLoading(false);
     }
