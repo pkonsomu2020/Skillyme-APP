@@ -333,8 +333,35 @@ export default function Sessions() {
                         }`}
                       >
                         <td className="p-3 font-mono text-sm font-medium">{session.id}</td>
-                        <td className="p-3 font-medium max-w-48 truncate" title={session.title}>
-                          {session.title}
+                        <td className="p-3 font-medium max-w-48" title={session.title}>
+                          <div className="space-y-1">
+                            <div className="truncate">{session.title}</div>
+                            <div className="flex gap-1 flex-wrap">
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${
+                                  (session.target_group || 'all') === 'form4' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                  (session.target_group || 'all') === 'undergraduate' ? 'bg-green-50 text-green-700 border-green-200' :
+                                  'bg-gray-50 text-gray-700 border-gray-200'
+                                }`}
+                              >
+                                {(session.target_group || 'all') === 'form4' ? 'Form 4' : 
+                                 (session.target_group || 'all') === 'undergraduate' ? 'Undergrad' : 'All'}
+                              </Badge>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${
+                                  (session.skill_area || 'general') === 'tech' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                  (session.skill_area || 'general') === 'career' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                  (session.skill_area || 'general') === 'creative' ? 'bg-pink-50 text-pink-700 border-pink-200' :
+                                  (session.skill_area || 'general') === 'business' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                  'bg-gray-50 text-gray-700 border-gray-200'
+                                }`}
+                              >
+                                {(session.skill_area || 'general').charAt(0).toUpperCase() + (session.skill_area || 'general').slice(1)}
+                              </Badge>
+                            </div>
+                          </div>
                         </td>
                         <td className="p-3 max-w-64 truncate" title={session.description}>
                           {session.description || <span className="text-muted-foreground italic">null</span>}

@@ -48,6 +48,8 @@ export interface Session {
   price: number;
   paybill_number?: string;
   business_number?: string;
+  target_group: 'form4' | 'undergraduate' | 'all';
+  skill_area: 'tech' | 'career' | 'creative' | 'business' | 'general';
   is_active: boolean;
   is_completed: boolean;
   max_attendees?: number;

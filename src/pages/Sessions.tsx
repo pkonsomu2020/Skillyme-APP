@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Video, ExternalLink } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, Video, ExternalLink, GraduationCap, BookOpen, Users } from "lucide-react";
 import { toast } from "sonner";
 import apiService from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,12 +19,15 @@ interface Session {
   description: string;
   google_meet_link: string;
   is_free: boolean;
+  target_group: 'form4' | 'undergraduate' | 'all';
+  skill_area: 'tech' | 'career' | 'creative' | 'business' | 'general';
 }
 
 const Sessions = () => {
   const { user, isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
 
   // Fetch sessions from database
   useEffect(() => {
@@ -33,7 +38,7 @@ const Sessions = () => {
         
         if (response.success) {
           // Transform the data to match the expected format
-          const transformedSessions = response.data.map((session: any) => ({
+          const transformedSessions = response.data.sessions.map((session: any) => ({
             id: session.id,
             title: session.title,
             recruiter: session.recruiter || 'Legal Professionals',
@@ -43,7 +48,9 @@ const Sessions = () => {
             duration: '90 minutes',
             description: session.description || 'Join us for an engaging session designed for high school and university students to learn from experienced legal professionals.',
             google_meet_link: session.google_meet_link || 'https://meet.google.com/nmh-nfxk-oao',
-            is_free: true
+            is_free: true,
+            target_group: session.target_group || 'all',
+            skill_area: session.skill_area || 'general'
           }));
           
           setSessions(transformedSessions);
@@ -82,79 +89,171 @@ const Sessions = () => {
     });
   };
 
+  // Filter sessions based on active tab
+  const filteredSessions = sessions.filter(session => {
+    if (activeTab === 'all') return true;
+    return session.target_group === activeTab || session.target_group === 'all';
+  });
+
+  // Get skill area badge color
+  const getSkillAreaColor = (skillArea: string) => {
+    switch (skillArea) {
+      case 'tech': return 'bg-blue-100 text-blue-800';
+      case 'career': return 'bg-green-100 text-green-800';
+      case 'creative': return 'bg-purple-100 text-purple-800';
+      case 'business': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Render session card
+  const renderSessionCard = (session: Session) => (
+    <Card key={session.id} className="hover:shadow-elegant transition-smooth">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-xl mb-2">{session.title}</CardTitle>
+            <CardDescription className="text-base">
+              {session.company} • {session.recruiter}
+            </CardDescription>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Badge className="bg-green-100 text-green-800">
+              FREE
+            </Badge>
+            <Badge className={getSkillAreaColor(session.skill_area)}>
+              {session.skill_area.charAt(0).toUpperCase() + session.skill_area.slice(1)}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">{session.description}</p>
+        
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="w-4 h-4 text-primary" />
+            <span>{new Date(session.date).toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4 text-primary" />
+            <span>{session.time} ({session.duration})</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Video className="w-4 h-4 text-primary" />
+            <span className="text-blue-600 hover:text-blue-800 cursor-pointer" 
+                  onClick={() => window.open(session.google_meet_link, '_blank')}>
+              Google Meet Link
+              <ExternalLink className="w-3 h-3 inline ml-1" />
+            </span>
+          </div>
+        </div>
+
+        <Button 
+          variant="hero" 
+          className="w-full"
+          onClick={() => handleJoinSession(session)}
+        >
+          <Video className="w-4 h-4 mr-2" />
+          Join Free Session
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2">Free Career Sessions</h2>
-        <p className="text-muted-foreground">Join our free career development sessions with industry professionals</p>
+        <h2 className="text-3xl font-bold mb-2">Career Sessions</h2>
+        <p className="text-muted-foreground">Join personalized career development sessions with industry professionals</p>
       </div>
 
-      <div className="grid gap-6 max-w-2xl">
-        {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading sessions...</p>
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No sessions available at the moment.</p>
-          </div>
-        ) : (
-          sessions.map((session) => (
-            <Card key={session.id} className="hover:shadow-elegant transition-smooth">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl mb-2">{session.title}</CardTitle>
-                    <CardDescription className="text-base">
-                      {session.company} • {session.recruiter}
-                    </CardDescription>
-                  </div>
-                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                    FREE
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">{session.description}</p>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <span>{new Date(session.date).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-primary" />
-                    <span>{session.time} ({session.duration})</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Video className="w-4 h-4 text-primary" />
-                    <span className="text-blue-600 hover:text-blue-800 cursor-pointer" 
-                          onClick={() => window.open(session.google_meet_link, '_blank')}>
-                      Google Meet Link
-                      <ExternalLink className="w-3 h-3 inline ml-1" />
-                    </span>
-                  </div>
-                </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            All Sessions
+          </TabsTrigger>
+          <TabsTrigger value="form4" className="flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" />
+            Form 4 Leavers
+          </TabsTrigger>
+          <TabsTrigger value="undergraduate" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Undergraduate Students
+          </TabsTrigger>
+        </TabsList>
 
-                <Button 
-                  variant="hero" 
-                  className="w-full"
-                  onClick={() => handleJoinSession(session)}
-                >
-                  <Video className="w-4 h-4 mr-2" />
-                  Join Free Session
-                </Button>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+        <TabsContent value="all" className="mt-0">
+          <div className="grid gap-6 max-w-2xl">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading sessions...</p>
+              </div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No sessions available for all students at the moment.</p>
+              </div>
+            ) : (
+              filteredSessions.map(renderSessionCard)
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="form4" className="mt-0">
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-900 mb-2">🎓 For Form 4 Leavers</h3>
+            <p className="text-sm text-blue-800">
+              Sessions designed specifically for high school graduates exploring career paths, 
+              university options, and entry-level opportunities.
+            </p>
+          </div>
+          <div className="grid gap-6 max-w-2xl">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading sessions...</p>
+              </div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No sessions available for Form 4 leavers at the moment.</p>
+              </div>
+            ) : (
+              filteredSessions.map(renderSessionCard)
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="undergraduate" className="mt-0">
+          <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+            <h3 className="font-semibold text-green-900 mb-2">📘 For Undergraduate Students</h3>
+            <p className="text-sm text-green-800">
+              Advanced sessions for university students focusing on internships, 
+              career development, and professional networking opportunities.
+            </p>
+          </div>
+          <div className="grid gap-6 max-w-2xl">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading sessions...</p>
+              </div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No sessions available for undergraduate students at the moment.</p>
+              </div>
+            ) : (
+              filteredSessions.map(renderSessionCard)
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

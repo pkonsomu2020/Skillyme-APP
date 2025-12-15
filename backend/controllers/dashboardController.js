@@ -6,16 +6,7 @@ const getDashboardStats = async (req, res) => {
     const userId = req.user.id;
     // Fetching dashboard stats
 
-    // Get available sessions count
-    const { count: availableSessions, error: sessionsError } = await supabase
-      .from('sessions')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
-    
-    if (sessionsError) throw sessionsError;
-    // Available sessions retrieved
-
-    // Get sessions joined by user (from payments table)
+    // Get sessions joined by user (from payments table) - this becomes points earned
     const { count: sessionsJoined, error: joinedError } = await supabase
       .from('payments')
       .select('*', { count: 'exact', head: true })
@@ -23,37 +14,37 @@ const getDashboardStats = async (req, res) => {
       .eq('status', 'paid');
     
     if (joinedError) throw joinedError;
-    // Sessions joined retrieved
+    
+    // Calculate points earned (10 points per session joined)
+    const pointsEarned = (sessionsJoined || 0) * 10;
 
-    // Get session cost (from sessions table)
-    const { data: costResult, error: costError } = await supabase
+    // Assignments completed (for now, same as sessions joined)
+    const assignmentsCompleted = sessionsJoined || 0;
+
+    // Get upcoming sessions count (active sessions in the future)
+    const { count: upcomingSessions, error: upcomingError } = await supabase
       .from('sessions')
-      .select('price')
+      .select('*', { count: 'exact', head: true })
       .eq('is_active', true)
-      .limit(1)
-      .single();
+      .gte('date', new Date().toISOString().split('T')[0]);
     
-    if (costError && costError.code !== 'PGRST116') throw costError;
-    const sessionCost = costResult?.price || 200;
-    // Session cost retrieved
+    if (upcomingError) throw upcomingError;
 
-    // Get recruiters count (from sessions table)
-    const { data: recruitersResult, error: recruitersError } = await supabase
-      .from('sessions')
-      .select('recruiter')
-      .eq('is_active', true);
-    
-    if (recruitersError) throw recruitersError;
-    const recruiters = new Set(recruitersResult.map(r => r.recruiter)).size;
-    // Recruiters count retrieved
+    // Determine current level based on sessions joined
+    let currentLevel = 'Beginner';
+    if (sessionsJoined >= 10) {
+      currentLevel = 'Pro';
+    } else if (sessionsJoined >= 3) {
+      currentLevel = 'Explorer';
+    }
 
     res.json({
       success: true,
       data: {
-        availableSessions,
-        sessionsJoined,
-        sessionCost,
-        recruiters
+        pointsEarned,
+        assignmentsCompleted,
+        upcomingSessions: upcomingSessions || 0,
+        currentLevel
       }
     });
 

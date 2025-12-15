@@ -34,9 +34,18 @@ const getAllSessions = async (req, res) => {
 
     // Sessions retrieved successfully
     
+    // Add default values for new fields if they don't exist
+    const sessionsWithDefaults = sessions.map(session => ({
+      ...session,
+      target_group: session.target_group || 'all',
+      skill_area: session.skill_area || 'general'
+    }));
+
     res.json({
       success: true,
-      data: sessions
+      data: {
+        sessions: sessionsWithDefaults
+      }
     });
 
   } catch (error) {

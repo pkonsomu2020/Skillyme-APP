@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { CalendarIcon, Clock, DollarSign, Users, Video, Building2, User, CreditCard, Image } from "lucide-react"
+import { CalendarIcon, Clock, DollarSign, Users, Video, Building2, User, CreditCard, Image, GraduationCap, Briefcase } from "lucide-react"
 import { adminApi, Session } from "@/services/api"
 
 interface CreateSessionFormProps {
@@ -28,7 +29,9 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
     time: "",
     max_attendees: "",
     poster_url: "",
-    thumbnail_url: ""
+    thumbnail_url: "",
+    target_group: "all" as "all" | "form4" | "undergraduate",
+    skill_area: "general" as "tech" | "career" | "creative" | "business" | "general"
   })
   const { toast } = useToast()
 
@@ -36,6 +39,13 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }))
+  }
+
+  const handleSelectChange = (field: 'target_group' | 'skill_area', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value as any
     }))
   }
 
@@ -95,7 +105,7 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
     try {
       setLoading(true)
 
-      const sessionData = {
+      const sessionData: Partial<Session> = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         company: formData.company.trim(),
@@ -108,7 +118,9 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
         time: formData.time,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : undefined,
         poster_url: formData.poster_url.trim() || undefined,
-        thumbnail_url: formData.thumbnail_url.trim() || undefined
+        thumbnail_url: formData.thumbnail_url.trim() || undefined,
+        target_group: formData.target_group as "all" | "form4" | "undergraduate",
+        skill_area: formData.skill_area as "tech" | "career" | "creative" | "business" | "general"
       }
 
       const response = await adminApi.sessions.createSession(sessionData)
@@ -225,6 +237,51 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
                 className="w-full"
                 type="url"
               />
+            </div>
+          </div>
+
+          {/* Session Categorization */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="target_group" className="text-sm font-medium flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Target Group *
+              </Label>
+              <Select value={formData.target_group} onValueChange={(value) => handleSelectChange('target_group', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select target audience" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Students</SelectItem>
+                  <SelectItem value="form4">Form 4 Leavers</SelectItem>
+                  <SelectItem value="undergraduate">Undergraduate Students</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Choose who this session is designed for
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="skill_area" className="text-sm font-medium flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Skill Area *
+              </Label>
+              <Select value={formData.skill_area} onValueChange={(value) => handleSelectChange('skill_area', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select skill focus area" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General Career</SelectItem>
+                  <SelectItem value="tech">Technology</SelectItem>
+                  <SelectItem value="career">Career Development</SelectItem>
+                  <SelectItem value="creative">Creative Arts</SelectItem>
+                  <SelectItem value="business">Business & Finance</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Main focus area of this session
+              </p>
             </div>
           </div>
 

@@ -1,23 +1,23 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Users, Video, TrendingUp } from "lucide-react";
+import { Calendar, Award, CheckCircle, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import apiService from "@/services/api";
 import { useState, useEffect } from "react";
 
 interface DashboardStats {
-  availableSessions: number;
-  sessionsJoined: number;
-  sessionCost: number;
-  recruiters: number;
+  pointsEarned: number;
+  assignmentsCompleted: number;
+  upcomingSessions: number;
+  currentLevel: string;
 }
 
 const DashboardOverview = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
-    availableSessions: 0,
-    sessionsJoined: 0,
-    sessionCost: 0,
-    recruiters: 0
+    pointsEarned: 0,
+    assignmentsCompleted: 0,
+    upcomingSessions: 0,
+    currentLevel: 'Beginner'
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,12 +66,44 @@ const DashboardOverview = () => {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
+                <Award className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Points Earned</p>
+                <p className="text-2xl font-bold">
+                  {isLoading ? '...' : error ? 'Error' : stats.pointsEarned}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-elegant transition-smooth">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Assignments Completed</p>
+                <p className="text-2xl font-bold">
+                  {isLoading ? '...' : error ? 'Error' : stats.assignmentsCompleted}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-elegant transition-smooth">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Available Sessions</p>
+                <p className="text-sm text-muted-foreground">Upcoming Sessions</p>
                 <p className="text-2xl font-bold">
-                  {isLoading ? '...' : error ? 'Error' : stats.availableSessions}
+                  {isLoading ? '...' : error ? 'Error' : stats.upcomingSessions}
                 </p>
               </div>
             </div>
@@ -82,44 +114,12 @@ const DashboardOverview = () => {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
-                <Users className="w-6 h-6 text-primary-foreground" />
+                <Star className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Sessions Joined</p>
+                <p className="text-sm text-muted-foreground">Current Level</p>
                 <p className="text-2xl font-bold">
-                  {isLoading ? '...' : error ? 'Error' : stats.sessionsJoined}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-elegant transition-smooth">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
-                <Video className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Session Cost</p>
-                <p className="text-2xl font-bold">
-                  {isLoading ? '...' : error ? 'Error' : `${stats.sessionCost} KES`}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-elegant transition-smooth">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Recruiters</p>
-                <p className="text-2xl font-bold">
-                  {isLoading ? '...' : error ? 'Error' : `${stats.recruiters}+`}
+                  {isLoading ? '...' : error ? 'Error' : stats.currentLevel}
                 </p>
               </div>
             </div>
@@ -151,7 +151,7 @@ const DashboardOverview = () => {
               <div>
                 <h4 className="font-semibold mb-1">Join a Session</h4>
                 <p className="text-sm text-muted-foreground">
-                  Sessions are now FREE! Simply register and join directly
+                  Pay 200 KES via M-Pesa and submit your transaction code
                 </p>
               </div>
             </div>
