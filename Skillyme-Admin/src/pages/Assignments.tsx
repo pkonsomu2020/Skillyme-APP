@@ -28,22 +28,28 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreateAssignmentForm } from "@/components/CreateAssignmentForm"
 import { ReviewSubmissionDialog } from "@/components/ReviewSubmissionDialog"
+import { ViewAssignmentDialog } from "@/components/ViewAssignmentDialog"
+import { EditAssignmentForm } from "@/components/EditAssignmentForm"
 import { adminApi } from "@/services/api"
 
 interface Assignment {
   id: number
   title: string
   description: string
+  instructions?: string
+  session_id?: number
   difficulty_level: 'easy' | 'medium' | 'hard'
   points_reward: number
-  submission_type: string
+  submission_type: 'text' | 'link' | 'file' | 'mixed'
   due_date?: string
   is_active: boolean
   sessions?: {
     title: string
     company: string
   }
+  created_by?: number
   created_at: string
+  updated_at?: string
 }
 
 interface Submission {
@@ -72,6 +78,9 @@ export default function Assignments() {
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
+  const [showViewDetails, setShowViewDetails] = useState(false)
+  const [showEditForm, setShowEditForm] = useState(false)
   const [activeTab, setActiveTab] = useState("assignments")
   const { toast } = useToast()
 
@@ -131,6 +140,57 @@ export default function Assignments() {
     toast({
       title: "Success!",
       description: "Submission reviewed successfully"
+    })
+  }
+
+  const handleViewDetails = (assignment: Assignment) => {
+    setSelectedAssignment(assignment)
+    setShowViewDetails(true)
+  }
+
+  const handleEditAssignment = (assignment: Assignment) => {
+    setSelectedAssignment(assignment)
+    setShowEditForm(true)
+  }
+
+  const handleDeleteAssignment = async (assignment: Assignment) => {
+    if (!confirm(`Are you sure you want to delete "${assignment.title}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await adminApi.assignments.deleteAssignment(assignment.id)
+      
+      if (response.success) {
+        setAssignments(prev => prev.filter(a => a.id !== assignment.id))
+        toast({
+          title: "Success!",
+          description: "Assignment deleted successfully"
+        })
+      } else {
+        throw new Error(response.error || 'Failed to delete assignment')
+      }
+    } catch (error) {
+      console.error('Delete assignment error:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete assignment",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleAssignmentUpdated = (updatedAssignment: Assignment) => {
+    setAssignments(prev => 
+      prev.map(assignment => 
+        assignment.id === updatedAssignment.id ? updatedAssignment : assignment
+      )
+    )
+    setShowEditForm(false)
+    setSelectedAssignment(null)
+    toast({
+      title: "Success!",
+      description: "Assignment updated successfully"
     })
   }
 
@@ -308,15 +368,18 @@ export default function Assignments() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewDetails(assignment)}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditAssignment(assignment)}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Assignment
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={() => handleDeleteAssignment(assignment)}
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -456,6 +519,29 @@ export default function Assignments() {
           <CreateAssignmentForm
             onAssignmentCreated={handleAssignmentCreated}
             onCancel={() => setShowCreateForm(false)}
+          />
+        )}
+
+        {/* View Assignment Details Dialog */}
+        {showViewDetails && selectedAssignment && (
+          <ViewAssignmentDialog
+            assignment={selectedAssignment}
+            onClose={() => {
+              setShowViewDetails(false)
+              setSelectedAssignment(null)
+            }}
+          />
+        )}
+
+        {/* Edit Assignment Form */}
+        {showEditForm && selectedAssignment && (
+          <EditAssignmentForm
+            assignment={selectedAssignment}
+            onAssignmentUpdated={handleAssignmentUpdated}
+            onCancel={() => {
+              setShowEditForm(false)
+              setSelectedAssignment(null)
+            }}
           />
         )}
 
