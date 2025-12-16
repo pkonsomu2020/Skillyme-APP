@@ -13,6 +13,7 @@ import Sessions from "./pages/Sessions";
 import Assignments from "./pages/Assignments";
 import Users from "./pages/Users";
 import Notifications from "./pages/Notifications";
+import Discounts from "./pages/Discounts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <Users />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/discounts"
+                  element={
+                    <ProtectedRoute>
+                      <Discounts />
                     </ProtectedRoute>
                   }
                 />

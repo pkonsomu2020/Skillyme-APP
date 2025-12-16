@@ -49,8 +49,8 @@ class EmailService {
     if (this.resend) {
       console.log('📧 [RESEND] Attempting to send via Resend...');
       try {
-        // Use a verified sender email or fallback to a default
-        const fromEmail = process.env.EMAIL_FROM || 'noreply@skillyme.com';
+        // Use verified skillyme.africa domain
+        const fromEmail = process.env.EMAIL_FROM || 'noreply@skillyme.africa';
         
         const emailData = {
           from: fromEmail,
@@ -288,6 +288,96 @@ class EmailService {
         </div>
       `;
     }
+
+    return await this.sendEmail(userEmail, subject, html);
+  }
+
+  // Email template for discount award notification
+  async sendDiscountAwardEmail(userEmail, userName, discountPercentage, discountType, userPoints, reason) {
+    const subject = `🎉 Congratulations! You've Earned a ${discountPercentage}% Discount - Skillyme`;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Discount Award - Skillyme</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🎉 Congratulations!</h1>
+            <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.9; font-size: 18px;">You've Earned a Discount!</p>
+          </div>
+          
+          <!-- Content -->
+          <div style="padding: 40px 30px;">
+            <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Amazing Achievement, ${userName}!</h2>
+            
+            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              We're thrilled to inform you that your outstanding performance on Skillyme has earned you a special discount!
+            </p>
+            
+            <!-- Discount Details -->
+            <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); padding: 30px; border-radius: 12px; margin: 30px 0; border-left: 6px solid #4caf50;">
+              <h3 style="margin: 0 0 20px 0; color: #2e7d32; font-size: 20px; text-align: center;">Your Discount Details</h3>
+              
+              <div style="text-align: center; margin: 20px 0;">
+                <div style="background: #4caf50; color: white; padding: 20px; border-radius: 50%; width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">
+                  ${discountPercentage}%
+                </div>
+                <p style="margin: 0; color: #2e7d32; font-size: 18px; font-weight: 600;">
+                  ${discountPercentage}% Discount on ${discountType === 'next_phase' ? 'Next Phase Registration' : 'Premium Services'}
+                </p>
+              </div>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #2e7d32; font-size: 16px;">🏆 Your Achievement Stats:</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #2e7d32;">
+                  <li style="margin-bottom: 8px;"><strong>Total Points Earned:</strong> ${userPoints} points</li>
+                  <li style="margin-bottom: 8px;"><strong>Achievement Reason:</strong> ${reason}</li>
+                  <li style="margin-bottom: 8px;"><strong>Discount Type:</strong> ${discountType === 'next_phase' ? 'Next Phase Registration' : 'Premium Services'}</li>
+                </ul>
+              </div>
+            </div>
+            
+            <!-- How to Use -->
+            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 30px 0;">
+              <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">📋 How to Use Your Discount:</h3>
+              <ol style="margin: 0; padding-left: 20px; color: #666; line-height: 1.6;">
+                <li style="margin-bottom: 10px;">Log into your Skillyme account</li>
+                <li style="margin-bottom: 10px;">Navigate to the registration or payment section</li>
+                <li style="margin-bottom: 10px;">Your discount will be automatically applied at checkout</li>
+                <li style="margin-bottom: 10px;">Complete your registration with the reduced price</li>
+              </ol>
+            </div>
+            
+            <!-- Call to Action -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'https://skillyme.africa'}" style="background: #4caf50; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px;">
+                🚀 Continue Your Journey
+              </a>
+            </div>
+            
+            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; text-align: center;">
+              Keep up the excellent work! Continue engaging with our platform to unlock more rewards and opportunities.
+            </p>
+          </div>
+          
+          <!-- Footer -->
+          <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+            <p style="color: #999999; font-size: 12px; margin: 0;">
+              © 2024 Skillyme. All rights reserved.<br>
+              You're receiving this because you've achieved outstanding performance on our platform.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
 
     return await this.sendEmail(userEmail, subject, html);
   }

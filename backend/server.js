@@ -78,6 +78,7 @@ app.use((req, res, next) => {
     req.path.startsWith('/api/admin/notifications') ||
     req.path.startsWith('/api/admin/upload') ||
     req.path.startsWith('/api/admin/analytics') ||
+    req.path.startsWith('/api/admin/discounts') ||
     req.path.startsWith('/api/assignments') ||
     req.path.startsWith('/api/dashboard')
   ) {
@@ -106,6 +107,7 @@ app.use('/api/admin/analytics', require('./routes/adminAnalytics'));
 app.use('/api/admin/notifications', require('./routes/adminNotifications'));
 app.use('/api/admin/upload', require('./routes/adminUpload'));
 app.use('/api/admin/assignments', require('./routes/adminAssignments'));
+app.use('/api/admin/discounts', require('./routes/adminDiscounts'));
 
 // All authentication routes are now unified in /api/admin/auth
 // No additional route files needed

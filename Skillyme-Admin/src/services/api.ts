@@ -559,6 +559,65 @@ export const assignmentsApi = {
   },
 };
 
+// Discounts Management API
+export const discountsApi = {
+  getLeaderboard: async (params?: {
+    limit?: number;
+    period?: string;
+    target_group?: string;
+    min_points?: number;
+  }): Promise<ApiResponse<{ leaderboard: any[]; summary: any }>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.period) queryParams.append('period', params.period);
+    if (params?.target_group) queryParams.append('target_group', params.target_group);
+    if (params?.min_points) queryParams.append('min_points', params.min_points.toString());
+    
+    return apiRequest<{ leaderboard: any[]; summary: any }>(`/admin/discounts/leaderboard?${queryParams}`);
+  },
+
+  award: async (data: {
+    user_id: number;
+    discount_percentage: number;
+    discount_type?: string;
+    valid_until?: string;
+    reason?: string;
+  }): Promise<ApiResponse<{ discount: any; user: any }>> => {
+    return apiRequest<{ discount: any; user: any }>('/admin/discounts/award', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  bulkAward: async (data: {
+    top_count?: number;
+    discount_percentage: number;
+    discount_type?: string;
+    min_points?: number;
+    reason?: string;
+  }): Promise<ApiResponse<{ summary: any; results: any[] }>> => {
+    return apiRequest<{ summary: any; results: any[] }>('/admin/discounts/bulk-award', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    discount_type?: string;
+  }): Promise<ApiResponse<{ discounts: any[]; pagination: any }>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.discount_type) queryParams.append('discount_type', params.discount_type);
+    
+    return apiRequest<{ discounts: any[]; pagination: any }>(`/admin/discounts?${queryParams}`);
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: adminAuthApi,
@@ -568,4 +627,5 @@ export const adminApi = {
   notifications: notificationsApi,
   upload: uploadApi,
   assignments: assignmentsApi,
+  discounts: discountsApi,
 };
