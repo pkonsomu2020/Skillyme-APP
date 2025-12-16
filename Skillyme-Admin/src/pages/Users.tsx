@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 import { useToast } from "@/hooks/use-toast"
-import { Search, UserPlus } from "lucide-react"
+import { Search } from "lucide-react"
 import { adminApi, User } from "@/services/api"
 
 // Use the exact User interface from API without modifications
@@ -121,41 +121,7 @@ export default function Users() {
     }
   }, [fetchUsers])
 
-  // Cleanup test users function
-  const handleCleanupTestUsers = async () => {
-    if (!confirm('Are you sure you want to delete all test users? This action cannot be undone.')) {
-      return
-    }
 
-    try {
-      setLoading(true)
-      const response = await adminApi.users.cleanupTestUsers()
-      
-      if (response.success) {
-        toast({
-          title: "Cleanup Successful",
-          description: `Deleted ${response.data?.deletedCount || 0} test users`,
-        })
-        // Refresh the users list
-        await fetchUsers()
-      } else {
-        toast({
-          title: "Cleanup Failed",
-          description: response.error || "Failed to cleanup test users",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Cleanup error:", error)
-      toast({
-        title: "Error",
-        description: "Failed to cleanup test users",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
 
 
@@ -192,17 +158,7 @@ export default function Users() {
             <p className="text-muted-foreground">Manage and view all registered users</p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleCleanupTestUsers}
-              className="text-red-600 hover:text-red-700"
-            >
-              🧹 Cleanup Test Users
-            </Button>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
+            {/* Action buttons removed as requested */}
           </div>
         </div>
 
@@ -248,7 +204,7 @@ export default function Users() {
           <CardContent>
             {filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <UserPlus className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
                   {searchTerm ? 'No users found' : 'No users yet'}
                 </h3>

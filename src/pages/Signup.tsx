@@ -12,68 +12,63 @@ const Signup = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form data matching CSV structure exactly
   const [formData, setFormData] = useState({
-    // Required fields
     name: "",
     email: "",
-    password: "",
-    confirmPassword: "",
     phone: "",
     country: "",
-    
-    // Optional basic fields
     county: "",
-    field_of_study: "",
+    fieldOfStudy: "",
     institution: "",
-    level_of_study: "",
-    
-    // Enhanced fields (matching CSV columns exactly)
-    preferred_name: "",
-    date_of_birth: "",
-    course_of_study: "",
+    levelOfStudy: "",
+    password: "",
+    confirmPassword: "",
+    // New enhanced signup fields
+    preferredName: "",
+    dateOfBirth: "",
+    courseOfStudy: "",
     degree: "",
-    year_of_study: "",
-    primary_field_interest: "",
-    signup_source: ""
+    yearOfStudy: "",
+    primaryFieldInterest: "",
+    signupSource: "",
   });
 
   const countries = [
-    "Kenya", "Nigeria", "South Africa", "Ghana", "Uganda", "Tanzania", "Ethiopia",
-    "Morocco", "Algeria", "Egypt", "Tunisia", "Libya", "Sudan", "Angola", "Mozambique",
-    "Madagascar", "Cameroon", "Côte d'Ivoire", "Niger", "Burkina Faso", "Mali", "Malawi",
+    "Kenya", "Nigeria", "South Africa", "Ghana", "Uganda", "Tanzania", "Ethiopia", 
+    "Morocco", "Algeria", "Egypt", "Tunisia", "Libya", "Sudan", "Angola", "Mozambique", 
+    "Madagascar", "Cameroon", "Côte d'Ivoire", "Niger", "Burkina Faso", "Mali", "Malawi", 
     "Zambia", "Somalia", "Senegal", "Chad", "Sierra Leone", "Liberia", "Central African Republic",
-    "Mauritania", "Eritrea", "Gambia", "Botswana", "Gabon", "Lesotho", "Guinea-Bissau",
-    "Equatorial Guinea", "Mauritius", "Eswatini", "Djibouti", "Fiji", "Comoros", "Cape Verde",
+    "Mauritania", "Eritrea", "Gambia", "Botswana", "Gabon", "Lesotho", "Guinea-Bissau", 
+    "Equatorial Guinea", "Mauritius", "Eswatini", "Djibouti", "Fiji", "Comoros", "Cape Verde", 
     "São Tomé and Príncipe", "Seychelles", "Other"
   ];
 
   const counties = [
-    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
-    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
-    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
-    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
-    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
-    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
+    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa", 
+    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi", 
+    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu", 
+    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa", 
+    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua", 
+    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi", 
     "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
-  ];
+  ];  
 
   const levelsOfStudy = ["High School", "Undergraduate", "Graduate", "Postgraduate"];
 
+  // New enhanced signup options
   const degrees = [
-    "Certificate", "Diploma", "Bachelor's Degree", "Master's Degree",
+    "Certificate", "Diploma", "Bachelor's Degree", "Master's Degree", 
     "PhD/Doctorate", "Professional Qualification", "Other"
   ];
 
   const yearsOfStudy = [
-    "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year",
+    "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", 
     "6th Year", "Graduate", "Postgraduate", "Other"
   ];
 
   const primaryFieldInterests = [
     "Technology & Software Development",
-    "Business & Entrepreneurship",
+    "Business & Entrepreneurship", 
     "Healthcare & Medicine",
     "Education & Teaching",
     "Law & Legal Services",
@@ -105,45 +100,74 @@ const Signup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
+    // Prevent multiple submissions
     if (isSubmitting) {
+      console.log("Form already submitting, ignoring submission");
       return;
     }
-
+    
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match!");
       return;
     }
 
-    // Enhanced password validation
+    // Enhanced password validation to match backend requirements
     const passwordErrors = [];
-
+    
     if (formData.password.length < 8) {
       passwordErrors.push('Password must be at least 8 characters long');
     }
-
+    
     if (formData.password.length > 128) {
       passwordErrors.push('Password must be less than 128 characters');
     }
-
+    
     if (!/[a-z]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one lowercase letter');
     }
-
+    
     if (!/[A-Z]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one uppercase letter');
     }
-
+    
     if (!/[0-9]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one number');
     }
-
+    
     if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password)) {
       passwordErrors.push('Password must contain at least one special character');
     }
-
+    
+    // Check for common passwords
+    const commonPasswords = [
+      'password', 'password123', '123456', 'admin', 'test', 'user',
+      'qwerty', 'abc123', 'letmein', 'welcome', 'monkey', 'dragon',
+      'master', 'hello', 'login', 'pass', '123456789', 'password1'
+    ];
+    
+    if (commonPasswords.includes(formData.password.toLowerCase())) {
+      passwordErrors.push('Password is too common. Please choose a more secure password');
+    }
+    
+    // Check for sequential characters
+    const sequences = ['123', '234', '345', '456', '567', '678', '789', '890',
+                      'abc', 'bcd', 'cde', 'def', 'efg', 'fgh', 'ghi', 'hij',
+                      'jkl', 'klm', 'lmn', 'mno', 'nop', 'opq', 'pqr', 'qrs',
+                      'rst', 'stu', 'tuv', 'uvw', 'vwx', 'wxy', 'xyz'];
+    
+    const lowerPassword = formData.password.toLowerCase();
+    if (sequences.some(seq => lowerPassword.includes(seq))) {
+      passwordErrors.push('Password contains sequential characters (e.g., 123, abc)');
+    }
+    
+    // Check for repeated characters
+    if (/(.)\1{2,}/.test(formData.password)) {
+      passwordErrors.push('Password contains too many repeated characters');
+    }
+    
     if (passwordErrors.length > 0) {
-      toast.error(passwordErrors[0]);
+      toast.error(passwordErrors[0]); // Show first error
       return;
     }
 
@@ -156,39 +180,38 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
       console.log("🚀 Starting registration process...");
-
-      // Prepare data matching CSV structure exactly
+      
+      // Prepare data for API - only send fields that exist in database
       const userData = {
-        // Required fields
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-        phone: formData.phone.trim(),
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
         country: formData.country,
-        
-        // Optional fields - send empty string as null for proper database handling
-        county: formData.county || null,
-        field_of_study: formData.field_of_study || null,
+        county: formData.country === "Kenya" ? formData.county : null,
+        field_of_study: formData.fieldOfStudy,
         institution: formData.institution || null,
-        level_of_study: formData.level_of_study || null,
-        
-        // Enhanced fields - matching CSV columns exactly
-        preferred_name: formData.preferred_name || null,
-        date_of_birth: formData.date_of_birth || null,
-        course_of_study: formData.course_of_study || null,
+        level_of_study: formData.levelOfStudy,
+        password: formData.password,
+        // Enhanced signup fields
+        preferred_name: formData.preferredName || null,
+        date_of_birth: formData.dateOfBirth || null,
+        course_of_study: formData.courseOfStudy || null,
         degree: formData.degree || null,
-        year_of_study: formData.year_of_study || null,
-        primary_field_interest: formData.primary_field_interest || null,
-        signup_source: formData.signup_source || null
+        year_of_study: formData.yearOfStudy || null,
+        primary_field_interest: formData.primaryFieldInterest || null,
+        signup_source: formData.signupSource || null
       };
 
-      console.log("📤 Sending registration data:", { 
-        ...userData, 
-        password: "***" 
-      });
-
-      const success = await register(userData);
-
+      console.log("📤 Sending registration data:", { ...userData, password: "***" });
+      
+      // Add timeout to prevent hanging
+      const registrationPromise = register(userData);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Registration timeout. Please try again.")), 30000)
+      );
+      
+      const success = await Promise.race([registrationPromise, timeoutPromise]);
+      
       if (success) {
         console.log("✅ Registration successful!");
         toast.success("Account created successfully!");
@@ -214,10 +237,10 @@ const Signup = () => {
       <Card className="w-full max-w-2xl shadow-elegant">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
-            <img
-              src="/Skillyme LOGO.jpg"
-              alt="Skillyme Logo"
-              className="w-full h-full object-cover"
+            <img 
+              src="/Skillyme LOGO.jpg" 
+              alt="Skillyme Logo" 
+              className="w-full h-full object-cover" 
             />
           </div>
           <CardTitle className="text-3xl">Create Your Account</CardTitle>
@@ -227,7 +250,6 @@ const Signup = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Required Fields */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name *</Label>
@@ -297,22 +319,22 @@ const Signup = () => {
               </div>
             )}
 
-            {/* Basic Optional Fields */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="field_of_study">Field of Study</Label>
+                <Label htmlFor="fieldOfStudy">Field of Study *</Label>
                 <Input
-                  id="field_of_study"
+                  id="fieldOfStudy"
                   placeholder="Computer Science"
-                  value={formData.field_of_study}
-                  onChange={(e) => handleChange("field_of_study", e.target.value)}
+                  value={formData.fieldOfStudy}
+                  onChange={(e) => handleChange("fieldOfStudy", e.target.value)}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="level_of_study">Level of Study</Label>
-                <Select value={formData.level_of_study} onValueChange={(value) => handleChange("level_of_study", value)}>
-                  <SelectTrigger id="level_of_study">
+                <Label htmlFor="levelOfStudy">Level of Study *</Label>
+                <Select value={formData.levelOfStudy} onValueChange={(value) => handleChange("levelOfStudy", value)} required>
+                  <SelectTrigger id="levelOfStudy">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -334,40 +356,45 @@ const Signup = () => {
               />
             </div>
 
-            {/* Enhanced Fields Section */}
+            {/* Enhanced Signup Fields */}
             <div className="border-t pt-6 mt-6">
               <h3 className="text-lg font-semibold mb-4 text-primary">Additional Information</h3>
-
+              
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="preferred_name">Preferred Name</Label>
+                  <Label htmlFor="preferredName">Preferred Name (Display Name)</Label>
                   <Input
-                    id="preferred_name"
+                    id="preferredName"
                     placeholder="Johnny"
-                    value={formData.preferred_name}
-                    onChange={(e) => handleChange("preferred_name", e.target.value)}
+                    value={formData.preferredName}
+                    onChange={(e) => handleChange("preferredName", e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="date_of_birth">Date of Birth</Label>
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
                   <Input
-                    id="date_of_birth"
+                    id="dateOfBirth"
                     type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) => handleChange("date_of_birth", e.target.value)}
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleChange("dateOfBirth", e.target.value)}
                   />
+                  {formData.dateOfBirth && (
+                    <p className="text-xs text-muted-foreground">
+                      {new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear()} years old
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="course_of_study">Course of Study</Label>
+                  <Label htmlFor="courseOfStudy">Course of Study</Label>
                   <Input
-                    id="course_of_study"
+                    id="courseOfStudy"
                     placeholder="Bachelor of Science in Computer Science"
-                    value={formData.course_of_study}
-                    onChange={(e) => handleChange("course_of_study", e.target.value)}
+                    value={formData.courseOfStudy}
+                    onChange={(e) => handleChange("courseOfStudy", e.target.value)}
                   />
                 </div>
 
@@ -388,9 +415,9 @@ const Signup = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="year_of_study">Year of Study</Label>
-                  <Select value={formData.year_of_study} onValueChange={(value) => handleChange("year_of_study", value)}>
-                    <SelectTrigger id="year_of_study">
+                  <Label htmlFor="yearOfStudy">Year of Study</Label>
+                  <Select value={formData.yearOfStudy} onValueChange={(value) => handleChange("yearOfStudy", value)}>
+                    <SelectTrigger id="yearOfStudy">
                       <SelectValue placeholder="Select year" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -402,9 +429,9 @@ const Signup = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="primary_field_interest">Primary Field of Interest</Label>
-                  <Select value={formData.primary_field_interest} onValueChange={(value) => handleChange("primary_field_interest", value)}>
-                    <SelectTrigger id="primary_field_interest">
+                  <Label htmlFor="primaryFieldInterest">Primary Field of Interest</Label>
+                  <Select value={formData.primaryFieldInterest} onValueChange={(value) => handleChange("primaryFieldInterest", value)}>
+                    <SelectTrigger id="primaryFieldInterest">
                       <SelectValue placeholder="Select your interest" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -417,9 +444,9 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup_source">How did you hear about Skillyme?</Label>
-                <Select value={formData.signup_source} onValueChange={(value) => handleChange("signup_source", value)}>
-                  <SelectTrigger id="signup_source">
+                <Label htmlFor="signupSource">How did you hear about Skillyme?</Label>
+                <Select value={formData.signupSource} onValueChange={(value) => handleChange("signupSource", value)}>
+                  <SelectTrigger id="signupSource">
                     <SelectValue placeholder="Select how you heard about us" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px] overflow-y-auto" position="popper">
@@ -431,7 +458,6 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Password Fields */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
@@ -464,14 +490,15 @@ const Signup = () => {
                             return (
                               <div
                                 key={level}
-                                className={`w-2 h-2 rounded-full ${level <= strength
-                                  ? strength <= 2
-                                    ? 'bg-red-500'
-                                    : strength <= 3
-                                      ? 'bg-yellow-500'
-                                      : 'bg-green-500'
-                                  : 'bg-gray-300'
-                                  }`}
+                                className={`w-2 h-2 rounded-full ${
+                                  level <= strength 
+                                    ? strength <= 2 
+                                      ? 'bg-red-500' 
+                                      : strength <= 3 
+                                        ? 'bg-yellow-500' 
+                                        : 'bg-green-500'
+                                    : 'bg-gray-300'
+                                }`}
                               />
                             );
                           })}
@@ -531,10 +558,10 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              variant="hero"
-              className="w-full"
+            <Button 
+              type="submit" 
+              variant="hero" 
+              className="w-full" 
               size="lg"
               disabled={isSubmitting}
             >
