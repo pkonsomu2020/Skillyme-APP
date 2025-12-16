@@ -1,11 +1,10 @@
 const express = require('express');
 const { body, query } = require('express-validator');
-const { authenticateAdmin, cleanAuth } = require('../middleware/adminAuth');
+const { authenticateAdmin } = require('../middleware/adminAuth');
 const {
   sendNotification,
   getNotificationHistory,
-  sendSessionReminder,
-  getRecipientOptions
+  sendSessionReminder
 } = require('../controllers/adminNotificationController');
 
 const router = express.Router();
@@ -31,10 +30,9 @@ const paginationValidation = [
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
 ];
 
-// Routes (protected with clean authentication)
-router.post('/send', cleanAuth, notificationValidation, sendNotification);
-router.get('/history', cleanAuth, paginationValidation, getNotificationHistory);
-router.post('/session-reminder', cleanAuth, sessionReminderValidation, sendSessionReminder);
-router.get('/recipient-options', cleanAuth, getRecipientOptions);
+// Routes
+router.post('/send', authenticateAdmin, notificationValidation, sendNotification);
+router.get('/history', authenticateAdmin, paginationValidation, getNotificationHistory);
+router.post('/session-reminder', authenticateAdmin, sessionReminderValidation, sendSessionReminder);
 
 module.exports = router;
