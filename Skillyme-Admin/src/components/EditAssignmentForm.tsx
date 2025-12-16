@@ -43,7 +43,7 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
     title: assignment.title,
     description: assignment.description,
     instructions: assignment.instructions || "",
-    session_id: assignment.session_id?.toString() || "",
+    session_id: assignment.session_id?.toString() || "none",
     difficulty_level: assignment.difficulty_level,
     points_reward: assignment.points_reward.toString(),
     submission_type: assignment.submission_type,
@@ -131,7 +131,7 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
         title: formData.title.trim(),
         description: formData.description.trim(),
         instructions: formData.instructions.trim() || undefined,
-        session_id: formData.session_id ? parseInt(formData.session_id) : undefined,
+        session_id: formData.session_id && formData.session_id !== "none" ? parseInt(formData.session_id) : undefined,
         difficulty_level: formData.difficulty_level,
         points_reward: formData.points_reward ? parseInt(formData.points_reward) : getDefaultPoints(formData.difficulty_level),
         submission_type: formData.submission_type,
@@ -207,7 +207,7 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
                     <SelectValue placeholder="Select a session" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No specific session</SelectItem>
+                    <SelectItem value="none">No specific session</SelectItem>
                     {sessions.map((session) => (
                       <SelectItem key={session.id} value={session.id.toString()}>
                         {session.title} • {session.company}

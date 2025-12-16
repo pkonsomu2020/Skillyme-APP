@@ -456,7 +456,7 @@ The Skillyme Team`
                       </SelectTrigger>
                       <SelectContent>
                         {loadingOptions ? (
-                          <SelectItem value="" disabled>Loading...</SelectItem>
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
                         ) : recipientOptions.fieldsOfStudy.length > 0 ? (
                           recipientOptions.fieldsOfStudy.map((field) => (
                             <SelectItem key={field} value={field}>
@@ -464,7 +464,7 @@ The Skillyme Team`
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="" disabled>No fields found</SelectItem>
+                          <SelectItem value="no-fields" disabled>No fields found</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -501,7 +501,7 @@ The Skillyme Team`
                       </SelectTrigger>
                       <SelectContent>
                         {loadingOptions ? (
-                          <SelectItem value="" disabled>Loading...</SelectItem>
+                          <SelectItem value="loading-institutions" disabled>Loading...</SelectItem>
                         ) : recipientOptions.institutions.length > 0 ? (
                           recipientOptions.institutions.map((institution) => (
                             <SelectItem key={institution} value={institution}>
@@ -509,7 +509,7 @@ The Skillyme Team`
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="" disabled>No institutions found</SelectItem>
+                          <SelectItem value="no-institutions" disabled>No institutions found</SelectItem>
                         )}
                       </SelectContent>
                     </Select>

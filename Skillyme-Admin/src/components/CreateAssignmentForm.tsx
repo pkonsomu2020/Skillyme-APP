@@ -28,7 +28,7 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
     title: "",
     description: "",
     instructions: "",
-    session_id: "",
+    session_id: "none",
     difficulty_level: "easy" as "easy" | "medium" | "hard",
     points_reward: "",
     submission_type: "text" as "text" | "link" | "file" | "mixed",
@@ -115,7 +115,7 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
         title: formData.title.trim(),
         description: formData.description.trim(),
         instructions: formData.instructions.trim() || undefined,
-        session_id: formData.session_id ? parseInt(formData.session_id) : undefined,
+        session_id: formData.session_id && formData.session_id !== "none" ? parseInt(formData.session_id) : undefined,
         difficulty_level: formData.difficulty_level,
         points_reward: formData.points_reward ? parseInt(formData.points_reward) : getDefaultPoints(formData.difficulty_level),
         submission_type: formData.submission_type,
@@ -204,7 +204,7 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
                   <SelectValue placeholder="Select a session" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific session</SelectItem>
+                  <SelectItem value="none">No specific session</SelectItem>
                   {sessions.map((session) => (
                     <SelectItem key={session.id} value={session.id.toString()}>
                       {session.title} • {session.company}
