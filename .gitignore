@@ -24,6 +24,6 @@ dist-ssr
 
 ./backend/node_modules
 ./backend/.env
-
+.env
 # Admin Dashboard (Separate Application) - REMOVED FROM GITIGNORE
 # Skillyme_Admin/ - This needs to be in the repository for Vercel deployment

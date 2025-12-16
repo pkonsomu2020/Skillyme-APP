@@ -181,9 +181,52 @@ class ApiService {
   }
 
   async getLeaderboard(limit = 10, period = null) {
+    // Try Supabase first, fallback to backend API
+    try {
+      const supabaseService = (await import('./supabase.js')).default;
+      const response = await supabaseService.getLeaderboard(limit);
+      if (response.success) {
+        return response;
+      }
+    } catch (error) {
+      console.warn('Supabase leaderboard failed, falling back to API:', error);
+    }
+
+    // Fallback to original API
     const params = new URLSearchParams({ limit: limit.toString() });
     if (period) params.append('period', period);
     return this.request(`/assignments/leaderboard?${params.toString()}`);
+  }
+
+  // New Supabase-integrated methods
+  async getAllUsersFromSupabase() {
+    try {
+      const supabaseService = (await import('./supabase.js')).default;
+      return await supabaseService.getAllUsers();
+    } catch (error) {
+      console.error('Error fetching users from Supabase:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getUsersWithStatsFromSupabase() {
+    try {
+      const supabaseService = (await import('./supabase.js')).default;
+      return await supabaseService.getUsersWithStats();
+    } catch (error) {
+      console.error('Error fetching users with stats from Supabase:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getDashboardStatsFromSupabase(userId = null) {
+    try {
+      const supabaseService = (await import('./supabase.js')).default;
+      return await supabaseService.getDashboardStats(userId);
+    } catch (error) {
+      console.error('Error fetching dashboard stats from Supabase:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   // Check if user is authenticated

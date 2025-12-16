@@ -59,13 +59,48 @@ const Leaderboard = () => {
       if (activeTab === "weekly") period = "week";
       if (activeTab === "monthly") period = "month";
       
+      // Try Supabase first, then fallback to API
       const response = await apiService.getLeaderboard(50, period);
-      if (response.success) {
-        setLeaderboard(response.data.leaderboard || []);
-        setStats(response.data.stats || null);
+      
+      if (response.success && response.data.leaderboard) {
+        setLeaderboard(response.data.leaderboard);
+        
+        // Calculate stats from the leaderboard data
+        const leaderboardData = response.data.leaderboard;
+        if (leaderboardData.length > 0) {
+          const totalPoints = leaderboardData.reduce((sum: number, entry: LeaderboardEntry) => sum + entry.total_points, 0);
+          const averagePoints = totalPoints / leaderboardData.length;
+          const topPerformer = leaderboardData[0];
+          
+          // Find user's rank if authenticated
+          let userRank = undefined;
+          if (isAuthenticated && user) {
+            const userEntry = leaderboardData.find((entry: LeaderboardEntry) => entry.user_id === user.id);
+            if (userEntry) {
+              userRank = userEntry.rank;
+            }
+          }
+          
+          setStats({
+            total_participants: leaderboardData.length,
+            average_points: averagePoints,
+            top_performer: {
+              name: topPerformer.name,
+              points: topPerformer.total_points
+            },
+            your_rank: userRank
+          });
+        }
+      } else {
+        // If no data from Supabase, show empty state
+        setLeaderboard([]);
+        setStats(null);
       }
     } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
       toast.error('Failed to fetch leaderboard');
+      setLeaderboard([]);
+      setStats(null);
     } finally {
       setIsLoading(false);
     }
