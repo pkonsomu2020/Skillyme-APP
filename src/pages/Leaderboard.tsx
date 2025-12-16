@@ -232,7 +232,7 @@ const Leaderboard = () => {
                         isCurrentUser(entry) 
                           ? 'bg-primary/5 border-primary/20 ring-2 ring-primary/10' 
                           : 'bg-background hover:bg-muted/50'
-                      } ${entry.rank <= 3 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' : ''}`}
+                      } ${entry.rank <= 3 ? 'bg-gradient-to-r from-yellow-50/50 to-orange-50/50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800' : ''}`}
                     >
                       {/* Rank */}
                       <div className="flex items-center justify-center w-12">
@@ -241,7 +241,7 @@ const Leaderboard = () => {
 
                       {/* Avatar */}
                       <Avatar className="w-12 h-12">
-                        <AvatarFallback className={`${entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' : 'bg-muted'}`}>
+                        <AvatarFallback className={`${entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white dark:from-yellow-600 dark:to-orange-600' : 'bg-muted text-muted-foreground'}`}>
                           {getInitials(entry.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -249,7 +249,7 @@ const Leaderboard = () => {
                       {/* User Info */}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`font-semibold ${isCurrentUser(entry) ? 'text-primary' : ''}`}>
+                          <h3 className={`font-semibold ${isCurrentUser(entry) ? 'text-primary' : 'text-foreground'}`}>
                             {entry.name}
                             {isCurrentUser(entry) && (
                               <Badge variant="outline" className="ml-2 text-xs">You</Badge>
@@ -266,7 +266,7 @@ const Leaderboard = () => {
 
                       {/* Points */}
                       <div className="text-right">
-                        <div className={`text-2xl font-bold ${entry.rank <= 3 ? 'text-yellow-600' : 'text-primary'}`}>
+                        <div className={`text-2xl font-bold ${entry.rank <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary'}`}>
                           {entry.total_points.toLocaleString()}
                         </div>
                         <div className="text-sm text-muted-foreground">points</div>

@@ -24,7 +24,17 @@ const menuItems = [
 export function UserSidebar() {
   const location = useLocation();
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // Handle exact matches
+    if (location.pathname === path) return true;
+    
+    // Handle dashboard root - show as active when on /dashboard or /dashboard/
+    if (path === "/dashboard" && (location.pathname === "/dashboard" || location.pathname === "/dashboard/")) {
+      return true;
+    }
+    
+    return false;
+  };
 
   return (
     <Sidebar>
@@ -49,9 +59,16 @@ export function UserSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                    <NavLink 
+                      to={item.url} 
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                        isActive(item.url)
+                          ? 'bg-primary/10 text-primary border-r-2 border-primary shadow-sm dark:bg-primary/20 dark:text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      }`}
+                    >
+                      <item.icon className={`w-4 h-4 ${isActive(item.url) ? 'text-primary' : ''}`} />
+                      <span className="font-medium">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

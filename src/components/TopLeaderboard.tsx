@@ -129,7 +129,7 @@ const TopLeaderboard = () => {
                   className={`flex items-center gap-3 p-3 rounded-lg ${
                     isCurrentUser(entry) 
                       ? 'bg-primary/10 border border-primary/20' 
-                      : 'bg-gradient-to-r from-yellow-50 to-orange-50'
+                      : 'bg-gradient-to-r from-yellow-50/50 to-orange-50/50 dark:from-yellow-900/20 dark:to-orange-900/20'
                   }`}
                 >
                   <div className="flex items-center justify-center w-8">
@@ -137,14 +137,14 @@ const TopLeaderboard = () => {
                   </div>
 
                   <Avatar className="w-8 h-8">
-                    <AvatarFallback className={`text-xs ${entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' : 'bg-muted'}`}>
+                    <AvatarFallback className={`text-xs ${entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white dark:from-yellow-600 dark:to-orange-600' : 'bg-muted text-muted-foreground'}`}>
                       {getInitials(entry.name)}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className={`font-medium text-sm truncate ${isCurrentUser(entry) ? 'text-primary' : ''}`}>
+                      <p className={`font-medium text-sm truncate ${isCurrentUser(entry) ? 'text-primary' : 'text-foreground'}`}>
                         {entry.name}
                         {isCurrentUser(entry) && (
                           <span className="text-xs text-primary ml-1">(You)</span>
@@ -157,7 +157,7 @@ const TopLeaderboard = () => {
                   </div>
 
                   <div className="text-right">
-                    <div className={`font-bold text-sm ${entry.rank <= 3 ? 'text-yellow-600' : 'text-primary'}`}>
+                    <div className={`font-bold text-sm ${entry.rank <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary'}`}>
                       {entry.total_points.toLocaleString()}
                     </div>
                     <div className="text-xs text-muted-foreground">pts</div>
