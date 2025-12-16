@@ -4,22 +4,25 @@ const supabase = require('../config/supabase');
 const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.id;
-    // Fetching dashboard stats
+    
+    // Get user points data
+    const UserPoints = require('../models/UserPoints');
+    let userPoints;
+    try {
+      userPoints = await UserPoints.getUserPoints(userId);
+    } catch (error) {
+      // If user points don't exist, initialize them
+      userPoints = await UserPoints.initializeUserPoints(userId);
+    }
 
-    // Get sessions joined by user (from payments table) - this becomes points earned
-    const { count: sessionsJoined, error: joinedError } = await supabase
-      .from('payments')
+    // Get assignments completed count
+    const { count: assignmentsCompleted, error: assignmentsError } = await supabase
+      .from('assignment_submissions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('status', 'paid');
+      .eq('status', 'approved');
     
-    if (joinedError) throw joinedError;
-    
-    // Calculate points earned (10 points per session joined)
-    const pointsEarned = (sessionsJoined || 0) * 10;
-
-    // Assignments completed (for now, same as sessions joined)
-    const assignmentsCompleted = sessionsJoined || 0;
+    if (assignmentsError) throw assignmentsError;
 
     // Get upcoming sessions count (active sessions in the future)
     const { count: upcomingSessions, error: upcomingError } = await supabase
@@ -30,26 +33,18 @@ const getDashboardStats = async (req, res) => {
     
     if (upcomingError) throw upcomingError;
 
-    // Determine current level based on sessions joined
-    let currentLevel = 'Beginner';
-    if (sessionsJoined >= 10) {
-      currentLevel = 'Pro';
-    } else if (sessionsJoined >= 3) {
-      currentLevel = 'Explorer';
-    }
-
     res.json({
       success: true,
       data: {
-        pointsEarned,
-        assignmentsCompleted,
+        pointsEarned: userPoints.total_points || 0,
+        assignmentsCompleted: assignmentsCompleted || 0,
         upcomingSessions: upcomingSessions || 0,
-        currentLevel
+        currentLevel: userPoints.level_name || 'Beginner'
       }
     });
 
   } catch (error) {
-    // PERFORMANCE: Removed excessive error logging
+    console.error('Dashboard stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch dashboard statistics'

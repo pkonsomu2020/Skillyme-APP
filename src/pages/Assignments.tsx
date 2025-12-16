@@ -67,7 +67,7 @@ const Assignments = () => {
   const [submissionData, setSubmissionData] = useState({
     submission_text: "",
     submission_links: [""],
-    submission_files: [""]
+    submission_files: [] as File[]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -138,25 +138,40 @@ const Assignments = () => {
     try {
       setIsSubmitting(true);
       
-      const submissionPayload = {
-        submission_text: submissionData.submission_text.trim(),
-        submission_links: submissionData.submission_links.filter(link => link.trim()),
-        submission_files: submissionData.submission_files.filter(file => file.trim())
-      };
-
-      const response = await apiService.request(`/assignments/${selectedAssignment.id}/submit`, {
-        method: 'POST',
-        body: JSON.stringify(submissionPayload)
+      // Create FormData for file uploads
+      const formData = new FormData();
+      formData.append('submission_text', submissionData.submission_text.trim());
+      
+      // Add links
+      const validLinks = submissionData.submission_links.filter(link => link.trim());
+      formData.append('submission_links', JSON.stringify(validLinks));
+      
+      // Add files
+      submissionData.submission_files.forEach((file, index) => {
+        formData.append(`files`, file);
       });
 
-      if (response.success) {
+      const response = await fetch(`${apiService.baseURL}/assignments/${selectedAssignment.id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiService.getAuthToken()}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
         toast.success('Assignment submitted successfully!');
         setSelectedAssignment(null);
-        setSubmissionData({ submission_text: "", submission_links: [""], submission_files: [""] });
+        setSubmissionData({ submission_text: "", submission_links: [""], submission_files: [] });
         fetchAssignments();
         fetchUserStats();
+      } else {
+        throw new Error(result.message || 'Submission failed');
       }
     } catch (error) {
+      console.error('Submission error:', error);
       toast.error('Failed to submit assignment');
     } finally {
       setIsSubmitting(false);
@@ -182,6 +197,40 @@ const Assignments = () => {
       ...prev,
       submission_links: prev.submission_links.filter((_, i) => i !== index)
     }));
+  };
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    
+    const fileArray = Array.from(files);
+    const maxSize = 200 * 1024 * 1024; // 200MB in bytes
+    
+    // Check file sizes
+    const oversizedFiles = fileArray.filter(file => file.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      toast.error(`Some files exceed the 200MB limit: ${oversizedFiles.map(f => f.name).join(', ')}`);
+      return;
+    }
+    
+    setSubmissionData(prev => ({
+      ...prev,
+      submission_files: [...prev.submission_files, ...fileArray]
+    }));
+  };
+
+  const removeFile = (index: number) => {
+    setSubmissionData(prev => ({
+      ...prev,
+      submission_files: prev.submission_files.filter((_, i) => i !== index)
+    }));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const availableAssignments = assignments.filter(a => !a.user_submission);
@@ -369,6 +418,63 @@ const Assignments = () => {
                                     </Button>
                                   </div>
                                 )}
+
+                                {(assignment.submission_type === 'file' || assignment.submission_type === 'mixed') && (
+                                  <div>
+                                    <Label>File Attachments (Optional)</Label>
+                                    <div className="mt-2">
+                                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                          Drag and drop files here, or click to browse
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mb-4">
+                                          Maximum file size: 200MB per file. All file types accepted.
+                                        </p>
+                                        <Input
+                                          type="file"
+                                          multiple
+                                          onChange={(e) => handleFileUpload(e.target.files)}
+                                          className="hidden"
+                                          id="file-upload"
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          onClick={() => document.getElementById('file-upload')?.click()}
+                                        >
+                                          <Upload className="w-4 h-4 mr-2" />
+                                          Choose Files
+                                        </Button>
+                                      </div>
+                                      
+                                      {submissionData.submission_files.length > 0 && (
+                                        <div className="mt-4 space-y-2">
+                                          <Label className="text-sm font-medium">Selected Files:</Label>
+                                          {submissionData.submission_files.map((file, index) => (
+                                            <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                                              <div className="flex items-center gap-2">
+                                                <FileText className="w-4 h-4 text-muted-foreground" />
+                                                <div>
+                                                  <p className="text-sm font-medium">{file.name}</p>
+                                                  <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                                                </div>
+                                              </div>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeFile(index)}
+                                              >
+                                                <XCircle className="w-4 h-4" />
+                                              </Button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="flex justify-end gap-2 pt-4">
@@ -380,7 +486,7 @@ const Assignments = () => {
                                 </Button>
                                 <Button
                                   onClick={handleSubmission}
-                                  disabled={isSubmitting || !submissionData.submission_text.trim()}
+                                  disabled={isSubmitting || (!submissionData.submission_text.trim() && submissionData.submission_files.length === 0)}
                                 >
                                   {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
                                 </Button>

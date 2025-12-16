@@ -1,6 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { authenticateToken } = require('../middleware/auth');
+const { upload, handleMulterError } = require('../middleware/fileUpload');
 const {
   getAllAssignments,
   getAssignmentById,
@@ -30,7 +31,7 @@ router.get('/leaderboard', getLeaderboard);
 router.get('/:id', getAssignmentById);
 
 // Protected routes (auth required)
-router.post('/:id/submit', authenticateToken, submissionValidation, submitAssignment);
+router.post('/:id/submit', authenticateToken, upload.array('files', 10), handleMulterError, submitAssignment);
 router.get('/user/submissions', authenticateToken, getUserSubmissions);
 router.get('/user/points', authenticateToken, getUserPoints);
 

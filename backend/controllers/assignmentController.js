@@ -73,18 +73,36 @@ const getAssignmentById = async (req, res) => {
 // Submit assignment (for users)
 const submitAssignment = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
     const { id } = req.params;
     const userId = req.user.id;
-    const { submission_text, submission_links = [], submission_files = [] } = req.body;
+    
+    // Handle both JSON and FormData requests
+    let submission_text, submission_links = [], submission_files = [];
+    
+    if (req.body.submission_text) {
+      submission_text = req.body.submission_text;
+    }
+    
+    if (req.body.submission_links) {
+      try {
+        submission_links = typeof req.body.submission_links === 'string' 
+          ? JSON.parse(req.body.submission_links) 
+          : req.body.submission_links;
+      } catch (e) {
+        submission_links = [];
+      }
+    }
+    
+    // Handle uploaded files
+    if (req.files && req.files.length > 0) {
+      submission_files = req.files.map(file => ({
+        filename: file.filename,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        path: file.path
+      }));
+    }
 
     // Check if assignment exists
     const assignment = await Assignment.findById(id);
