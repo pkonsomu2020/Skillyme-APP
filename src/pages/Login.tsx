@@ -42,23 +42,23 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-secondary/30 via-background to-secondary/30">
       <Card className="w-full max-w-md shadow-elegant">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
+        <CardHeader className="text-center px-4 md:px-6">
+          <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
             <img 
               src="/Skillyme LOGO.jpg" 
               alt="Skillyme Logo" 
               className="w-full h-full object-cover" 
             />
           </div>
-          <CardTitle className="text-3xl">Welcome Back</CardTitle>
-          <CardDescription className="text-base">
+          <CardTitle className="text-2xl md:text-3xl">Welcome Back</CardTitle>
+          <CardDescription className="text-sm md:text-base">
             Sign in to access your career sessions
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 md:px-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -66,11 +66,12 @@ const Login = () => {
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 required
+                className="h-11 md:h-10"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -78,6 +79,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 required
+                className="h-11 md:h-10"
               />
             </div>
 
@@ -90,8 +92,7 @@ const Login = () => {
             <Button 
               type="submit" 
               variant="hero" 
-              className="w-full" 
-              size="lg"
+              className="w-full h-12 md:h-11 text-base font-medium" 
               disabled={isSubmitting || isLoading}
             >
               {isSubmitting || isLoading ? "Signing In..." : "Sign In"}

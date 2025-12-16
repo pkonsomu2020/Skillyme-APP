@@ -37,37 +37,37 @@ export function UserSidebar() {
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="h-16 flex items-center justify-center border-b border-border">
+    <Sidebar className="border-r border-border/40">
+      <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40 px-4">
         <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
             <img 
               src="/Skillyme LOGO.jpg" 
               alt="Skillyme Logo" 
               className="w-full h-full object-cover" 
             />
           </div>
-          <span className="font-bold text-lg bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+          <span className="font-bold text-base md:text-lg bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             Skillyme
           </span>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} className="h-12 md:h-10">
                     <NavLink 
                       to={item.url} 
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                      className={`flex items-center gap-3 px-4 py-3 md:py-2 rounded-lg transition-all duration-200 text-sm md:text-base ${
                         isActive(item.url)
                           ? 'bg-primary/10 text-primary border-r-2 border-primary shadow-sm dark:bg-primary/20 dark:text-primary-foreground'
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       }`}
                     >
-                      <item.icon className={`w-4 h-4 ${isActive(item.url) ? 'text-primary' : ''}`} />
+                      <item.icon className={`w-5 h-5 md:w-4 md:h-4 ${isActive(item.url) ? 'text-primary' : ''}`} />
                       <span className="font-medium">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>

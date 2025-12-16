@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Video, Menu, X } from "lucide-react";
+import { Video, Menu, X, LayoutDashboard, FileText, Trophy, Search, MessageSquare, Phone } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import ProfileDropdown from "./ProfileDropdown";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,71 +71,88 @@ const Navbar = () => {
             variant="ghost"
             size="sm"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2"
+            className="p-2 h-10 w-10"
           >
             {isMobileMenuOpen ? (
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             ) : (
-              <Menu className="h-5 w-5" />
+              <Menu className="h-6 w-6" />
             )}
           </Button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Enhanced Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-background border-b border-border shadow-lg">
-          <div className="px-4 py-4 space-y-4">
-            {/* Mobile Menu Items */}
-            <div className="space-y-2">
+        <div className="md:hidden bg-background/95 backdrop-blur-sm border-b border-border shadow-lg">
+          <div className="px-4 py-6 space-y-6">
+            {/* Mobile Menu Items - Complete Navigation */}
+            <div className="space-y-3">
               <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <LayoutDashboard className="w-5 h-5 mr-3" />
                   Dashboard
                 </Button>
               </Link>
-              <Link to="/dashboard/find-recruiters" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
-                  Find Recruiters
-                </Button>
-              </Link>
               <Link to="/dashboard/sessions" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <Video className="w-5 h-5 mr-3" />
                   Sessions
                 </Button>
               </Link>
+              <Link to="/dashboard/assignments" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <FileText className="w-5 h-5 mr-3" />
+                  Assignments
+                </Button>
+              </Link>
+              <Link to="/dashboard/leaderboard" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <Trophy className="w-5 h-5 mr-3" />
+                  Leaderboard
+                </Button>
+              </Link>
+              <Link to="/dashboard/find-recruiters" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <Search className="w-5 h-5 mr-3" />
+                  Find Recruiters
+                </Button>
+              </Link>
               <Link to="/dashboard/community" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <MessageSquare className="w-5 h-5 mr-3" />
                   Community
                 </Button>
               </Link>
               <Link to="/dashboard/contact" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
+                <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
+                  <Phone className="w-5 h-5 mr-3" />
                   Contact
                 </Button>
               </Link>
               
               {isLoading ? (
-                <div className="pt-2 border-t border-border">
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                <div className="pt-4 border-t border-border">
+                  <div className="px-3 py-3 text-base text-muted-foreground">
                     Loading...
                   </div>
                 </div>
               ) : isAuthenticated && user ? (
-                <div className="pt-2 border-t border-border">
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                <div className="pt-4 border-t border-border">
+                  <div className="px-3 py-4 bg-muted/30 rounded-lg">
+                    <p className="text-base font-semibold">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
                   </div>
                 </div>
               ) : (
-                <div className="pt-2 border-t border-border">
+                <div className="pt-4 border-t border-border space-y-3">
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
+                    <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium">
                       Login
                     </Button>
                   </Link>
                   <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="hero" className="w-full mt-2">
+                    <Button variant="hero" className="w-full h-12 text-base font-medium">
                       Get Started
                     </Button>
                   </Link>

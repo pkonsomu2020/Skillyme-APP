@@ -155,56 +155,56 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <Trophy className="w-8 h-8 text-yellow-500" />
+    <div className="p-4 md:p-8">
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2 md:gap-3">
+          <Trophy className="w-6 h-6 md:w-8 md:h-8 text-yellow-500" />
           Leaderboard
         </h2>
-        <p className="text-muted-foreground">See how you rank against other students</p>
+        <p className="text-sm md:text-base text-muted-foreground">See how you rank against other students</p>
       </div>
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg">
+                  <Users className="w-4 h-4 md:w-6 md:h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Participants</p>
-                  <p className="text-2xl font-bold">{stats.total_participants}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Total Participants</p>
+                  <p className="text-lg md:text-2xl font-bold">{stats.total_participants}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
+                  <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Average Points</p>
-                  <p className="text-2xl font-bold">{Math.round(stats.average_points)}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Average Points</p>
+                  <p className="text-lg md:text-2xl font-bold">{Math.round(stats.average_points)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Crown className="w-6 h-6 text-yellow-600" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="p-1.5 md:p-2 bg-yellow-100 rounded-lg">
+                  <Crown className="w-4 h-4 md:w-6 md:h-6 text-yellow-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Top Performer</p>
-                  <p className="text-lg font-bold">{stats.top_performer.name}</p>
-                  <p className="text-sm text-muted-foreground">{stats.top_performer.points} pts</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Top Performer</p>
+                  <p className="text-sm md:text-lg font-bold truncate">{stats.top_performer.name}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">{stats.top_performer.points} pts</p>
                 </div>
               </div>
             </CardContent>
@@ -212,14 +212,14 @@ const Leaderboard = () => {
 
           {stats.your_rank && (
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Target className="w-6 h-6 text-purple-600" />
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-center gap-2 md:gap-4">
+                  <div className="p-1.5 md:p-2 bg-purple-100 rounded-lg">
+                    <Target className="w-4 h-4 md:w-6 md:h-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Your Rank</p>
-                    <p className="text-2xl font-bold">#{stats.your_rank}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Your Rank</p>
+                    <p className="text-lg md:text-2xl font-bold">#{stats.your_rank}</p>
                   </div>
                 </div>
               </CardContent>
@@ -267,58 +267,58 @@ const Leaderboard = () => {
                   leaderboard.map((entry, index) => (
                     <div
                       key={entry.user_id}
-                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all hover:shadow-md ${
+                      className={`flex items-center gap-2 md:gap-4 p-3 md:p-4 rounded-lg border transition-all hover:shadow-md ${
                         isCurrentUser(entry) 
                           ? 'bg-primary/5 border-primary/20 ring-2 ring-primary/10' 
                           : 'bg-background hover:bg-muted/50'
                       } ${entry.rank <= 3 ? 'bg-gradient-to-r from-yellow-50/50 to-orange-50/50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800' : ''}`}
                     >
                       {/* Rank */}
-                      <div className="flex items-center justify-center w-12">
+                      <div className="flex items-center justify-center w-8 md:w-12">
                         {getRankIcon(entry.rank)}
                       </div>
 
                       {/* Avatar */}
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className={`${entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white dark:from-yellow-600 dark:to-orange-600' : 'bg-muted text-muted-foreground'}`}>
+                      <Avatar className="w-10 h-10 md:w-12 md:h-12">
+                        <AvatarFallback className={`text-xs md:text-sm ${entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white dark:from-yellow-600 dark:to-orange-600' : 'bg-muted text-muted-foreground'}`}>
                           {getInitials(entry.name)}
                         </AvatarFallback>
                       </Avatar>
 
                       {/* User Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`font-semibold ${isCurrentUser(entry) ? 'text-primary' : 'text-foreground'}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 mb-1">
+                          <h3 className={`font-semibold text-sm md:text-base truncate ${isCurrentUser(entry) ? 'text-primary' : 'text-foreground'}`}>
                             {entry.name}
                             {isCurrentUser(entry) && (
-                              <Badge variant="outline" className="ml-2 text-xs">You</Badge>
+                              <Badge variant="outline" className="ml-1 md:ml-2 text-xs">You</Badge>
                             )}
                           </h3>
-                          <Badge className={getLevelColor(entry.level_name)}>
+                          <Badge className={`${getLevelColor(entry.level_name)} text-xs`}>
                             {entry.level_name}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-xs md:text-sm text-muted-foreground">
                           <span>{entry.assignments_completed} assignments</span>
                           {entry.sessions_attended && entry.sessions_attended > 0 && (
-                            <span>{entry.sessions_attended} sessions</span>
+                            <span className="hidden md:inline">{entry.sessions_attended} sessions</span>
                           )}
                           {entry.payments_count && entry.payments_count > 0 && (
-                            <span>{entry.payments_count} payments</span>
+                            <span className="hidden md:inline">{entry.payments_count} payments</span>
                           )}
                         </div>
                       </div>
 
                       {/* Points */}
                       <div className="text-right">
-                        <div className={`text-2xl font-bold ${entry.rank <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary'}`}>
+                        <div className={`text-lg md:text-2xl font-bold ${entry.rank <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary'}`}>
                           {entry.total_points.toLocaleString()}
                         </div>
-                        <div className="text-sm text-muted-foreground">points</div>
+                        <div className="text-xs md:text-sm text-muted-foreground">points</div>
                       </div>
 
-                      {/* Rank Badge */}
-                      <Badge className={`${getRankBadgeColor(entry.rank)} font-bold`}>
+                      {/* Rank Badge - Hidden on mobile, shown in rank icon */}
+                      <Badge className={`hidden md:flex ${getRankBadgeColor(entry.rank)} font-bold`}>
                         #{entry.rank}
                       </Badge>
                     </div>

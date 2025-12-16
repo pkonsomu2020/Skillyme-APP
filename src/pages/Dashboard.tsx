@@ -30,21 +30,21 @@ const Dashboard = () => {
             {/* Header */}
             <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-40">
               <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <SidebarTrigger />
+                <div className="flex items-center gap-2 md:gap-4">
+                  <SidebarTrigger className="h-8 w-8 md:h-6 md:w-6" />
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                      <Video className="w-6 h-6 text-primary-foreground" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg gradient-primary flex items-center justify-center">
+                      <Video className="w-4 h-4 md:w-6 md:h-6 text-primary-foreground" />
                     </div>
-                    <div>
-                      <h1 className="font-bold text-lg">Skillyme</h1>
+                    <div className="hidden sm:block">
+                      <h1 className="font-bold text-base md:text-lg">Skillyme</h1>
                       <p className="text-xs text-muted-foreground">Student Dashboard</p>
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="h-8 md:h-9 px-2 md:px-3">
+                  <LogOut className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Logout</span>
                 </Button>
               </div>
             </header>

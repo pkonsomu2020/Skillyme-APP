@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import MobileOptimizedDashboard from "@/components/MobileOptimizedDashboard";
 import { 
   Calendar, 
   Award, 
@@ -26,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import apiService from "@/services/api";
 import React, { useState, useEffect } from "react";
 import TopLeaderboard from "@/components/TopLeaderboard";
+import { isMobile } from "@/utils/mobileOptimizations";
 
 interface DashboardStats {
   pointsEarned: number;
@@ -63,6 +65,15 @@ const DashboardOverview = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mobile, setMobile] = useState(false);
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => setMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Calculate current level based on points earned
   const calculateCurrentLevel = () => {
@@ -219,24 +230,29 @@ const DashboardOverview = () => {
     return nextLevel ? levelThresholds[nextLevel as keyof typeof levelThresholds] : 2000;
   };
   
+  // Use mobile-optimized version on small screens
+  if (mobile) {
+    return <MobileOptimizedDashboard stats={stats} isLoading={isLoading} />;
+  }
+
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="p-3 md:p-8 space-y-6 md:space-y-8">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 md:p-8">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-secondary/20 rounded-full blur-2xl"></div>
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-primary-foreground" />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">
+              <h1 className="text-xl md:text-3xl font-bold">
                 Welcome back, {user?.name || 'Student'}! 
                 <span className="ml-2">👋</span>
               </h1>
-              <p className="text-muted-foreground">Ready to level up your career journey?</p>
+              <p className="text-sm md:text-base text-muted-foreground">Ready to level up your career journey?</p>
             </div>
           </div>
           
@@ -260,7 +276,7 @@ const DashboardOverview = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/5"></div>
           <CardContent className="pt-6 relative z-10">
