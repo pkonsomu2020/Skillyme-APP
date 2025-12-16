@@ -12,7 +12,7 @@ const sendNotification = async (req, res) => {
         endpoint: '/api/admin/notifications/send',
         errors: errors.array()
       });
-
+      
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -38,7 +38,7 @@ const sendNotification = async (req, res) => {
         const { data: allUsers, error: allError } = await supabase
           .from('users')
           .select('id, name, email, preferred_name');
-
+        
         if (allError) throw allError;
         targetUsers = allUsers;
         break;
@@ -115,14 +115,35 @@ const sendNotification = async (req, res) => {
     const emailPromises = targetUsers.map(async (user) => {
       try {
         const recipientName = user.preferred_name || user.name;
-
+        
         // Create personalized message
         const personalizedMessage = message.replace(/\{name\}/g, recipientName);
-
-        await emailService.sendNotificationEmail(
+        
+        await emailService.sendEmail(
           user.email,
-          recipientName,
           subject,
+          `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0;">Skillyme</h1>
+              </div>
+              <div style="padding: 30px; background: #f8f9fa;">
+                <h2 style="color: #333; margin-bottom: 20px;">${subject}</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  ${personalizedMessage.replace(/\n/g, '<br>')}
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                  <p style="color: #666; font-size: 14px;">
+                    Best regards,<br>
+                    The Skillyme Team
+                  </p>
+                </div>
+              </div>
+              <div style="background: #333; color: white; padding: 15px; text-align: center; font-size: 12px;">
+                <p>© 2024 Skillyme. All rights reserved.</p>
+              </div>
+            </div>
+          `,
           personalizedMessage
         );
 
@@ -148,7 +169,8 @@ const sendNotification = async (req, res) => {
         target_count: targetUsers.length,
         successful_sends: successful,
         failed_sends: failed,
-        sent_by: req.admin.id
+        sent_by: req.admin.id,
+        created_at: new Date().toISOString()
       }]);
 
     res.json({
@@ -166,7 +188,7 @@ const sendNotification = async (req, res) => {
       endpoint: '/api/admin/notifications/send',
       adminId: req.admin?.id
     });
-
+    
     res.status(500).json({
       success: false,
       message: 'Failed to send notification',
@@ -185,7 +207,8 @@ const getNotificationHistory = async (req, res) => {
       .from('admin_notifications')
       .select(`
         id, type, subject, message, recipients, target_count,
-        successful_sends, failed_sends, sent_by, created_at
+        successful_sends, failed_sends, sent_by, created_at,
+        admins!inner(name, email)
       `)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -220,7 +243,7 @@ const getNotificationHistory = async (req, res) => {
       endpoint: '/api/admin/notifications/history',
       adminId: req.admin?.id
     });
-
+    
     res.status(500).json({
       success: false,
       message: 'Failed to fetch notification history',
@@ -336,11 +359,23 @@ const sendSessionReminder = async (req, res) => {
         const user = attendee.users;
         const recipientName = user.preferred_name || user.name;
         const personalizedMessage = message.replace(/\{name\}/g, recipientName);
-
-        await emailService.sendNotificationEmail(
+        
+        await emailService.sendEmail(
           user.email,
-          recipientName,
           subject,
+          `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0;">Skillyme</h1>
+              </div>
+              <div style="padding: 30px; background: #f8f9fa;">
+                <h2 style="color: #333; margin-bottom: 20px;">${subject}</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  ${personalizedMessage.replace(/\n/g, '<br>')}
+                </div>
+              </div>
+            </div>
+          `,
           personalizedMessage
         );
 
@@ -370,7 +405,7 @@ const sendSessionReminder = async (req, res) => {
       endpoint: '/api/admin/notifications/session-reminder',
       adminId: req.admin?.id
     });
-
+    
     res.status(500).json({
       success: false,
       message: 'Failed to send session reminder',
@@ -379,57 +414,8 @@ const sendSessionReminder = async (req, res) => {
   }
 };
 
-// Get unique fields of study and institutions from users
-const getRecipientOptions = async (req, res) => {
-  try {
-    // Get unique fields of study
-    const { data: fieldsData, error: fieldsError } = await supabase
-      .from('users')
-      .select('field_of_study')
-      .not('field_of_study', 'is', null);
-
-    if (fieldsError) {
-      throw fieldsError;
-    }
-
-    // Get unique institutions
-    const { data: institutionsData, error: institutionsError } = await supabase
-      .from('users')
-      .select('institution')
-      .not('institution', 'is', null);
-
-    if (institutionsError) {
-      throw institutionsError;
-    }
-
-    // Extract unique values
-    const uniqueFields = [...new Set(fieldsData.map(item => item.field_of_study))].filter(Boolean).sort();
-    const uniqueInstitutions = [...new Set(institutionsData.map(item => item.institution))].filter(Boolean).sort();
-
-    res.json({
-      success: true,
-      data: {
-        fieldsOfStudy: uniqueFields,
-        institutions: uniqueInstitutions
-      }
-    });
-  } catch (error) {
-    await ErrorHandler.logError(error, {
-      endpoint: '/api/admin/notifications/recipient-options',
-      adminId: req.admin?.id
-    });
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch recipient options',
-      error: error.message
-    });
-  }
-};
-
 module.exports = {
   sendNotification,
   getNotificationHistory,
-  sendSessionReminder,
-  getRecipientOptions
+  sendSessionReminder
 };
