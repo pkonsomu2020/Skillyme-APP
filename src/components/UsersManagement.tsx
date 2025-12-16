@@ -60,8 +60,8 @@ const UsersManagement = () => {
     try {
       setIsLoading(true);
       
-      // Try Supabase first for enhanced data
-      let response = await apiService.getUsersWithStatsFromSupabase();
+      // Try Supabase first for enhanced data (shows ALL users including inactive)
+      let response = await apiService.getAllUsersWithStatsFromSupabase();
       if (!response.success) {
         // Fallback to basic user data
         response = await apiService.getAllUsersFromSupabase();

@@ -32,6 +32,27 @@ class SupabaseService {
     }
   }
 
+  // Get ALL users with stats (for admin dashboard - shows everyone)
+  async getAllUsersWithStats() {
+    try {
+      const usersResponse = await this.getUsersWithStats();
+      if (!usersResponse.success) {
+        throw new Error(usersResponse.error);
+      }
+
+      // Return ALL users with their stats (no filtering)
+      const allUsers = usersResponse.data.map((user, index) => ({
+        ...user,
+        rank: index + 1 // Rank all users by points
+      }));
+
+      return { success: true, data: allUsers };
+    } catch (error) {
+      console.error('Error fetching all users with stats:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async getUserById(id) {
     try {
       const { data, error } = await this.client
@@ -50,13 +71,13 @@ class SupabaseService {
 
   async getUsersWithStats() {
     try {
-      // Get users with their session attendance and payment stats
+      // Get users with their session attendance, payment stats, and assignment submissions
       const { data, error } = await this.client
         .from('users')
         .select(`
           *,
           user_sessions(count),
-          payments(count, amount)
+          payments(count, amount, status)
         `)
         .order('created_at', { ascending: false });
 
@@ -65,11 +86,22 @@ class SupabaseService {
       // Calculate stats for each user
       const usersWithStats = data.map(user => {
         const sessionsAttended = user.user_sessions?.length || 0;
-        const totalPayments = user.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-        const paymentsCount = user.payments?.length || 0;
+        const allPayments = user.payments || [];
+        const approvedPayments = allPayments.filter(p => p.status === 'approved' || p.status === 'completed');
+        const totalPayments = approvedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+        const paymentsCount = approvedPayments.length;
         
-        // Calculate points based on activity (mock calculation)
-        const points = (sessionsAttended * 50) + (paymentsCount * 25) + Math.floor(totalPayments / 10);
+        // Mock assignment data (in real implementation, this would come from assignments table)
+        // For now, we'll use a combination of sessions and payments as proxy for assignments
+        const assignmentsCompleted = Math.min(sessionsAttended + paymentsCount, sessionsAttended * 2);
+        
+        // Enhanced points calculation
+        const assignmentPoints = assignmentsCompleted * 75; // Higher points for assignments
+        const sessionPoints = sessionsAttended * 50;
+        const paymentPoints = paymentsCount * 25;
+        const bonusPoints = Math.floor(totalPayments / 10);
+        
+        const points = assignmentPoints + sessionPoints + paymentPoints + bonusPoints;
         
         // Determine level based on points
         let level = 'Beginner';
@@ -84,7 +116,8 @@ class SupabaseService {
           level_name: level,
           sessions_attended: sessionsAttended,
           total_payments: totalPayments,
-          payments_count: paymentsCount
+          payments_count: paymentsCount,
+          assignments_completed: assignmentsCompleted
         };
       });
 
@@ -102,8 +135,20 @@ class SupabaseService {
         throw new Error(usersResponse.error);
       }
 
+      // Filter users who have activity (assignments, sessions, or payments)
+      // Only show users who have submitted assignments OR attended sessions OR made payments
+      const activeUsers = usersResponse.data.filter(user => {
+        const hasAssignments = user.assignments_completed > 0;
+        const hasSessions = user.sessions_attended > 0;
+        const hasPayments = user.payments_count > 0;
+        const hasPoints = user.total_points > 0;
+        
+        // Show users who have any meaningful activity
+        return hasAssignments || hasSessions || hasPayments || hasPoints;
+      });
+
       // Sort by points and add rank
-      const sortedUsers = usersResponse.data
+      const sortedUsers = activeUsers
         .sort((a, b) => b.total_points - a.total_points)
         .slice(0, limit)
         .map((user, index) => ({
@@ -114,7 +159,10 @@ class SupabaseService {
           rank: index + 1,
           email: user.email,
           country: user.country,
-          field_of_study: user.field_of_study
+          field_of_study: user.field_of_study,
+          assignments_completed: user.assignments_completed || 0,
+          sessions_attended: user.sessions_attended || 0,
+          payments_count: user.payments_count || 0
         }));
 
       return { success: true, data: { leaderboard: sortedUsers } };

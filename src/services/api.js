@@ -219,6 +219,17 @@ class ApiService {
     }
   }
 
+  // Get ALL users with stats (for admin - shows everyone including inactive)
+  async getAllUsersWithStatsFromSupabase() {
+    try {
+      const supabaseService = (await import('./supabase.js')).default;
+      return await supabaseService.getAllUsersWithStats();
+    } catch (error) {
+      console.error('Error fetching all users with stats from Supabase:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async getDashboardStatsFromSupabase(userId = null) {
     try {
       const supabaseService = (await import('./supabase.js')).default;

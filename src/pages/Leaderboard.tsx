@@ -23,9 +23,10 @@ interface LeaderboardEntry {
   name: string;
   email: string;
   total_points: number;
-  available_points: number;
   level_name: string;
   assignments_completed: number;
+  sessions_attended?: number;
+  payments_count?: number;
   rank: number;
 }
 
@@ -251,6 +252,9 @@ const Leaderboard = () => {
                 {activeTab === "all-time" ? "All Time Rankings" : 
                  activeTab === "monthly" ? "Monthly Rankings" : "Weekly Rankings"}
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Showing active users who have completed assignments, attended sessions, or made payments
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -294,9 +298,15 @@ const Leaderboard = () => {
                             {entry.level_name}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {entry.assignments_completed} assignments completed
-                        </p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{entry.assignments_completed} assignments</span>
+                          {entry.sessions_attended && entry.sessions_attended > 0 && (
+                            <span>{entry.sessions_attended} sessions</span>
+                          )}
+                          {entry.payments_count && entry.payments_count > 0 && (
+                            <span>{entry.payments_count} payments</span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Points */}
