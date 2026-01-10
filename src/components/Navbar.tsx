@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Video, Menu, X, LayoutDashboard, FileText, Trophy, Search, MessageSquare, Phone } from "lucide-react";
+import { Video, Menu, X, LayoutDashboard, FileText, Trophy, Search, MessageSquare, Phone, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import ProfileDropdown from "./ProfileDropdown";
 import { useAuth } from "@/contexts/AuthContext";
@@ -138,10 +138,61 @@ const Navbar = () => {
                   </div>
                 </div>
               ) : isAuthenticated && user ? (
-                <div className="pt-4 border-t border-border">
+                <div className="pt-4 border-t border-border space-y-4">
+                  {/* Mobile Profile Section */}
                   <div className="px-3 py-4 bg-muted/30 rounded-lg">
-                    <p className="text-base font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-bold text-lg shadow-md">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-base text-foreground truncate">{user.name || 'User'}</p>
+                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </div>
+
+                    {/* User Details */}
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">Full Name</span>
+                        <span className="text-muted-foreground truncate ml-2">{user.name || 'Not provided'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">Email</span>
+                        <span className="text-muted-foreground truncate ml-2">{user.email || 'Not provided'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">Phone</span>
+                        <span className="text-muted-foreground truncate ml-2">{user.phone || 'Not provided'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">Location</span>
+                        <span className="text-muted-foreground truncate ml-2">
+                          {user.country ? `${user.country}${user.county ? `, ${user.county}` : ''}` : 'Not provided'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          // Use the logout function from auth context
+                          const authContext = useAuth();
+                          authContext?.logout();
+                        }}
+                        className="w-full justify-center h-10 text-sm font-medium"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Logout
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (
