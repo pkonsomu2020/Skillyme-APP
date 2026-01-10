@@ -70,7 +70,20 @@ const forgotPassword = async (req, res) => {
 
     // Send reset email
     try {
-      const resetUrl = `${process.env.FRONTEND_URL || 'https://skillyme.africa'}/reset-password/${token}`;
+      // Get frontend URL from environment with proper fallback
+      let frontendUrl = process.env.FRONTEND_URL || 'https://www.skillyme.africa';
+      
+      // Handle comma-separated values (use first one)
+      if (frontendUrl.includes(',')) {
+        frontendUrl = frontendUrl.split(',')[0].trim();
+      }
+      
+      // Remove trailing slash
+      frontendUrl = frontendUrl.replace(/\/$/, '');
+      
+      const resetUrl = `${frontendUrl}/reset-password/${token}`;
+      console.log('🔍 [PASSWORD RESET DEBUG] Frontend URL from env:', process.env.FRONTEND_URL);
+      console.log('🔍 [PASSWORD RESET DEBUG] Processed Frontend URL:', frontendUrl);
       console.log('🔍 [PASSWORD RESET DEBUG] Reset URL:', resetUrl);
       
       await emailService.sendPasswordResetEmail(user.email, user.name, resetUrl);
@@ -80,8 +93,18 @@ const forgotPassword = async (req, res) => {
       // Don't fail the request if email fails - provide the link directly
     }
 
-    // Always provide the reset link in the response for development/testing
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://skillyme.africa'}/reset-password/${token}`;
+    // Generate reset URL for response
+    let frontendUrl = process.env.FRONTEND_URL || 'https://www.skillyme.africa';
+    
+    // Handle comma-separated values (use first one)
+    if (frontendUrl.includes(',')) {
+      frontendUrl = frontendUrl.split(',')[0].trim();
+    }
+    
+    // Remove trailing slash
+    frontendUrl = frontendUrl.replace(/\/$/, '');
+    
+    const resetUrl = `${frontendUrl}/reset-password/${token}`;
     
     res.json({
       success: true,
