@@ -136,37 +136,51 @@ const forgotPassword = async (req, res) => {
 const validateResetToken = async (req, res) => {
   try {
     const { token } = req.params;
+    console.log('🔍 [PASSWORD RESET DEBUG] Validating token:', token);
 
     if (!token) {
+      console.log('❌ [PASSWORD RESET DEBUG] No token provided');
       return res.status(400).json({
         success: false,
         message: 'Reset token is required'
       });
     }
 
+    if (token.length !== 64) {
+      console.log('❌ [PASSWORD RESET DEBUG] Invalid token length:', token.length);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid token format'
+      });
+    }
+
+    console.log('🔍 [PASSWORD RESET DEBUG] Token format is valid, checking database...');
     const resetRecord = await PasswordReset.findByToken(token);
     
     if (!resetRecord) {
+      console.log('❌ [PASSWORD RESET DEBUG] Token not found or expired');
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired reset token'
       });
     }
 
+    console.log('✅ [PASSWORD RESET DEBUG] Token validation successful for user:', resetRecord.users.email);
     res.json({
       success: true,
       message: 'Reset token is valid',
       data: {
-        email: resetRecord.email,
-        name: resetRecord.name
+        email: resetRecord.users.email,
+        name: resetRecord.users.name
       }
     });
 
   } catch (error) {
-    // PERFORMANCE: Removed excessive error logging
+    console.error('❌ [PASSWORD RESET DEBUG] Token validation error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

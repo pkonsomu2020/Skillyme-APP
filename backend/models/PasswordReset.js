@@ -47,25 +47,72 @@ class PasswordReset {
         throw new Error('Database connection not available');
       }
       
-      const { data: rows, error } = await supabase
+      // Get the token record
+      const { data: tokenData, error: tokenError } = await supabase
         .from('password_resets')
-        .select(`
-          *,
-          users!inner(email, name)
-        `)
+        .select('*')
         .eq('token', token)
-        .gt('expires_at', new Date().toISOString())
         .single();
       
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ [PASSWORD RESET DEBUG] Error finding token:', error);
-        throw error;
+      if (tokenError) {
+        if (tokenError.code === 'PGRST116') {
+          console.log('❌ [PASSWORD RESET DEBUG] Token not found');
+          return null;
+        }
+        console.error('❌ [PASSWORD RESET DEBUG] Error finding token:', tokenError);
+        throw tokenError;
       }
       
-      console.log('✅ [PASSWORD RESET DEBUG] Token found:', rows ? 'Yes' : 'No');
-      return rows || null;
+      if (!tokenData) {
+        console.log('❌ [PASSWORD RESET DEBUG] Token not found');
+        return null;
+      }
+      
+      console.log('🔍 [PASSWORD RESET DEBUG] Found token record:', {
+        id: tokenData.id,
+        user_id: tokenData.user_id,
+        expires_at: tokenData.expires_at
+      });
+      
+      // Check if token is expired
+      const expiryTime = new Date(tokenData.expires_at);
+      const currentTime = new Date();
+      
+      if (currentTime > expiryTime) {
+        console.log('❌ [PASSWORD RESET DEBUG] Token is expired');
+        console.log('Current time:', currentTime.toISOString());
+        console.log('Expiry time:', expiryTime.toISOString());
+        return null;
+      }
+      
+      // Get user data separately
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, name')
+        .eq('id', tokenData.user_id)
+        .single();
+      
+      if (userError) {
+        console.error('❌ [PASSWORD RESET DEBUG] Error finding user:', userError);
+        throw userError;
+      }
+      
+      if (!userData) {
+        console.log('❌ [PASSWORD RESET DEBUG] User not found');
+        return null;
+      }
+      
+      console.log('✅ [PASSWORD RESET DEBUG] Token validation successful');
+      console.log('User:', userData.email);
+      
+      // Return in expected format
+      return {
+        ...tokenData,
+        users: userData
+      };
+      
     } catch (error) {
-      console.error('❌ [PASSWORD RESET DEBUG] Error finding password reset:', error);
+      console.error('❌ [PASSWORD RESET DEBUG] Error in findByToken:', error);
       throw error;
     }
   }

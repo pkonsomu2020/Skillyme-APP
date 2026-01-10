@@ -99,6 +99,11 @@ app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/diagnostic', require('./routes/diagnostic'));
 app.use('/secure-access', require('./routes/secureAccess'));
 
+// Debug routes (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/debug', require('./routes/debug'));
+}
+
 // Admin routes
 app.use('/api/admin/auth', require('./routes/adminAuth'));
 app.use('/api/admin/sessions', require('./routes/adminSessions'));
