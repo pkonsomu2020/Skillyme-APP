@@ -15,12 +15,14 @@ const Navbar = () => {
   let isAuthenticated = false;
   let user = null;
   let isLoading = false;
+  let logout = null;
   
   try {
     const authContext = useAuth();
     isAuthenticated = authContext?.isAuthenticated || false;
     user = authContext?.user || null;
     isLoading = authContext?.isLoading || false;
+    logout = authContext?.logout || null;
     
     // PERFORMANCE: Removed excessive debug logging
   } catch (error) {
@@ -183,9 +185,10 @@ const Navbar = () => {
                         size="sm" 
                         onClick={() => {
                           setIsMobileMenuOpen(false);
-                          // Use the logout function from auth context
-                          const authContext = useAuth();
-                          authContext?.logout();
+                          // Use the logout function from the auth context
+                          if (logout) {
+                            logout();
+                          }
                         }}
                         className="w-full justify-center h-10 text-sm font-medium"
                       >
