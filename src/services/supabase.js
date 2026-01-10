@@ -4,16 +4,39 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+let supabase;
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ CRITICAL: Supabase configuration missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file');
+  // Create a mock client to prevent crashes
+  supabase = {
+    from: () => ({
+      select: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+      insert: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+      update: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+      delete: () => ({ data: null, error: { message: 'Supabase not configured' } })
+    })
+  };
+} else {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 // Supabase service class for database operations
 class SupabaseService {
   constructor() {
     this.client = supabase;
+    this.isConfigured = !!(supabaseUrl && supabaseAnonKey);
+  }
+
+  // Check if Supabase is properly configured
+  checkConfiguration() {
+    if (!this.isConfigured) {
+      console.warn('⚠️ Supabase not configured, falling back to API endpoints');
+      return false;
+    }
+    return true;
   }
 
   // User operations
@@ -70,34 +93,54 @@ class SupabaseService {
   }
 
   async getUsersWithStats() {
+    if (!this.checkConfiguration()) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     try {
-      // Get users with their session attendance, payment stats, and assignment submissions
-      const { data, error } = await this.client
+      // Get users first
+      const { data: users, error: usersError } = await this.client
         .from('users')
-        .select(`
-          *,
-          user_sessions(count),
-          payments(count, amount, status)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (usersError) throw usersError;
+
+      // Get all user sessions
+      const { data: userSessions, error: sessionsError } = await this.client
+        .from('user_sessions')
+        .select('user_id, session_id');
+
+      if (sessionsError) {
+        console.warn('Could not fetch user sessions:', sessionsError);
+      }
+
+      // Get all payments
+      const { data: payments, error: paymentsError } = await this.client
+        .from('payments')
+        .select('user_id, amount, status');
+
+      if (paymentsError) {
+        console.warn('Could not fetch payments:', paymentsError);
+      }
 
       // Calculate stats for each user
-      const usersWithStats = data.map(user => {
-        const sessionsAttended = user.user_sessions?.length || 0;
-        const allPayments = user.payments || [];
-        const approvedPayments = allPayments.filter(p => p.status === 'approved' || p.status === 'completed');
+      const usersWithStats = users.map(user => {
+        // Count sessions for this user
+        const userSessionsCount = userSessions ? userSessions.filter(us => us.user_id === user.id).length : 0;
+        
+        // Calculate payment stats for this user
+        const userPayments = payments ? payments.filter(p => p.user_id === user.id) : [];
+        const approvedPayments = userPayments.filter(p => p.status === 'approved' || p.status === 'completed');
         const totalPayments = approvedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
         const paymentsCount = approvedPayments.length;
         
         // Mock assignment data (in real implementation, this would come from assignments table)
-        // For now, we'll use a combination of sessions and payments as proxy for assignments
-        const assignmentsCompleted = Math.min(sessionsAttended + paymentsCount, sessionsAttended * 2);
+        const assignmentsCompleted = Math.min(userSessionsCount + paymentsCount, userSessionsCount * 2);
         
         // Enhanced points calculation
-        const assignmentPoints = assignmentsCompleted * 75; // Higher points for assignments
-        const sessionPoints = sessionsAttended * 50;
+        const assignmentPoints = assignmentsCompleted * 75;
+        const sessionPoints = userSessionsCount * 50;
         const paymentPoints = paymentsCount * 25;
         const bonusPoints = Math.floor(totalPayments / 10);
         
@@ -114,7 +157,7 @@ class SupabaseService {
           ...user,
           total_points: points,
           level_name: level,
-          sessions_attended: sessionsAttended,
+          sessions_attended: userSessionsCount,
           total_payments: totalPayments,
           payments_count: paymentsCount,
           assignments_completed: assignmentsCompleted
@@ -129,6 +172,10 @@ class SupabaseService {
   }
 
   async getLeaderboard(limit = 10) {
+    if (!this.checkConfiguration()) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     try {
       const usersResponse = await this.getUsersWithStats();
       if (!usersResponse.success) {
@@ -191,20 +238,49 @@ class SupabaseService {
 
   async getSessionsWithAttendance() {
     try {
-      const { data, error } = await this.client
+      // Get sessions first
+      const { data: sessions, error: sessionsError } = await this.client
         .from('sessions')
-        .select(`
-          *,
-          user_sessions(
-            user_id,
-            users(name, email)
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('date', { ascending: true });
 
-      if (error) throw error;
-      return { success: true, data };
+      if (sessionsError) throw sessionsError;
+
+      // Get user sessions with user details separately
+      const { data: userSessions, error: userSessionsError } = await this.client
+        .from('user_sessions')
+        .select('user_id, session_id');
+
+      if (userSessionsError) {
+        console.warn('Could not fetch user sessions:', userSessionsError);
+        // Return sessions without attendance data
+        return { success: true, data: sessions };
+      }
+
+      // Get user details
+      const userIds = [...new Set(userSessions.map(us => us.user_id))];
+      const { data: users, error: usersError } = await this.client
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.warn('Could not fetch user details:', usersError);
+      }
+
+      // Combine the data
+      const sessionsWithAttendance = sessions.map(session => ({
+        ...session,
+        user_sessions: userSessions
+          .filter(us => us.session_id === session.id)
+          .map(us => ({
+            ...us,
+            users: users ? users.find(user => user.id === us.user_id) : null
+          }))
+      }));
+
+      return { success: true, data: sessionsWithAttendance };
     } catch (error) {
       console.error('Error fetching sessions with attendance:', error);
       return { success: false, error: error.message };
@@ -214,17 +290,44 @@ class SupabaseService {
   // Payment operations
   async getAllPayments() {
     try {
-      const { data, error } = await this.client
+      // Get payments first
+      const { data: payments, error: paymentsError } = await this.client
         .from('payments')
-        .select(`
-          *,
-          users(name, email),
-          sessions(title, company)
-        `)
+        .select('*')
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
-      return { success: true, data };
+      if (paymentsError) throw paymentsError;
+
+      // Get user details separately
+      const userIds = [...new Set(payments.map(p => p.user_id))];
+      const { data: users, error: usersError } = await this.client
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.warn('Could not fetch user details:', usersError);
+      }
+
+      // Get session details separately
+      const sessionIds = [...new Set(payments.map(p => p.session_id).filter(Boolean))];
+      const { data: sessions, error: sessionsError } = await this.client
+        .from('sessions')
+        .select('id, title, company')
+        .in('id', sessionIds);
+
+      if (sessionsError) {
+        console.warn('Could not fetch session details:', sessionsError);
+      }
+
+      // Combine the data
+      const paymentsWithDetails = payments.map(payment => ({
+        ...payment,
+        users: users ? users.find(user => user.id === payment.user_id) : null,
+        sessions: sessions ? sessions.find(session => session.id === payment.session_id) : null
+      }));
+
+      return { success: true, data: paymentsWithDetails };
     } catch (error) {
       console.error('Error fetching payments:', error);
       return { success: false, error: error.message };
@@ -233,18 +336,45 @@ class SupabaseService {
 
   async getPaymentsByStatus(status) {
     try {
-      const { data, error } = await this.client
+      // Get payments by status first
+      const { data: payments, error: paymentsError } = await this.client
         .from('payments')
-        .select(`
-          *,
-          users(name, email),
-          sessions(title, company)
-        `)
+        .select('*')
         .eq('status', status)
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
-      return { success: true, data };
+      if (paymentsError) throw paymentsError;
+
+      // Get user details separately
+      const userIds = [...new Set(payments.map(p => p.user_id))];
+      const { data: users, error: usersError } = await this.client
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.warn('Could not fetch user details:', usersError);
+      }
+
+      // Get session details separately
+      const sessionIds = [...new Set(payments.map(p => p.session_id).filter(Boolean))];
+      const { data: sessions, error: sessionsError } = await this.client
+        .from('sessions')
+        .select('id, title, company')
+        .in('id', sessionIds);
+
+      if (sessionsError) {
+        console.warn('Could not fetch session details:', sessionsError);
+      }
+
+      // Combine the data
+      const paymentsWithDetails = payments.map(payment => ({
+        ...payment,
+        users: users ? users.find(user => user.id === payment.user_id) : null,
+        sessions: sessions ? sessions.find(session => session.id === payment.session_id) : null
+      }));
+
+      return { success: true, data: paymentsWithDetails };
     } catch (error) {
       console.error('Error fetching payments by status:', error);
       return { success: false, error: error.message };
@@ -254,17 +384,40 @@ class SupabaseService {
   // User session operations
   async getUserSessions(userId) {
     try {
-      const { data, error } = await this.client
+      // Get user sessions first
+      const { data: userSessions, error: userSessionsError } = await this.client
         .from('user_sessions')
-        .select(`
-          *,
-          sessions(*)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .order('joined_at', { ascending: false });
 
-      if (error) throw error;
-      return { success: true, data };
+      if (userSessionsError) throw userSessionsError;
+
+      // Get session details separately
+      const sessionIds = userSessions.map(us => us.session_id);
+      
+      if (sessionIds.length === 0) {
+        return { success: true, data: [] };
+      }
+
+      const { data: sessions, error: sessionsError } = await this.client
+        .from('sessions')
+        .select('*')
+        .in('id', sessionIds);
+
+      if (sessionsError) {
+        console.warn('Could not fetch session details:', sessionsError);
+        // Return user sessions without session details
+        return { success: true, data: userSessions };
+      }
+
+      // Combine the data
+      const combinedData = userSessions.map(userSession => ({
+        ...userSession,
+        sessions: sessions.find(session => session.id === userSession.session_id)
+      }));
+
+      return { success: true, data: combinedData };
     } catch (error) {
       console.error('Error fetching user sessions:', error);
       return { success: false, error: error.message };
