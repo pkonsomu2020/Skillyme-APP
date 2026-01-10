@@ -2,7 +2,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, Search, Video, MessageSquare, Phone, FileText, Trophy, User, LogOut, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -46,8 +45,8 @@ export function UserSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40">
-      <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40 px-4">
+    <Sidebar className="border-r border-border/40 flex flex-col h-full">
+      <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40 px-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-lg ring-2 ring-primary/20 overflow-hidden">
             <img 
@@ -62,7 +61,7 @@ export function UserSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-2 py-4 flex-1 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
@@ -89,51 +88,55 @@ export function UserSidebar() {
       </SidebarContent>
 
       {/* Mobile Profile Section */}
-      <SidebarFooter className="p-4 border-t border-border/40 md:hidden">
+      <SidebarFooter className="p-3 border-t border-border/40 md:hidden bg-background flex-shrink-0">
         {user && (
-          <div className="space-y-4">
-            {/* User Profile Info */}
-            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-semibold text-sm">
+          <div className="space-y-3">
+            {/* User Profile Card */}
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-bold text-lg shadow-md">
                 {user.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{user.name || 'User'}</p>
+                <p className="font-semibold text-sm text-foreground truncate">{user.name || 'User'}</p>
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
             </div>
 
-            {/* User Details */}
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="w-3 h-3" />
-                <span className="font-medium">Full Name:</span>
-                <span className="truncate">{user.name || 'Not provided'}</span>
+            {/* User Details Grid */}
+            <div className="grid grid-cols-1 gap-2 text-xs bg-muted/30 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <User className="w-3 h-3 text-primary flex-shrink-0" />
+                <span className="font-medium text-foreground">Full Name:</span>
+                <span className="text-muted-foreground truncate ml-auto">{user.name || 'Not provided'}</span>
               </div>
               
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="w-3 h-3" />
-                <span className="font-medium">Phone:</span>
-                <span className="truncate">{user.phone || 'Not provided'}</span>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-3 h-3 text-primary flex-shrink-0" />
+                <span className="font-medium text-foreground">Email:</span>
+                <span className="text-muted-foreground truncate ml-auto">{user.email || 'Not provided'}</span>
               </div>
               
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="w-3 h-3" />
-                <span className="font-medium">Location:</span>
-                <span className="truncate">{user.country || 'Not provided'}</span>
+              <div className="flex items-center gap-2">
+                <Phone className="w-3 h-3 text-primary flex-shrink-0" />
+                <span className="font-medium text-foreground">Phone:</span>
+                <span className="text-muted-foreground truncate ml-auto">{user.phone || 'Not provided'}</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
+                <span className="font-medium text-foreground">Location:</span>
+                <span className="text-muted-foreground truncate ml-auto">{user.country || 'Not provided'}</span>
               </div>
             </div>
 
-            <Separator />
-
             {/* Logout Button */}
             <Button 
-              variant="outline" 
+              variant="destructive" 
               size="sm" 
               onClick={handleLogout}
-              className="w-full justify-start h-9 text-xs"
+              className="w-full justify-center h-10 text-sm font-medium"
             >
-              <LogOut className="w-3 h-3 mr-2" />
+              <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
           </div>
