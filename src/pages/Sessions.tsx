@@ -109,57 +109,57 @@ const Sessions = () => {
   // Render session card
   const renderSessionCard = (session: Session) => (
     <Card key={session.id} className="hover:shadow-elegant transition-smooth">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-xl mb-2">{session.title}</CardTitle>
-            <CardDescription className="text-base">
+      <CardHeader className="pb-3 md:pb-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg md:text-xl mb-1 md:mb-2 line-clamp-2">{session.title}</CardTitle>
+            <CardDescription className="text-sm md:text-base">
               {session.company} • {session.recruiter}
             </CardDescription>
           </div>
-          <div className="flex flex-col gap-2">
-            <Badge className="bg-green-100 text-green-800">
+          <div className="flex flex-col gap-1 md:gap-2 flex-shrink-0">
+            <Badge className="bg-green-100 text-green-800 text-xs px-2 py-1">
               FREE
             </Badge>
-            <Badge className={getSkillAreaColor(session.skill_area)}>
+            <Badge className={`${getSkillAreaColor(session.skill_area)} text-xs px-2 py-1`}>
               {session.skill_area.charAt(0).toUpperCase() + session.skill_area.slice(1)}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{session.description}</p>
+      <CardContent className="space-y-3 md:space-y-4 pt-0">
+        <p className="text-xs md:text-sm text-muted-foreground line-clamp-3">{session.description}</p>
         
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span>{new Date(session.date).toLocaleDateString('en-US', { 
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <Calendar className="w-3 h-3 md:w-4 md:h-4 text-primary flex-shrink-0" />
+            <span className="truncate">{new Date(session.date).toLocaleDateString('en-US', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
               day: 'numeric' 
             })}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="w-4 h-4 text-primary" />
-            <span>{session.time} ({session.duration})</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <Clock className="w-3 h-3 md:w-4 md:h-4 text-primary flex-shrink-0" />
+            <span className="truncate">{session.time} ({session.duration})</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Video className="w-4 h-4 text-primary" />
-            <span className="text-blue-600 hover:text-blue-800 cursor-pointer" 
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <Video className="w-3 h-3 md:w-4 md:h-4 text-primary flex-shrink-0" />
+            <span className="text-blue-600 hover:text-blue-800 cursor-pointer truncate" 
                   onClick={() => window.open(session.google_meet_link, '_blank')}>
               Google Meet Link
-              <ExternalLink className="w-3 h-3 inline ml-1" />
+              <ExternalLink className="w-2 h-2 md:w-3 md:h-3 inline ml-1" />
             </span>
           </div>
         </div>
 
         <Button 
           variant="hero" 
-          className="w-full"
+          className="w-full h-10 md:h-11 text-sm md:text-base"
           onClick={() => handleJoinSession(session)}
         >
-          <Video className="w-4 h-4 mr-2" />
+          <Video className="w-3 h-3 md:w-4 md:h-4 mr-2" />
           Join Free Session
         </Button>
       </CardContent>
@@ -167,25 +167,25 @@ const Sessions = () => {
   );
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2">Career Sessions</h2>
-        <p className="text-muted-foreground">Join personalized career development sessions with industry professionals</p>
+    <div className="p-3 md:p-8">
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">Career Sessions</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Join personalized career development sessions with industry professionals</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            All Sessions
+        <TabsList className="grid w-full grid-cols-3 mb-6 md:mb-8 h-auto">
+          <TabsTrigger value="all" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3 text-xs md:text-sm">
+            <Users className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-center leading-tight">All Sessions</span>
           </TabsTrigger>
-          <TabsTrigger value="form4" className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            Form 4 Leavers
+          <TabsTrigger value="form4" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3 text-xs md:text-sm">
+            <GraduationCap className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-center leading-tight">Form 4 Leavers</span>
           </TabsTrigger>
-          <TabsTrigger value="undergraduate" className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Undergraduate Students
+          <TabsTrigger value="undergraduate" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3 text-xs md:text-sm">
+            <BookOpen className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-center leading-tight">Undergraduate Students</span>
           </TabsTrigger>
         </TabsList>
 

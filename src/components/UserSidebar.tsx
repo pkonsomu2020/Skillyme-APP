@@ -1,5 +1,8 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Search, Video, MessageSquare, Phone, FileText, Trophy } from "lucide-react";
+import { LayoutDashboard, Search, Video, MessageSquare, Phone, FileText, Trophy, User, LogOut, MapPin } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -9,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 const menuItems = [
@@ -23,6 +27,7 @@ const menuItems = [
 
 export function UserSidebar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
     // Handle exact matches
@@ -34,6 +39,10 @@ export function UserSidebar() {
     }
     
     return false;
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -52,6 +61,7 @@ export function UserSidebar() {
           </span>
         </div>
       </SidebarHeader>
+      
       <SidebarContent className="px-2 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -77,6 +87,58 @@ export function UserSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* Mobile Profile Section */}
+      <SidebarFooter className="p-4 border-t border-border/40 md:hidden">
+        {user && (
+          <div className="space-y-4">
+            {/* User Profile Info */}
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                {user.name?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{user.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              </div>
+            </div>
+
+            {/* User Details */}
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <User className="w-3 h-3" />
+                <span className="font-medium">Full Name:</span>
+                <span className="truncate">{user.name || 'Not provided'}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Phone className="w-3 h-3" />
+                <span className="font-medium">Phone:</span>
+                <span className="truncate">{user.phone || 'Not provided'}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span className="font-medium">Location:</span>
+                <span className="truncate">{user.country || 'Not provided'}</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Logout Button */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogout}
+              className="w-full justify-start h-9 text-xs"
+            >
+              <LogOut className="w-3 h-3 mr-2" />
+              Logout
+            </Button>
+          </div>
+        )}
+      </SidebarFooter>
     </Sidebar>
   );
 }
