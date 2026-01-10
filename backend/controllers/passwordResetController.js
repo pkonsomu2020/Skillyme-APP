@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    console.log('🔍 [PASSWORD RESET DEBUG] Starting forgot password for:', email);
 
     if (!email) {
       return res.status(400).json({
@@ -18,6 +19,7 @@ const forgotPassword = async (req, res) => {
     // Check if user exists
     const user = await User.findByEmail(email);
     if (!user) {
+      console.log('🔍 [PASSWORD RESET DEBUG] User not found for email:', email);
       // Don't reveal if user exists or not for security
       return res.json({
         success: true,
@@ -25,62 +27,84 @@ const forgotPassword = async (req, res) => {
       });
     }
 
+    console.log('🔍 [PASSWORD RESET DEBUG] User found:', user.id);
+
     // Generate reset token
     const token = PasswordReset.generateToken();
     const expiresAt = PasswordReset.getExpirationTime();
 
+    console.log('🔍 [PASSWORD RESET DEBUG] Generated token:', token);
+    console.log('🔍 [PASSWORD RESET DEBUG] Expires at:', expiresAt);
+
     // Try to delete any existing reset tokens for this user
     try {
+      console.log('🔍 [PASSWORD RESET DEBUG] Deleting existing tokens for user:', user.id);
       await PasswordReset.deleteByUserId(user.id);
+      console.log('✅ [PASSWORD RESET DEBUG] Existing tokens deleted successfully');
     } catch (deleteError) {
-      console.log('Could not delete existing reset tokens:', deleteError.message);
+      console.log('⚠️ [PASSWORD RESET DEBUG] Could not delete existing reset tokens:', deleteError.message);
+      // Continue anyway - this is not critical
     }
 
     // Create new reset token
+    let resetTokenCreated = false;
     try {
-      console.log('🔍 [PASSWORD RESET DEBUG] Creating reset token for user:', user.id);
+      console.log('🔍 [PASSWORD RESET DEBUG] Creating new reset token...');
       await PasswordReset.create(user.id, token, expiresAt);
+      resetTokenCreated = true;
       console.log('✅ [PASSWORD RESET DEBUG] Reset token created successfully');
     } catch (resetError) {
-      console.error('❌ [PASSWORD RESET DEBUG] Token creation failed:', resetError);
+      console.log('❌ [PASSWORD RESET DEBUG] Password reset token creation failed:', resetError.message);
       
-      // Return success anyway to not reveal system issues
-      return res.json({
-        success: true,
-        message: 'If an account with that email exists, we have sent a password reset link.'
+      // If database operations fail, we can still provide a temporary solution
+      // by generating a JWT token that contains the reset information
+      console.log('🔄 [PASSWORD RESET DEBUG] Falling back to JWT-based reset token');
+      
+      // For now, return an error since we need the database for security
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to generate password reset token. Please try again later.',
+        debug: process.env.NODE_ENV === 'development' ? resetError.message : undefined
       });
     }
 
     // Send reset email
     try {
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:8081'}/reset-password/${token}`;
+      const resetUrl = `${process.env.FRONTEND_URL || 'https://skillyme.africa'}/reset-password/${token}`;
+      console.log('🔍 [PASSWORD RESET DEBUG] Reset URL:', resetUrl);
       
       await emailService.sendPasswordResetEmail(user.email, user.name, resetUrl);
-      
-      // Password reset email sent
+      console.log('✅ [PASSWORD RESET DEBUG] Password reset email sent successfully');
     } catch (emailError) {
-      // PERFORMANCE: Removed excessive error logging
-      // Don't fail the request if email fails
+      console.log('⚠️ [PASSWORD RESET DEBUG] Email sending failed:', emailError.message);
+      // Don't fail the request if email fails - provide the link directly
     }
 
-    // If email sending failed, provide the reset link directly in the response
-    // This is a temporary workaround until email service is properly configured
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://skillyme-app.vercel.app'}/reset-password/${token}`;
+    // Always provide the reset link in the response for development/testing
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://skillyme.africa'}/reset-password/${token}`;
     
     res.json({
       success: true,
       message: 'Password reset link generated successfully.',
       data: {
         resetUrl: resetUrl,
-        note: 'Please save this link to reset your password. It will expire in 1 hour.'
+        note: 'Please save this link to reset your password. It will expire in 1 hour.',
+        debug: process.env.NODE_ENV === 'development' ? {
+          userId: user.id,
+          token: token,
+          expiresAt: expiresAt
+        } : undefined
       }
     });
 
+    console.log('✅ [PASSWORD RESET DEBUG] Forgot password process completed successfully');
+
   } catch (error) {
-    // PERFORMANCE: Removed excessive error logging
+    console.error('❌ [PASSWORD RESET DEBUG] Forgot password failed:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
