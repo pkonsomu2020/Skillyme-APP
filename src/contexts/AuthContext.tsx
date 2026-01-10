@@ -145,11 +145,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (storedAuth && storedUser && isAuthenticated === 'true') {
         try {
           const userData = JSON.parse(storedUser);
-          setUser(userData);
           
-          // Optionally verify the token is still valid by fetching profile
+          // Verify the token is still valid by fetching profile
           try {
-            await fetchUserProfile();
+            const response = await apiService.getProfile();
+            if (response.success) {
+              setUser(response.data.user);
+            } else {
+              // Token is invalid, clear auth state
+              console.log('Token validation failed, clearing auth state');
+              apiService.logout();
+              setUser(null);
+              localStorage.removeItem('user');
+              localStorage.removeItem('isAuthenticated');
+              localStorage.removeItem('authToken');
+            }
           } catch (error) {
             // If profile fetch fails, the token might be expired
             console.log('Token validation failed, clearing auth state');

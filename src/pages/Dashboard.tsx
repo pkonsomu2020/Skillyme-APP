@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserSidebar } from "@/components/UserSidebar";
+import { useAuth } from "@/contexts/AuthContext";
 import DashboardOverview from "./DashboardOverview";
 import Sessions from "./Sessions";
 import Assignments from "./Assignments";
@@ -14,8 +15,10 @@ import Contact from "./Contact";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
+    logout();
     toast.success("Logged out successfully");
     navigate("/");
   };
