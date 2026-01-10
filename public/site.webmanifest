@@ -1,0 +1,28 @@
+{
+  "name": "Skillyme - Career Connection Platform",
+  "short_name": "Skillyme",
+  "description": "Connect with industry professionals through interactive career sessions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/Skillyme LOGO.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Skillyme LOGO.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "business", "productivity"],
+  "lang": "en",
+  "scope": "/",
+  "id": "skillyme-career-platform"
+}
