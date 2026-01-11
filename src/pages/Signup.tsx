@@ -321,13 +321,12 @@ const Signup = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fieldOfStudy">Field of Study *</Label>
+                <Label htmlFor="fieldOfStudy">Field of Study</Label>
                 <Input
                   id="fieldOfStudy"
-                  placeholder="Computer Science"
+                  placeholder="Computer Science (optional)"
                   value={formData.fieldOfStudy}
                   onChange={(e) => handleChange("fieldOfStudy", e.target.value)}
-                  required
                 />
               </div>
 
