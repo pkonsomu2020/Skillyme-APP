@@ -73,8 +73,8 @@ export function CreateSessionForm({ onSessionCreated, onCancel }: CreateSessionF
       return false
     }
 
-    // Validate time format
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+    // Validate time format - accept both HH:MM and HH:MM:SS formats
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/
     if (!timeRegex.test(formData.time)) {
       toast({
         title: "Validation Error",

@@ -39,6 +39,15 @@ export function EditSessionForm({ session, onSessionUpdated, onCancel }: EditSes
   // Initialize form with session data
   useEffect(() => {
     if (session) {
+      // Normalize time format - remove seconds if present
+      let normalizedTime = session.time || ""
+      if (normalizedTime) {
+        const timeParts = normalizedTime.split(':')
+        if (timeParts.length === 3) {
+          normalizedTime = `${timeParts[0]}:${timeParts[1]}`
+        }
+      }
+
       setFormData({
         title: session.title || "",
         description: session.description || "",
@@ -49,7 +58,7 @@ export function EditSessionForm({ session, onSessionUpdated, onCancel }: EditSes
         business_number: session.business_number || "",
         recruiter: session.recruiter || "",
         date: session.date || "",
-        time: session.time || "",
+        time: normalizedTime,
         max_attendees: session.max_attendees?.toString() || "",
         poster_url: session.poster_url || "",
         thumbnail_url: session.thumbnail_url || "",
@@ -86,15 +95,26 @@ export function EditSessionForm({ session, onSessionUpdated, onCancel }: EditSes
       return false
     }
 
-    // Validate time format
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+    // Validate time format - accept both HH:MM and HH:MM:SS formats
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/
     if (!timeRegex.test(formData.time)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter time in HH:MM format (24-hour)",
-        variant: "destructive"
-      })
-      return false
+      // Try to parse and convert if it's in a different format
+      try {
+        // If time has seconds, remove them
+        const timeParts = formData.time.split(':')
+        if (timeParts.length === 3) {
+          const normalizedTime = `${timeParts[0]}:${timeParts[1]}`
+          setFormData(prev => ({ ...prev, time: normalizedTime }))
+          return true
+        }
+      } catch (e) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter time in HH:MM format (24-hour)",
+          variant: "destructive"
+        })
+        return false
+      }
     }
 
     // Validate Google Meet link if provided
@@ -118,6 +138,13 @@ export function EditSessionForm({ session, onSessionUpdated, onCancel }: EditSes
     try {
       setLoading(true)
 
+      // Normalize time format - ensure it's HH:MM without seconds
+      let normalizedTime = formData.time
+      const timeParts = normalizedTime.split(':')
+      if (timeParts.length === 3) {
+        normalizedTime = `${timeParts[0]}:${timeParts[1]}`
+      }
+
       const sessionData: Partial<Session> = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -128,7 +155,7 @@ export function EditSessionForm({ session, onSessionUpdated, onCancel }: EditSes
         business_number: formData.business_number.trim() || undefined,
         recruiter: formData.recruiter.trim(),
         date: formData.date,
-        time: formData.time,
+        time: normalizedTime,
         max_attendees: formData.max_attendees ? parseInt(formData.max_attendees) : undefined,
         poster_url: formData.poster_url.trim() || undefined,
         thumbnail_url: formData.thumbnail_url.trim() || undefined,
