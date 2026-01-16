@@ -108,58 +108,58 @@ const Sessions = () => {
 
   // Render session card
   const renderSessionCard = (session: Session) => (
-    <Card key={session.id} className="hover:shadow-elegant transition-smooth">
-      <CardHeader className="pb-3 md:pb-6">
+    <Card key={session.id} className="hover:shadow-elegant transition-smooth h-full flex flex-col">
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg md:text-xl mb-1 md:mb-2 line-clamp-2">{session.title}</CardTitle>
-            <CardDescription className="text-sm md:text-base">
+            <CardTitle className="text-base md:text-lg mb-1 line-clamp-2 leading-tight">{session.title}</CardTitle>
+            <CardDescription className="text-xs md:text-sm">
               {session.company} • {session.recruiter}
             </CardDescription>
           </div>
-          <div className="flex flex-col gap-1 md:gap-2 flex-shrink-0">
-            <Badge className="bg-green-100 text-green-800 text-xs px-2 py-1">
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            <Badge className="bg-green-100 text-green-800 text-xs px-2 py-0.5">
               FREE
             </Badge>
-            <Badge className={`${getSkillAreaColor(session.skill_area)} text-xs px-2 py-1`}>
+            <Badge className={`${getSkillAreaColor(session.skill_area)} text-xs px-2 py-0.5`}>
               {session.skill_area.charAt(0).toUpperCase() + session.skill_area.slice(1)}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 md:space-y-4 pt-0">
-        <p className="text-xs md:text-sm text-muted-foreground line-clamp-3">{session.description}</p>
+      <CardContent className="space-y-3 pt-0 flex-1 flex flex-col">
+        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 flex-shrink-0">{session.description}</p>
         
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs md:text-sm">
-            <Calendar className="w-3 h-3 md:w-4 md:h-4 text-primary flex-shrink-0" />
+        <div className="space-y-1.5 flex-shrink-0">
+          <div className="flex items-center gap-2 text-xs">
+            <Calendar className="w-3 h-3 text-primary flex-shrink-0" />
             <span className="truncate">{new Date(session.date).toLocaleDateString('en-US', { 
-              weekday: 'long', 
+              weekday: 'short', 
               year: 'numeric', 
-              month: 'long', 
+              month: 'short', 
               day: 'numeric' 
             })}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs md:text-sm">
-            <Clock className="w-3 h-3 md:w-4 md:h-4 text-primary flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs">
+            <Clock className="w-3 h-3 text-primary flex-shrink-0" />
             <span className="truncate">{session.time} ({session.duration})</span>
           </div>
-          <div className="flex items-center gap-2 text-xs md:text-sm">
-            <Video className="w-3 h-3 md:w-4 md:h-4 text-primary flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs">
+            <Video className="w-3 h-3 text-primary flex-shrink-0" />
             <span className="text-blue-600 hover:text-blue-800 cursor-pointer truncate" 
                   onClick={() => window.open(session.google_meet_link, '_blank')}>
               Google Meet Link
-              <ExternalLink className="w-2 h-2 md:w-3 md:h-3 inline ml-1" />
+              <ExternalLink className="w-2 h-2 inline ml-1" />
             </span>
           </div>
         </div>
 
         <Button 
           variant="hero" 
-          className="w-full h-10 md:h-11 text-sm md:text-base"
+          className="w-full h-9 text-sm mt-auto"
           onClick={() => handleJoinSession(session)}
         >
-          <Video className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+          <Video className="w-3 h-3 mr-2" />
           Join Free Session
         </Button>
       </CardContent>
@@ -190,14 +190,14 @@ const Sessions = () => {
         </TabsList>
 
         <TabsContent value="all" className="mt-0">
-          <div className="grid gap-6 max-w-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 max-w-7xl">
             {isLoading ? (
-              <div className="text-center py-8">
+              <div className="col-span-full text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading sessions...</p>
               </div>
             ) : filteredSessions.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="col-span-full text-center py-8">
                 <p className="text-muted-foreground">No sessions available for all students at the moment.</p>
               </div>
             ) : (
@@ -214,14 +214,14 @@ const Sessions = () => {
               university options, and entry-level opportunities.
             </p>
           </div>
-          <div className="grid gap-6 max-w-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 max-w-7xl">
             {isLoading ? (
-              <div className="text-center py-8">
+              <div className="col-span-full text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading sessions...</p>
               </div>
             ) : filteredSessions.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="col-span-full text-center py-8">
                 <p className="text-muted-foreground">No sessions available for Form 4 leavers at the moment.</p>
               </div>
             ) : (
@@ -238,14 +238,14 @@ const Sessions = () => {
               career development, and professional networking opportunities.
             </p>
           </div>
-          <div className="grid gap-6 max-w-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 max-w-7xl">
             {isLoading ? (
-              <div className="text-center py-8">
+              <div className="col-span-full text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading sessions...</p>
               </div>
             ) : filteredSessions.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="col-span-full text-center py-8">
                 <p className="text-muted-foreground">No sessions available for undergraduate students at the moment.</p>
               </div>
             ) : (
