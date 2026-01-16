@@ -424,11 +424,75 @@ const getSessionAttendees = async (req, res) => {
   }
 };
 
+// Toggle session active status
+const toggleSessionActive = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get current session status
+    const { data: currentSession, error: fetchError } = await supabase
+      .from('sessions')
+      .select('is_active')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        return res.status(404).json({
+          success: false,
+          message: 'Session not found'
+        });
+      }
+      throw fetchError;
+    }
+
+    // Toggle the status
+    const newStatus = !currentSession.is_active;
+
+    const { data: session, error } = await supabase
+      .from('sessions')
+      .update({ 
+        is_active: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select(`
+        id, title, description, date, time, google_meet_link,
+        recruiter, company, price, is_active, is_completed,
+        poster_url, thumbnail_url, max_attendees, current_attendees,
+        created_at, updated_at
+      `)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      message: `Session ${newStatus ? 'activated' : 'deactivated'} successfully`,
+      data: { session }
+    });
+  } catch (error) {
+    await ErrorHandler.logError(error, {
+      endpoint: `/api/admin/sessions/${req.params.id}/toggle-active`,
+      adminId: req.admin?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to toggle session status',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllSessions,
   getSessionById,
   createSession,
   updateSession,
   deleteSession,
-  getSessionAttendees
+  getSessionAttendees,
+  toggleSessionActive
 };

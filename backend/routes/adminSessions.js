@@ -7,7 +7,8 @@ const {
   createSession,
   updateSession,
   deleteSession,
-  getSessionAttendees
+  getSessionAttendees,
+  toggleSessionActive
 } = require('../controllers/adminSessionController');
 
 const router = express.Router();
@@ -56,6 +57,7 @@ router.get('/', getAllSessions);
 router.get('/:id', idValidation, getSessionById);
 router.post('/', sessionValidation, createSession);
 router.put('/:id', idValidation, updateSessionValidation, updateSession);
+router.put('/:id/toggle-active', idValidation, toggleSessionActive);
 router.delete('/:id', idValidation, deleteSession);
 router.get('/:id/attendees', idValidation, getSessionAttendees);
 
