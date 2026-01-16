@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CreateSessionForm } from "@/components/CreateSessionForm"
+import { EditSessionForm } from "@/components/EditSessionForm"
 import { adminApi, Session } from "@/services/api"
 
 export default function Sessions() {
@@ -23,6 +24,7 @@ export default function Sessions() {
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([])
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingSession, setEditingSession] = useState<Session | null>(null)
   const { toast } = useToast()
 
   // Fetch sessions data using the API service
@@ -117,6 +119,22 @@ export default function Sessions() {
       title: "Success!",
       description: "Session created successfully and is now available for users to book",
     })
+  }
+
+  // Handle session update
+  const handleSessionUpdated = (updatedSession: Session) => {
+    setSessions(prev => prev.map(s => s.id === updatedSession.id ? updatedSession : s))
+    setFilteredSessions(prev => prev.map(s => s.id === updatedSession.id ? updatedSession : s))
+    setEditingSession(null)
+    toast({
+      title: "Success!",
+      description: "Session updated successfully",
+    })
+  }
+
+  // Handle edit session
+  const handleEditSession = (session: Session) => {
+    setEditingSession(session)
   }
 
   // Handle session actions
@@ -220,6 +238,30 @@ export default function Sessions() {
           <CreateSessionForm
             onSessionCreated={handleSessionCreated}
             onCancel={() => setShowCreateForm(false)}
+          />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (editingSession) {
+    return (
+      <DashboardLayout>
+        <div className="p-8">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() => setEditingSession(null)}
+              className="mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Sessions
+            </Button>
+          </div>
+          <EditSessionForm
+            session={editingSession}
+            onSessionUpdated={handleSessionUpdated}
+            onCancel={() => setEditingSession(null)}
           />
         </div>
       </DashboardLayout>
@@ -461,7 +503,7 @@ export default function Sessions() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Edit Session
                               </DropdownMenuItem>
