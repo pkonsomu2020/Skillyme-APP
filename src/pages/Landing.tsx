@@ -145,7 +145,7 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Simple steps to connect with your future</p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
                 1
@@ -165,14 +165,6 @@ const Landing = () => {
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
                 3
-              </div>
-              <h3 className="font-semibold mb-2">Pay & Join</h3>
-              <p className="text-sm text-muted-foreground">Secure payment via M-Pesa</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
-                4
               </div>
               <h3 className="font-semibold mb-2">Connect</h3>
               <p className="text-sm text-muted-foreground">Meet recruiters via Google Meet</p>

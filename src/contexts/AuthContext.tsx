@@ -19,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (userData: any) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchUserProfile: () => Promise<void>;
 }
 
@@ -117,22 +117,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       return false;
     } catch (error) {
-      // PERFORMANCE: Removed excessive error logging
-      return false;
+      console.error('Registration error:', error);
+      // Re-throw the error so the signup component can handle it
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    // Logging out user
-    apiService.logout();
-    setUser(null);
-    // Clear all stored authentication data
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-    // User state cleared
+  const logout = async () => {
+    try {
+      // Logging out user
+      await apiService.logout();
+      setUser(null);
+      // Clear all stored authentication data
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
+      // User state cleared
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force clear even if there's an error
+      setUser(null);
+      localStorage.clear();
+    }
   };
 
   // Check authentication status on mount

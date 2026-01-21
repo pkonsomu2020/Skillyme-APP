@@ -11,11 +11,10 @@ const registerValidation = [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phone').optional().trim().isLength({ min: 5 }).withMessage('Phone number is required'),
+  body('phone').trim().notEmpty().withMessage('Phone number is required').isLength({ min: 5 }).withMessage('Phone number must be at least 5 characters'),
   body('country').trim().isLength({ min: 2 }).withMessage('Country is required'),
   body('county').optional().trim().isLength({ min: 2 }).withMessage('County must be at least 2 characters'),
-  body('field_of_study').optional().trim().isLength({ min: 1 }).withMessage('Field of study must be at least 1 character if provided'),
-  body('institution').optional().trim().isLength({ min: 1 }).withMessage('Institution is required'),
+  // field_of_study and institution are completely optional - no validation
   body('level_of_study').optional().isIn(['High School', 'Undergraduate', 'Graduate', 'Postgraduate']).withMessage('Invalid level of study')
 ];
 

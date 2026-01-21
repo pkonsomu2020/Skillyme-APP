@@ -42,7 +42,17 @@ class ApiService {
 
       // PERFORMANCE: Removed excessive error logging
       if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
+        // Provide detailed error message from backend
+        const errorMessage = data.message || data.error || `Request failed with status ${response.status}`;
+        const error = new Error(errorMessage);
+        
+        // Include validation errors if available
+        if (data.errors && Array.isArray(data.errors)) {
+          error.validationErrors = data.errors;
+          error.message = data.errors.map(err => err.msg || err.message).join(', ');
+        }
+        
+        throw error;
       }
 
       return data;
@@ -88,7 +98,16 @@ class ApiService {
   }
 
   async logout() {
-    this.removeAuthToken();
+    try {
+      // Try to call logout endpoint if available
+      await this.request('/auth/logout', { method: 'POST' });
+    } catch (error) {
+      // Ignore logout endpoint errors, just clear local token
+      console.warn('Logout endpoint failed, clearing local token:', error.message);
+    } finally {
+      // Always clear the token regardless of endpoint success
+      this.removeAuthToken();
+    }
   }
 
   async getProfile() {

@@ -183,11 +183,20 @@ const Navbar = () => {
                       <Button 
                         variant="destructive" 
                         size="sm" 
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          // Use the logout function from the auth context
-                          if (logout) {
-                            logout();
+                        onClick={async () => {
+                          try {
+                            setIsMobileMenuOpen(false);
+                            // Use the logout function from the auth context
+                            if (logout) {
+                              await logout();
+                              // Force page reload to ensure clean state
+                              window.location.href = '/';
+                            }
+                          } catch (error) {
+                            console.error('Logout error:', error);
+                            // Force logout even if there's an error
+                            localStorage.clear();
+                            window.location.href = '/';
                           }
                         }}
                         className="w-full justify-center h-10 text-sm font-medium"

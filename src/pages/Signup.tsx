@@ -188,7 +188,7 @@ const Signup = () => {
         phone: formData.phone,
         country: formData.country,
         county: formData.country === "Kenya" ? formData.county : null,
-        field_of_study: formData.fieldOfStudy,
+        field_of_study: formData.fieldOfStudy || null, // Send null if empty
         institution: formData.institution || null,
         level_of_study: formData.levelOfStudy,
         password: formData.password,
@@ -218,11 +218,25 @@ const Signup = () => {
         navigate("/dashboard");
       } else {
         console.log("❌ Registration failed");
-        toast.error("Registration failed. Please try again.");
+        toast.error("Registration failed. Please check your information and try again.");
       }
     } catch (error) {
       console.error("❌ Registration error:", error);
-      toast.error(error.message || "Registration failed. Please try again.");
+      
+      // Display specific error message from backend
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle validation errors specifically
+      if (error.validationErrors && Array.isArray(error.validationErrors)) {
+        const validationMessages = error.validationErrors.map(err => err.msg || err.message);
+        errorMessage = validationMessages.join(', ');
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
