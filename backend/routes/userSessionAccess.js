@@ -1,11 +1,11 @@
 const express = require('express');
-const { authenticateAdminToken } = require('../middleware/auth');
+const { authenticateAdmin } = require('../middleware/adminAuth');
 const supabase = require('../config/supabase');
 
 const router = express.Router();
 
 // Get all users and their session access status for a specific session
-router.get('/session/:sessionId/users', authenticateAdminToken, async (req, res) => {
+router.get('/session/:sessionId/users', authenticateAdmin, async (req, res) => {
   try {
     const { sessionId } = req.params;
     
@@ -64,7 +64,7 @@ router.get('/session/:sessionId/users', authenticateAdminToken, async (req, res)
 });
 
 // Grant or revoke access for a user to a specific session
-router.post('/grant-access', authenticateAdminToken, async (req, res) => {
+router.post('/grant-access', authenticateAdmin, async (req, res) => {
   try {
     const { userId, sessionId, accessGranted, adminNotes } = req.body;
     const adminId = req.admin.id;
