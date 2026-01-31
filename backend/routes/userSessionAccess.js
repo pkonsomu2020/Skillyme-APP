@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateAdminToken } = require('../middleware/auth');
-const db = require('../database/connection');
+const supabase = require('../config/supabase');
 
 const router = express.Router();
 
@@ -9,30 +9,48 @@ router.get('/session/:sessionId/users', authenticateAdminToken, async (req, res)
   try {
     const { sessionId } = req.params;
     
-    const query = `
-      SELECT 
-        u.id as user_id,
-        u.name,
-        u.email,
-        u.phone,
-        u.country,
-        u.county,
-        u.field_of_study,
-        usa.access_granted,
-        usa.admin_notes,
-        usa.granted_at,
-        usa.granted_by
-      FROM users u
-      LEFT JOIN user_session_access usa ON u.id = usa.user_id AND usa.session_id = $1
-      ORDER BY u.name ASC
-    `;
+    // Get all users first
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+      .order('name', { ascending: true });
     
-    const result = await db.query(query, [sessionId]);
+    if (usersError) {
+      throw usersError;
+    }
+    
+    // Get session access data for this session
+    const { data: accessData, error: accessError } = await supabase
+      .from('user_session_access')
+      .select('*')
+      .eq('session_id', sessionId);
+    
+    if (accessError) {
+      console.warn('Could not fetch session access data:', accessError);
+    }
+    
+    // Combine users with their access status
+    const usersWithAccess = users.map(user => {
+      const access = accessData ? accessData.find(a => a.user_id === user.id) : null;
+      return {
+        user_id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        country: user.country,
+        county: user.county,
+        field_of_study: user.field_of_study,
+        access_granted: access ? access.access_granted : null,
+        admin_notes: access ? access.admin_notes : null,
+        granted_at: access ? access.granted_at : null,
+        granted_by: access ? access.granted_by : null
+      };
+    });
     
     res.json({
       success: true,
       data: {
-        users: result.rows
+        users: usersWithAccess
       }
     });
   } catch (error) {
@@ -59,42 +77,60 @@ router.post('/grant-access', authenticateAdminToken, async (req, res) => {
     }
     
     // Check if record exists
-    const existingQuery = `
-      SELECT id FROM user_session_access 
-      WHERE user_id = $1 AND session_id = $2
-    `;
-    const existingResult = await db.query(existingQuery, [userId, sessionId]);
+    const { data: existingRecord, error: checkError } = await supabase
+      .from('user_session_access')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .single();
     
-    if (existingResult.rows.length > 0) {
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      throw checkError;
+    }
+    
+    let result;
+    
+    if (existingRecord) {
       // Update existing record
-      const updateQuery = `
-        UPDATE user_session_access 
-        SET access_granted = $1, admin_notes = $2, granted_by = $3, granted_at = NOW(), updated_at = NOW()
-        WHERE user_id = $4 AND session_id = $5
-        RETURNING *
-      `;
-      const result = await db.query(updateQuery, [accessGranted, adminNotes, adminId, userId, sessionId]);
+      const { data, error } = await supabase
+        .from('user_session_access')
+        .update({
+          access_granted: accessGranted,
+          admin_notes: adminNotes,
+          granted_by: adminId,
+          granted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('session_id', sessionId)
+        .select()
+        .single();
       
-      res.json({
-        success: true,
-        message: `Access ${accessGranted ? 'granted' : 'revoked'} successfully`,
-        data: result.rows[0]
-      });
+      if (error) throw error;
+      result = data;
     } else {
       // Create new record
-      const insertQuery = `
-        INSERT INTO user_session_access (user_id, session_id, access_granted, admin_notes, granted_by)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-      `;
-      const result = await db.query(insertQuery, [userId, sessionId, accessGranted, adminNotes, adminId]);
+      const { data, error } = await supabase
+        .from('user_session_access')
+        .insert({
+          user_id: userId,
+          session_id: sessionId,
+          access_granted: accessGranted,
+          admin_notes: adminNotes,
+          granted_by: adminId
+        })
+        .select()
+        .single();
       
-      res.json({
-        success: true,
-        message: `Access ${accessGranted ? 'granted' : 'revoked'} successfully`,
-        data: result.rows[0]
-      });
+      if (error) throw error;
+      result = data;
     }
+    
+    res.json({
+      success: true,
+      message: `Access ${accessGranted ? 'granted' : 'revoked'} successfully`,
+      data: result
+    });
   } catch (error) {
     console.error('Error managing session access:', error);
     res.status(500).json({
@@ -110,20 +146,24 @@ router.get('/user/:userId/session/:sessionId', async (req, res) => {
   try {
     const { userId, sessionId } = req.params;
     
-    const query = `
-      SELECT access_granted, granted_at, admin_notes
-      FROM user_session_access 
-      WHERE user_id = $1 AND session_id = $2
-    `;
-    const result = await db.query(query, [userId, sessionId]);
+    const { data, error } = await supabase
+      .from('user_session_access')
+      .select('access_granted, granted_at, admin_notes')
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .single();
     
-    const hasAccess = result.rows.length > 0 ? result.rows[0].access_granted : false;
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      throw error;
+    }
+    
+    const hasAccess = data ? data.access_granted : false;
     
     res.json({
       success: true,
       data: {
         hasAccess,
-        accessDetails: result.rows[0] || null
+        accessDetails: data || null
       }
     });
   } catch (error) {
