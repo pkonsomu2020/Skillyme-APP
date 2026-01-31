@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Calendar, Users, MoreVertical, Search, ArrowLeft, Video, Image, CheckCircle, XCircle } from "lucide-react"
+import { Plus, Calendar, Users, MoreVertical, Search, ArrowLeft, Video, Image, CheckCircle, XCircle, Shield } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreateSessionForm } from "@/components/CreateSessionForm"
 import { EditSessionForm } from "@/components/EditSessionForm"
+import { SessionAccessManager } from "@/components/SessionAccessManager"
 import { adminApi, Session } from "@/services/api"
 
 export default function Sessions() {
@@ -25,6 +26,7 @@ export default function Sessions() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingSession, setEditingSession] = useState<Session | null>(null)
+  const [managingAccessSession, setManagingAccessSession] = useState<Session | null>(null)
   const { toast } = useToast()
 
   // Fetch sessions data using the API service
@@ -135,6 +137,11 @@ export default function Sessions() {
   // Handle edit session
   const handleEditSession = (session: Session) => {
     setEditingSession(session)
+  }
+
+  // Handle manage session access
+  const handleManageAccess = (session: Session) => {
+    setManagingAccessSession(session)
   }
 
   // Handle session actions
@@ -264,6 +271,18 @@ export default function Sessions() {
             onCancel={() => setEditingSession(null)}
           />
         </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (managingAccessSession) {
+    return (
+      <DashboardLayout>
+        <SessionAccessManager
+          sessionId={managingAccessSession.id}
+          sessionTitle={managingAccessSession.title}
+          onBack={() => setManagingAccessSession(null)}
+        />
       </DashboardLayout>
     )
   }
@@ -506,6 +525,10 @@ export default function Sessions() {
                               <DropdownMenuItem onClick={() => handleEditSession(session)}>
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Edit Session
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleManageAccess(session)}>
+                                <Shield className="mr-2 h-4 w-4" />
+                                Manage User Access
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleToggleActive(session.id, !session.is_active)}>
                                 {session.is_active ? (

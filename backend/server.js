@@ -79,7 +79,9 @@ app.use((req, res, next) => {
     req.path.startsWith('/api/admin/upload') ||
     req.path.startsWith('/api/admin/analytics') ||
     req.path.startsWith('/api/admin/discounts') ||
+    req.path.startsWith('/api/admin/session-access') ||
     req.path.startsWith('/api/assignments') ||
+    req.path.startsWith('/api/session-access') ||
     req.path.startsWith('/api/dashboard')
   ) {
     return next();
@@ -94,15 +96,11 @@ app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/sessions', require('./routes/sessions'));
+app.use('/api/session-access', require('./routes/sessionAccess'));
 app.use('/api/assignments', require('./routes/assignments'));
 // MySQL setup route removed - now using Supabase
 app.use('/api/diagnostic', require('./routes/diagnostic'));
 app.use('/secure-access', require('./routes/secureAccess'));
-
-// Debug routes (only in development)
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/debug', require('./routes/debug'));
-}
 
 // Admin routes
 app.use('/api/admin/auth', require('./routes/adminAuth'));
@@ -113,6 +111,7 @@ app.use('/api/admin/notifications', require('./routes/adminNotifications'));
 app.use('/api/admin/upload', require('./routes/adminUpload'));
 app.use('/api/admin/assignments', require('./routes/adminAssignments'));
 app.use('/api/admin/discounts', require('./routes/adminDiscounts'));
+app.use('/api/admin/session-access', require('./routes/userSessionAccess'));
 
 // All authentication routes are now unified in /api/admin/auth
 // No additional route files needed

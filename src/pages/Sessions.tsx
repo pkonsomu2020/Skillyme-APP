@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, ExternalLink, GraduationCap, BookOpen, Users } from "lucide-react";
+import { Calendar, Clock, Video, ExternalLink, GraduationCap, BookOpen, Users, Lock } from "lucide-react";
 import { toast } from "sonner";
 import apiService from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,9 +23,14 @@ interface Session {
   skill_area: 'tech' | 'career' | 'creative' | 'business' | 'general';
 }
 
+interface SessionAccess {
+  [sessionId: number]: boolean;
+}
+
 const Sessions = () => {
   const { user, isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionAccess, setSessionAccess] = useState<SessionAccess>({});
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
@@ -54,6 +59,11 @@ const Sessions = () => {
           }));
           
           setSessions(transformedSessions);
+          
+          // Fetch session access for authenticated users
+          if (isAuthenticated && user) {
+            await fetchSessionAccess(transformedSessions);
+          }
         } else {
           toast.error('Failed to fetch sessions');
         }
@@ -65,11 +75,49 @@ const Sessions = () => {
     };
 
     fetchSessions();
-  }, []);
+  }, [isAuthenticated, user]);
+
+  // Fetch user's session access permissions
+  const fetchSessionAccess = async (sessionsList: Session[]) => {
+    try {
+      const accessPromises = sessionsList.map(async (session) => {
+        try {
+          const response = await apiService.request(`/session-access/session/${session.id}`);
+          return {
+            sessionId: session.id,
+            hasAccess: response.success ? response.data.hasAccess : false
+          };
+        } catch (error) {
+          console.warn(`Failed to check access for session ${session.id}:`, error);
+          return {
+            sessionId: session.id,
+            hasAccess: false
+          };
+        }
+      });
+
+      const accessResults = await Promise.all(accessPromises);
+      const accessMap: SessionAccess = {};
+      
+      accessResults.forEach(({ sessionId, hasAccess }) => {
+        accessMap[sessionId] = hasAccess;
+      });
+      
+      setSessionAccess(accessMap);
+    } catch (error) {
+      console.error('Error fetching session access:', error);
+    }
+  };
 
   const handleJoinSession = (session: Session) => {
     if (!isAuthenticated) {
       toast.error('Please log in to join sessions');
+      return;
+    }
+
+    // Check if user has access to this session
+    if (!sessionAccess[session.id]) {
+      toast.error('Access not granted. Please contact admin for session access.');
       return;
     }
     
@@ -107,64 +155,97 @@ const Sessions = () => {
   };
 
   // Render session card
-  const renderSessionCard = (session: Session) => (
-    <Card key={session.id} className="hover:shadow-elegant transition-smooth h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base md:text-lg mb-1 line-clamp-2 leading-tight">{session.title}</CardTitle>
-            <CardDescription className="text-xs md:text-sm">
-              {session.company} • {session.recruiter}
-            </CardDescription>
+  const renderSessionCard = (session: Session) => {
+    const hasAccess = sessionAccess[session.id] || false;
+    
+    return (
+      <Card key={session.id} className="hover:shadow-elegant transition-smooth h-full flex flex-col">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base md:text-lg mb-1 line-clamp-2 leading-tight">{session.title}</CardTitle>
+              <CardDescription className="text-xs md:text-sm">
+                {session.company} • {session.recruiter}
+              </CardDescription>
+            </div>
+            <div className="flex flex-col gap-1 flex-shrink-0">
+              <Badge className="bg-green-100 text-green-800 text-xs px-2 py-0.5">
+                FREE
+              </Badge>
+              <Badge className={`${getSkillAreaColor(session.skill_area)} text-xs px-2 py-0.5`}>
+                {session.skill_area.charAt(0).toUpperCase() + session.skill_area.slice(1)}
+              </Badge>
+              {isAuthenticated && (
+                <Badge className={`text-xs px-2 py-0.5 ${
+                  hasAccess 
+                    ? 'bg-green-100 text-green-800 border-green-200' 
+                    : 'bg-red-100 text-red-800 border-red-200'
+                }`}>
+                  {hasAccess ? 'Access Granted' : 'Access Pending'}
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col gap-1 flex-shrink-0">
-            <Badge className="bg-green-100 text-green-800 text-xs px-2 py-0.5">
-              FREE
-            </Badge>
-            <Badge className={`${getSkillAreaColor(session.skill_area)} text-xs px-2 py-0.5`}>
-              {session.skill_area.charAt(0).toUpperCase() + session.skill_area.slice(1)}
-            </Badge>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0 flex-1 flex flex-col">
+          <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 flex-shrink-0">{session.description}</p>
+          
+          <div className="space-y-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 text-xs">
+              <Calendar className="w-3 h-3 text-primary flex-shrink-0" />
+              <span className="truncate">{new Date(session.date).toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              })}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <Clock className="w-3 h-3 text-primary flex-shrink-0" />
+              <span className="truncate">{session.time} ({session.duration})</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <Video className="w-3 h-3 text-primary flex-shrink-0" />
+              <span className="text-blue-600 hover:text-blue-800 cursor-pointer truncate" 
+                    onClick={() => window.open(session.google_meet_link, '_blank')}>
+                Google Meet Link
+                <ExternalLink className="w-2 h-2 inline ml-1" />
+              </span>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-0 flex-1 flex flex-col">
-        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 flex-shrink-0">{session.description}</p>
-        
-        <div className="space-y-1.5 flex-shrink-0">
-          <div className="flex items-center gap-2 text-xs">
-            <Calendar className="w-3 h-3 text-primary flex-shrink-0" />
-            <span className="truncate">{new Date(session.date).toLocaleDateString('en-US', { 
-              weekday: 'short', 
-              year: 'numeric', 
-              month: 'short', 
-              day: 'numeric' 
-            })}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <Clock className="w-3 h-3 text-primary flex-shrink-0" />
-            <span className="truncate">{session.time} ({session.duration})</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <Video className="w-3 h-3 text-primary flex-shrink-0" />
-            <span className="text-blue-600 hover:text-blue-800 cursor-pointer truncate" 
-                  onClick={() => window.open(session.google_meet_link, '_blank')}>
-              Google Meet Link
-              <ExternalLink className="w-2 h-2 inline ml-1" />
-            </span>
-          </div>
-        </div>
 
-        <Button 
-          variant="hero" 
-          className="w-full h-9 text-sm mt-auto"
-          onClick={() => handleJoinSession(session)}
-        >
-          <Video className="w-3 h-3 mr-2" />
-          Join Free Session
-        </Button>
-      </CardContent>
-    </Card>
-  );
+          {!isAuthenticated ? (
+            <Button 
+              variant="outline" 
+              className="w-full h-9 text-sm mt-auto"
+              disabled
+            >
+              <Lock className="w-3 h-3 mr-2" />
+              Login Required
+            </Button>
+          ) : hasAccess ? (
+            <Button 
+              variant="hero" 
+              className="w-full h-9 text-sm mt-auto"
+              onClick={() => handleJoinSession(session)}
+            >
+              <Video className="w-3 h-3 mr-2" />
+              Join Free Session
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="w-full h-9 text-sm mt-auto"
+              disabled
+            >
+              <Lock className="w-3 h-3 mr-2" />
+              Access Pending
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="p-3 md:p-8">
