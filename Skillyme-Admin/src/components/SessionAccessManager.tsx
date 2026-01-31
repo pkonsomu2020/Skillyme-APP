@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Search, CheckCircle, XCircle, Users, ArrowLeft, AlertCircle } from "lucide-react"
-import { adminApi } from "@/services/api"
 
 interface User {
   user_id: number
@@ -35,12 +34,19 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [processingUsers, setProcessingUsers] = useState<Set<number>>(new Set())
+  const [testMode, setTestMode] = useState(true) // Start in test mode
   const { toast } = useToast()
+
+  console.log('🔧 SessionAccessManager mounted with:', { sessionId, sessionTitle, testMode })
 
   // Fetch users and their access status for this session
   useEffect(() => {
-    fetchUsers()
-  }, [sessionId])
+    if (testMode) {
+      loadTestData()
+    } else {
+      fetchRealUsers()
+    }
+  }, [sessionId, testMode])
 
   // Filter users based on search term
   useEffect(() => {
@@ -62,14 +68,86 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     }
   }, [searchTerm, users])
 
-  const fetchUsers = async () => {
+  const loadTestData = async () => {
     try {
-      console.log('🔧 Fetching users for session:', sessionId)
+      console.log('🔧 Loading test data...')
+      setLoading(true)
+      setError(null)
+
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      const mockUsers: User[] = [
+        {
+          user_id: 1,
+          name: "John Doe",
+          email: "john@example.com",
+          phone: "+254700000001",
+          country: "Kenya",
+          county: "Nairobi",
+          field_of_study: "Computer Science",
+          access_granted: true,
+          admin_notes: "Approved for testing",
+          granted_at: new Date().toISOString(),
+          granted_by: 1
+        },
+        {
+          user_id: 2,
+          name: "Jane Smith", 
+          email: "jane@example.com",
+          phone: "+254700000002",
+          country: "Kenya",
+          county: "Mombasa",
+          field_of_study: "Engineering",
+          access_granted: false,
+          admin_notes: null,
+          granted_at: null,
+          granted_by: null
+        },
+        {
+          user_id: 3,
+          name: "Bob Wilson",
+          email: "bob@example.com", 
+          phone: "+254700000003",
+          country: "Kenya",
+          county: "Kisumu",
+          field_of_study: "Business",
+          access_granted: null,
+          admin_notes: "Pending review",
+          granted_at: null,
+          granted_by: null
+        }
+      ]
+
+      console.log('🔧 Setting mock users:', mockUsers)
+      setUsers(mockUsers)
+      setFilteredUsers(mockUsers)
+      
+      toast({
+        title: "Test Mode Active",
+        description: `Loaded ${mockUsers.length} test users`,
+      })
+
+    } catch (err) {
+      console.error('🔧 Error in loadTestData:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchRealUsers = async () => {
+    try {
+      console.log('🔧 Fetching real users for session:', sessionId)
       setLoading(true)
       setError(null)
       
-      // Use direct API call for reliability
       const token = localStorage.getItem('adminToken')
+      if (!token) {
+        throw new Error('No admin token found')
+      }
+
       const response = await fetch(`https://skillyme-backend-s3sy.onrender.com/api/admin/session-access/session/${sessionId}/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -84,13 +162,18 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         const usersList = data.data?.users || []
         setUsers(usersList)
         setFilteredUsers(usersList)
-        console.log('🔧 Users loaded:', usersList.length)
+        console.log('🔧 Real users loaded:', usersList.length)
+        
+        toast({
+          title: "Success",
+          description: `Loaded ${usersList.length} users from database`,
+        })
       } else {
         throw new Error(data.message || data.error || 'Failed to load users')
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      console.error('🔧 Error:', err)
+      console.error('🔧 Error fetching real users:', err)
       setError(errorMessage)
       toast({
         title: "Error",
@@ -103,12 +186,32 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   }
 
   const handleToggleAccess = async (userId: number, currentAccess: boolean | null, adminNotes: string = "") => {
+    if (testMode) {
+      // Test mode - just update local state
+      const newAccess = !currentAccess
+      setUsers(prev => prev.map(user => 
+        user.user_id === userId 
+          ? { 
+              ...user, 
+              access_granted: newAccess,
+              admin_notes: adminNotes,
+              granted_at: newAccess ? new Date().toISOString() : null
+            }
+          : user
+      ))
+      toast({
+        title: "Test Mode",
+        description: `Access ${newAccess ? 'granted' : 'revoked'} (test only)`,
+      })
+      return
+    }
+
+    // Real mode - make API call
     const newAccess = !currentAccess
     
     try {
       setProcessingUsers(prev => new Set(prev).add(userId))
       
-      // Use direct API call for reliability
       const token = localStorage.getItem('adminToken')
       const response = await fetch('https://skillyme-backend-s3sy.onrender.com/api/admin/session-access/grant-access', {
         method: 'POST',
@@ -132,7 +235,6 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           description: `Access ${newAccess ? 'granted' : 'revoked'} successfully`,
         })
         
-        // Update the user in the local state
         setUsers(prev => prev.map(user => 
           user.user_id === userId 
             ? { 
@@ -178,7 +280,10 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
 
   const stats = getAccessStats()
 
+  console.log('🔧 Rendering with state:', { loading, error, usersCount: users.length, testMode })
+
   if (loading) {
+    console.log('🔧 Rendering loading state')
     return (
       <div className="p-8">
         <div className="flex items-center gap-4 mb-6">
@@ -188,7 +293,9 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Session Access Management</h1>
-            <p className="text-muted-foreground">Loading users for: {sessionTitle}</p>
+            <p className="text-muted-foreground">
+              {testMode ? 'Loading test data' : 'Loading users'} for: {sessionTitle}
+            </p>
           </div>
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -202,6 +309,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   }
 
   if (error) {
+    console.log('🔧 Rendering error state:', error)
     return (
       <div className="p-8 space-y-6">
         <div className="flex items-center gap-4">
@@ -220,7 +328,9 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
             <div className="flex flex-col items-center text-center space-y-4">
               <AlertCircle className="h-12 w-12 text-destructive" />
               <div>
-                <h3 className="text-lg font-semibold text-destructive">API Error</h3>
+                <h3 className="text-lg font-semibold text-destructive">
+                  {testMode ? 'Test Mode Error' : 'API Error'}
+                </h3>
                 <p className="text-muted-foreground mt-2 max-w-md">
                   Failed to load users for this session.
                 </p>
@@ -229,9 +339,12 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button onClick={fetchUsers} variant="outline">
+                <Button onClick={() => testMode ? loadTestData() : fetchRealUsers()} variant="outline">
                   <Search className="mr-2 h-4 w-4" />
                   Retry
+                </Button>
+                <Button onClick={() => setTestMode(!testMode)} variant="outline">
+                  Switch to {testMode ? 'Real' : 'Test'} Mode
                 </Button>
                 <Button onClick={onBack}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -245,6 +358,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     )
   }
 
+  console.log('🔧 Rendering main content with users:', users)
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
@@ -254,10 +368,38 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           Back to Sessions
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Session Access Management</h1>
+          <h1 className="text-3xl font-bold">
+            Session Access Management {testMode && '- TEST MODE'}
+          </h1>
           <p className="text-muted-foreground">Manage user access for: {sessionTitle}</p>
         </div>
       </div>
+
+      {/* Mode Toggle */}
+      <Card className={testMode ? "bg-blue-50 border-blue-200" : "bg-green-50 border-green-200"}>
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm font-medium">
+                {testMode ? '🧪 Test Mode Active' : '🔴 Live Mode Active'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {testMode 
+                  ? 'Using mock data for testing. No real changes will be made.' 
+                  : 'Connected to live database. Changes will affect real users.'
+                }
+              </p>
+            </div>
+            <Button 
+              onClick={() => setTestMode(!testMode)} 
+              variant="outline"
+              size="sm"
+            >
+              Switch to {testMode ? 'Live' : 'Test'} Mode
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
