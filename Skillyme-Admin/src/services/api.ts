@@ -618,6 +618,29 @@ export const discountsApi = {
   },
 };
 
+// Session Access Management API
+export const sessionAccessApi = {
+  getUsersForSession: async (sessionId: number): Promise<ApiResponse<{ users: any[] }>> => {
+    return apiRequest<{ users: any[] }>(`/admin/session-access/session/${sessionId}/users`);
+  },
+
+  grantAccess: async (data: {
+    userId: number;
+    sessionId: number;
+    accessGranted: boolean;
+    adminNotes?: string;
+  }): Promise<ApiResponse<any>> => {
+    return apiRequest<any>('/admin/session-access/grant-access', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  checkUserAccess: async (userId: number, sessionId: number): Promise<ApiResponse<{ hasAccess: boolean; accessDetails: any }>> => {
+    return apiRequest<{ hasAccess: boolean; accessDetails: any }>(`/admin/session-access/user/${userId}/session/${sessionId}`);
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: adminAuthApi,
@@ -628,4 +651,5 @@ export const adminApi = {
   upload: uploadApi,
   assignments: assignmentsApi,
   discounts: discountsApi,
+  sessionAccess: sessionAccessApi,
 };

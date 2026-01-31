@@ -5,53 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Search, CheckCircle, XCircle, Users, ArrowLeft } from "lucide-react"
-
-// Import the apiRequest function directly
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import environment from '../../config/environment';
-
-const API_BASE_URL = environment.apiConfig.baseURL;
-
-// Helper function to get auth token
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('adminToken');
-};
-
-// Helper function to make API requests
-const apiRequest = async (
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<{ success: boolean; data?: any; error?: string }> => {
-  const token = getAuthToken();
-
-  const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data;
-  } catch (error: unknown) {
-    console.error('❌ API request failed:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
-  }
-};
+import { Search, CheckCircle, XCircle, Users, ArrowLeft, AlertCircle } from "lucide-react"
+import { adminApi } from "@/services/api"
 
 interface User {
   user_id: number
@@ -77,6 +32,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [processingUsers, setProcessingUsers] = useState<Set<number>>(new Set())
   const { toast } = useToast()
@@ -108,24 +64,37 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
 
   const fetchUsers = async () => {
     try {
+      console.log('🔧 Fetching users for session:', sessionId)
       setLoading(true)
-      const response = await apiRequest(`/admin/session-access/session/${sessionId}/users`)
+      setError(null)
       
-      if (response.success && response.data) {
-        setUsers(response.data.users)
-        setFilteredUsers(response.data.users)
+      // Use direct API call for reliability
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch(`https://skillyme-backend-s3sy.onrender.com/api/admin/session-access/session/${sessionId}/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      console.log('🔧 API Response:', data)
+
+      if (response.ok && data.success) {
+        const usersList = data.data?.users || []
+        setUsers(usersList)
+        setFilteredUsers(usersList)
+        console.log('🔧 Users loaded:', usersList.length)
       } else {
-        toast({
-          title: "Error",
-          description: response.error || "Failed to load users",
-          variant: "destructive",
-        })
+        throw new Error(data.message || data.error || 'Failed to load users')
       }
-    } catch (error) {
-      console.error("Error fetching users:", error)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error('🔧 Error:', err)
+      setError(errorMessage)
       toast({
         title: "Error",
-        description: "Failed to load users",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -139,8 +108,14 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     try {
       setProcessingUsers(prev => new Set(prev).add(userId))
       
-      const response = await apiRequest('/admin/session-access/grant-access', {
+      // Use direct API call for reliability
+      const token = localStorage.getItem('adminToken')
+      const response = await fetch('https://skillyme-backend-s3sy.onrender.com/api/admin/session-access/grant-access', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           userId,
           sessionId,
@@ -149,7 +124,9 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         })
       })
 
-      if (response.success) {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
         toast({
           title: "Success",
           description: `Access ${newAccess ? 'granted' : 'revoked'} successfully`,
@@ -167,17 +144,14 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
             : user
         ))
       } else {
-        toast({
-          title: "Error",
-          description: response.error || "Failed to update access",
-          variant: "destructive",
-        })
+        throw new Error(data.message || data.error || 'Failed to update access')
       }
     } catch (error) {
       console.error("Error updating access:", error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update access'
       toast({
         title: "Error",
-        description: "Failed to update access",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -207,12 +181,66 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   if (loading) {
     return (
       <div className="p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Sessions
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Session Access Management</h1>
+            <p className="text-muted-foreground">Loading users for: {sessionTitle}</p>
+          </div>
+        </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Loading users...</p>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Sessions
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Session Access Management</h1>
+            <p className="text-muted-foreground">Error loading: {sessionTitle}</p>
+          </div>
+        </div>
+
+        <Card className="border-destructive">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <AlertCircle className="h-12 w-12 text-destructive" />
+              <div>
+                <h3 className="text-lg font-semibold text-destructive">API Error</h3>
+                <p className="text-muted-foreground mt-2 max-w-md">
+                  Failed to load users for this session.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 font-mono bg-muted p-2 rounded">
+                  {error}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={fetchUsers} variant="outline">
+                  <Search className="mr-2 h-4 w-4" />
+                  Retry
+                </Button>
+                <Button onClick={onBack}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Sessions
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
