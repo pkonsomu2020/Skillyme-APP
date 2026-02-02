@@ -137,15 +137,27 @@ const getSignupTrends = async (req, res) => {
       throw error;
     }
 
-    // Group by date
-    const dailySignups = {};
+    // Group by date for last 7 days
+    const dailySignups = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const daySignups = signups.filter(user => user.created_at.startsWith(dateStr));
+      dailySignups.push({
+        name: dayName,
+        signups: daySignups.length,
+        date: dateStr
+      });
+    }
+
+    // Source stats
     const sourceStats = {};
     const fieldStats = {};
 
     signups.forEach(user => {
-      const date = user.created_at.split('T')[0];
-      dailySignups[date] = (dailySignups[date] || 0) + 1;
-
       // Source stats
       const source = user.signup_source || 'Unknown';
       sourceStats[source] = (sourceStats[source] || 0) + 1;
@@ -154,12 +166,6 @@ const getSignupTrends = async (req, res) => {
       const field = user.field_of_study || 'Unknown';
       fieldStats[field] = (fieldStats[field] || 0) + 1;
     });
-
-    // Convert to array format for charts (weekly format for frontend)
-    const dailyData = Object.entries(dailySignups).map(([date, count]) => ({
-      name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-      signups: count
-    }));
 
     const sourceData = Object.entries(sourceStats).map(([source, count]) => ({
       source,
@@ -174,7 +180,7 @@ const getSignupTrends = async (req, res) => {
     res.json({
       success: true,
       data: {
-        dailySignups: dailyData,
+        dailySignups: dailySignups,
         sourceStats: sourceData,
         fieldStats: fieldData,
         totalSignups: signups.length
@@ -432,7 +438,7 @@ const getRevenueAnalytics = async (req, res) => {
     const { data: payments, error } = await supabase
       .from('payments')
       .select(`
-        payment_id, amount, actual_amount, submission_date, status, session_id,
+        payment_id, amount, submission_date, status,
         sessions!inner(id, title, recruiter, company, date)
       `)
       .eq('status', 'paid')
@@ -443,18 +449,14 @@ const getRevenueAnalytics = async (req, res) => {
       throw error;
     }
 
-    // Calculate total revenue using actual_amount if available, otherwise amount
-    const totalRevenue = payments.reduce((sum, payment) => {
-      const revenue = payment.actual_amount || payment.amount || 0;
-      return sum + revenue;
-    }, 0);
+    // Calculate total revenue
+    const totalRevenue = payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
 
     // Group by date
     const dailyRevenue = {};
     payments.forEach(payment => {
       const date = payment.submission_date.split('T')[0];
-      const revenue = payment.actual_amount || payment.amount || 0;
-      dailyRevenue[date] = (dailyRevenue[date] || 0) + revenue;
+      dailyRevenue[date] = (dailyRevenue[date] || 0) + (payment.amount || 0);
     });
 
     // Convert to array format
@@ -467,8 +469,6 @@ const getRevenueAnalytics = async (req, res) => {
     const sessionRevenue = {};
     payments.forEach(payment => {
       const sessionId = payment.session_id;
-      const revenue = payment.actual_amount || payment.amount || 0;
-      
       if (!sessionRevenue[sessionId]) {
         sessionRevenue[sessionId] = {
           sessionId,
@@ -479,7 +479,7 @@ const getRevenueAnalytics = async (req, res) => {
           transactions: 0
         };
       }
-      sessionRevenue[sessionId].revenue += revenue;
+      sessionRevenue[sessionId].revenue += payment.amount || 0;
       sessionRevenue[sessionId].transactions += 1;
     });
 
@@ -487,35 +487,13 @@ const getRevenueAnalytics = async (req, res) => {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
-    // Get all payments for comparison (not just paid ones)
-    const { data: allPayments, error: allPaymentsError } = await supabase
-      .from('payments')
-      .select('payment_id, amount, actual_amount, status')
-      .gte('submission_date', daysAgo.toISOString());
-
-    if (allPaymentsError) {
-      throw allPaymentsError;
-    }
-
-    const pendingRevenue = allPayments
-      .filter(p => p.status === 'pending')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-
-    const failedRevenue = allPayments
-      .filter(p => p.status === 'failed')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-
     res.json({
       success: true,
       data: {
         totalRevenue,
-        pendingRevenue,
-        failedRevenue,
         dailyRevenue: dailyData,
         topRevenueSessions,
-        totalTransactions: payments.length,
-        totalPayments: allPayments.length,
-        successRate: allPayments.length > 0 ? Math.round((payments.length / allPayments.length) * 100) : 0
+        totalTransactions: payments.length
       }
     });
   } catch (error) {

@@ -85,8 +85,16 @@ export interface User {
 export interface DashboardStats {
   totalUsers: number;
   activeSessions: number;
+  completedSessions: number;
   totalRevenue: number;
+  recentSignups: number;
   growthRate: number;
+}
+
+export interface SignupTrend {
+  name: string;
+  signups: number;
+  date?: string;
 }
 
 export interface Notification {
@@ -228,16 +236,20 @@ export const analyticsApi = {
     return apiRequest<{ overview: DashboardStats }>('/admin/analytics/dashboard');
   },
 
-  getSignupTrends: async (): Promise<ApiResponse<any[]>> => {
-    return apiRequest<any[]>('/admin/analytics/signup-trends');
+  getSignupTrends: async (): Promise<ApiResponse<{ dailySignups: SignupTrend[] }>> => {
+    return apiRequest<{ dailySignups: SignupTrend[] }>('/admin/analytics/signup-trends');
+  },
+
+  getSessionAnalytics: async (): Promise<ApiResponse<{ overview: any; topSessions: any[] }>> => {
+    return apiRequest<{ overview: any; topSessions: any[] }>('/admin/analytics/sessions');
   },
 
   getSessionPerformance: async (): Promise<ApiResponse<any[]>> => {
     return apiRequest<any[]>('/admin/analytics/session-performance');
   },
 
-  getUserDemographics: async (): Promise<ApiResponse<{ fieldOfStudy: any[]; signupSource: any[] }>> => {
-    return apiRequest<{ fieldOfStudy: any[]; signupSource: any[] }>('/admin/analytics/user-demographics');
+  getUserDemographics: async (): Promise<ApiResponse<{ byField: any; byExperience: any; byMonth: any }>> => {
+    return apiRequest<{ byField: any; byExperience: any; byMonth: any }>('/admin/analytics/user-demographics');
   },
 };
 
