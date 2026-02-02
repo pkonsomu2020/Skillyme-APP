@@ -263,6 +263,15 @@ class ApiService {
   isAuthenticated() {
     return !!this.getAuthToken();
   }
+
+  // Session access methods
+  async checkSessionAccess(sessionId) {
+    return this.request(`/session-access/session/${sessionId}`);
+  }
+
+  async getMySessionAccess() {
+    return this.request('/session-access/my-access');
+  }
 }
 
 export default new ApiService();

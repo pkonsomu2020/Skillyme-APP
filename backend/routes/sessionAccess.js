@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const supabase = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin'); // Admin client for RLS bypass
 
 const router = express.Router();
 
@@ -9,8 +10,8 @@ router.get('/my-access', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Get user's session access records
-    const { data: accessData, error: accessError } = await supabase
+    // Get user's session access records using admin client to bypass RLS
+    const { data: accessData, error: accessError } = await supabaseAdmin
       .from('user_session_access')
       .select(`
         session_id,
@@ -57,7 +58,8 @@ router.get('/session/:sessionId', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { sessionId } = req.params;
     
-    const { data, error } = await supabase
+    // Use admin client to bypass RLS when reading user access
+    const { data, error } = await supabaseAdmin
       .from('user_session_access')
       .select('access_granted, granted_at, admin_notes')
       .eq('user_id', userId)

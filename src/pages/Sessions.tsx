@@ -80,15 +80,20 @@ const Sessions = () => {
   // Fetch user's session access permissions
   const fetchSessionAccess = async (sessionsList: Session[]) => {
     try {
+      console.log('🔍 Fetching session access for', sessionsList.length, 'sessions');
+      
       const accessPromises = sessionsList.map(async (session) => {
         try {
-          const response = await apiService.request(`/session-access/session/${session.id}`);
+          console.log(`🔍 Checking access for session ${session.id}`);
+          const response = await apiService.checkSessionAccess(session.id);
+          console.log(`✅ Session ${session.id} access response:`, response);
+          
           return {
             sessionId: session.id,
             hasAccess: response.success ? response.data.hasAccess : false
           };
         } catch (error) {
-          console.warn(`Failed to check access for session ${session.id}:`, error);
+          console.warn(`❌ Failed to check access for session ${session.id}:`, error);
           return {
             sessionId: session.id,
             hasAccess: false
@@ -101,11 +106,13 @@ const Sessions = () => {
       
       accessResults.forEach(({ sessionId, hasAccess }) => {
         accessMap[sessionId] = hasAccess;
+        console.log(`📋 Session ${sessionId} access: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
       });
       
       setSessionAccess(accessMap);
+      console.log('✅ Final session access map:', accessMap);
     } catch (error) {
-      console.error('Error fetching session access:', error);
+      console.error('❌ Error fetching session access:', error);
     }
   };
 
