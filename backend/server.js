@@ -12,6 +12,7 @@ const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware
 // Updated: 2026-02-02 - Fixed user session access routes to use admin client for reading
 // Updated: 2026-02-02 - Added bulk grant access functionality for session access management
 // Updated: 2026-02-02 - Added session join points system and user discounts display
+// Updated: 2026-02-02 - Fixed discounts page to show ALL users (120+) and added auto-refresh
 require('dotenv').config();
 
 const app = express();

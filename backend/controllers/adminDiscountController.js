@@ -8,24 +8,63 @@ const UserPoints = require('../models/UserPoints');
 const getLeaderboardForDiscounts = async (req, res) => {
   try {
     const { 
-      limit = 50, 
+      limit = 200, // Increased default to show more users
       period = 'all', 
       target_group = 'all',
       min_points = 10 
     } = req.query;
 
-    // Get leaderboard data
-    const leaderboardData = await UserPoints.getLeaderboard({
-      limit: parseInt(limit),
-      period,
-      target_group,
-      metric: 'points'
-    });
+    // Get ALL users first (not just those with points)
+    const { data: allUsers, error: usersError } = await supabase
+      .from('users')
+      .select(`
+        id, name, email, phone, country, county, field_of_study, institution, level_of_study,
+        preferred_name, date_of_birth, course_of_study, degree, year_of_study,
+        primary_field_interest, signup_source, created_at, updated_at
+      `)
+      .order('created_at', { ascending: false })
+      .limit(parseInt(limit));
 
-    // Enhance with discount eligibility and assignment details
+    if (usersError) throw usersError;
+
+    if (!allUsers || allUsers.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          leaderboard: [],
+          summary: {
+            total_users: 0,
+            eligible_users: 0,
+            users_with_discounts: 0
+          }
+        }
+      });
+    }
+
+    console.log(`Processing ${allUsers.length} users for discount eligibility`);
+
+    // Enhance each user with points and discount data
     const enhancedData = await Promise.all(
-      leaderboardData.map(async (user) => {
+      allUsers.map(async (user) => {
         try {
+          // Get user points (may not exist for new users)
+          const { data: pointsData, error: pointsError } = await supabase
+            .from('user_points')
+            .select('total_points, available_points, level_name')
+            .eq('user_id', user.id)
+            .single();
+
+          if (pointsError && pointsError.code !== 'PGRST116') {
+            console.warn(`Points error for user ${user.id}:`, pointsError);
+          }
+
+          // Default points for users without entries
+          const userPoints = pointsData || {
+            total_points: 0,
+            available_points: 0,
+            level_name: 'Beginner'
+          };
+
           // Get assignment submissions for verification
           const { data: submissions, error: submissionError } = await supabase
             .from('assignment_submissions')
@@ -33,10 +72,12 @@ const getLeaderboardForDiscounts = async (req, res) => {
               id, assignment_id, status, points_earned, submitted_at,
               assignments(title)
             `)
-            .eq('user_id', user.user_id)
+            .eq('user_id', user.id)
             .order('submitted_at', { ascending: false });
 
-          if (submissionError) throw submissionError;
+          if (submissionError) {
+            console.warn(`Submissions error for user ${user.id}:`, submissionError);
+          }
 
           // Calculate assignment stats
           const totalSubmissions = submissions?.length || 0;
@@ -48,12 +89,12 @@ const getLeaderboardForDiscounts = async (req, res) => {
 
           // Check discount eligibility - More flexible approach
           // Primary criteria: Points (always required)
-          const meetsPoints = user.total_points >= parseInt(min_points);
+          const meetsPoints = userPoints.total_points >= parseInt(min_points);
           
           // Secondary criteria: Assignments OR high points
           const meetsAssignments = approvedSubmissions.length >= 3;
           const meetsPointsPerAssignment = averagePointsPerAssignment >= 15; // Good performance
-          const hasHighPoints = user.total_points >= 100; // High performers with points alone
+          const hasHighPoints = userPoints.total_points >= 100; // High performers with points alone
           
           // Eligible if: Has minimum points AND (has high points OR good assignment performance OR is developing user)
           const isEligible = meetsPoints && 
@@ -65,13 +106,24 @@ const getLeaderboardForDiscounts = async (req, res) => {
           const { data: existingDiscounts, error: discountError } = await supabase
             .from('user_discounts')
             .select('*')
-            .eq('user_id', user.user_id)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-          if (discountError) throw discountError;
+          if (discountError) {
+            console.warn(`Discounts error for user ${user.id}:`, discountError);
+          }
 
           return {
-            ...user,
+            user_id: user.id,
+            total_points: userPoints.total_points,
+            available_points: userPoints.available_points,
+            level_name: userPoints.level_name,
+            users: {
+              name: user.name,
+              email: user.email,
+              field_of_study: user.field_of_study,
+              level_of_study: user.level_of_study
+            },
             assignment_stats: {
               total_submissions: totalSubmissions,
               approved_submissions: approvedSubmissions.length,
@@ -98,11 +150,38 @@ const getLeaderboardForDiscounts = async (req, res) => {
             existing_discounts: existingDiscounts || []
           };
         } catch (error) {
-          console.error(`Error processing user ${user.user_id}:`, error);
+          console.error(`Error processing user ${user.id}:`, error);
+          // Return default data for users that fail processing
           return {
-            ...user,
-            assignment_stats: { total_submissions: 0, approved_submissions: 0, average_score: 0 },
-            discount_eligibility: { is_eligible: false },
+            user_id: user.id,
+            total_points: 0,
+            available_points: 0,
+            level_name: 'Beginner',
+            users: {
+              name: user.name,
+              email: user.email,
+              field_of_study: user.field_of_study,
+              level_of_study: user.level_of_study
+            },
+            assignment_stats: { 
+              total_submissions: 0, 
+              approved_submissions: 0, 
+              total_points_earned: 0,
+              average_points_per_assignment: 0,
+              recent_submissions: []
+            },
+            discount_eligibility: { 
+              is_eligible: false,
+              points_requirement: parseInt(min_points),
+              assignments_requirement: 3,
+              points_per_assignment_requirement: 15,
+              high_points_threshold: 100,
+              meets_points: false,
+              meets_assignments: false,
+              meets_points_per_assignment: false,
+              has_high_points: false,
+              eligibility_reason: 'Error processing user data'
+            },
             existing_discounts: []
           };
         }
@@ -116,6 +195,8 @@ const getLeaderboardForDiscounts = async (req, res) => {
       return b.total_points - a.total_points;
     });
 
+    console.log(`Processed ${enhancedData.length} users for discounts page`);
+
     res.json({
       success: true,
       data: {
@@ -123,10 +204,12 @@ const getLeaderboardForDiscounts = async (req, res) => {
         summary: {
           total_users: enhancedData.length,
           eligible_users: enhancedData.filter(u => u.discount_eligibility.is_eligible).length,
+          users_with_discounts: enhancedData.filter(u => u.existing_discounts.length > 0).length,
           criteria: {
             min_points: parseInt(min_points),
             min_assignments: 3,
-            min_score: 70
+            min_points_per_assignment: 15,
+            high_points_threshold: 100
           }
         }
       }

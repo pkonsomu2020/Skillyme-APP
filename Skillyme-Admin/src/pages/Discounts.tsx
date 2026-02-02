@@ -74,6 +74,7 @@ export default function Discounts() {
   const [minPoints, setMinPoints] = useState(10)
   const [discountPercentage, setDiscountPercentage] = useState(20)
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'discounts'>('leaderboard')
+  const [autoRefresh, setAutoRefresh] = useState(true)
   const { toast } = useToast()
 
   // Fetch leaderboard data for discounts
@@ -212,6 +213,19 @@ export default function Discounts() {
     fetchDiscounts()
   }, [minPoints])
 
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return
+
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing discounts data...')
+      fetchLeaderboard()
+      fetchDiscounts()
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [autoRefresh, minPoints])
+
   const getStatusBadge = (status: string) => {
     const variants = {
       active: "default",
@@ -259,7 +273,31 @@ export default function Discounts() {
             </h1>
             <p className="text-muted-foreground">Award discounts to top-performing students based on leaderboard rankings</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2 mr-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={autoRefresh ? 'bg-green-50 border-green-200 text-green-700' : ''}
+              >
+                {autoRefresh ? '🔄 Auto-refresh ON' : '⏸️ Auto-refresh OFF'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  fetchLeaderboard()
+                  fetchDiscounts()
+                  toast({
+                    title: "Refreshed",
+                    description: "User data updated successfully",
+                  })
+                }}
+              >
+                🔄 Refresh Now
+              </Button>
+            </div>
             <Button
               variant={activeTab === 'leaderboard' ? 'default' : 'outline'}
               onClick={() => setActiveTab('leaderboard')}

@@ -47,6 +47,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   const [searchTerm, setSearchTerm] = useState("")
   const [processingUsers, setProcessingUsers] = useState<Set<number>>(new Set())
   const [bulkProcessing, setBulkProcessing] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(true)
   const { toast } = useToast()
 
   // Memoized filtered users with safe search
@@ -91,6 +92,18 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   useEffect(() => {
     loadUsersWithAccessStatus()
   }, [sessionId])
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return
+
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing session access data...')
+      loadUsersWithAccessStatus()
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [autoRefresh, sessionId])
 
   const loadUsersWithAccessStatus = async () => {
     try {
@@ -335,14 +348,39 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Sessions
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Session Access Management</h1>
-          <p className="text-muted-foreground">Manage database-persisted access for: {sessionTitle}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Sessions
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Session Access Management</h1>
+            <p className="text-muted-foreground">Manage database-persisted access for: {sessionTitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={autoRefresh ? 'bg-green-50 border-green-200 text-green-700' : ''}
+          >
+            {autoRefresh ? '🔄 Auto-refresh ON' : '⏸️ Auto-refresh OFF'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              loadUsersWithAccessStatus()
+              toast({
+                title: "Refreshed",
+                description: "User access data updated successfully",
+              })
+            }}
+          >
+            🔄 Refresh Now
+          </Button>
         </div>
       </div>
 
