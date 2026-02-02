@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,11 +8,31 @@ import { useToast } from "@/hooks/use-toast"
 import { Search, CheckCircle, XCircle, Users, ArrowLeft, AlertCircle, Loader2 } from "lucide-react"
 import { adminApi, User } from "@/services/api"
 
-interface UserWithAccess extends User {
-  hasAccess: boolean
-  adminNotes?: string
-  grantedAt?: string
-  grantedBy?: number
+interface UserWithAccess {
+  id: number
+  name: string
+  email: string
+  phone: string
+  country: string
+  county: string | null
+  field_of_study: string
+  institution: string
+  level_of_study: string
+  created_at: string
+  updated_at: string
+  password: string
+  preferred_name: string | null
+  date_of_birth: string | null
+  course_of_study: string | null
+  degree: string | null
+  year_of_study: string | null
+  primary_field_interest: string | null
+  signup_source: string | null
+  user_id?: number
+  access_granted: boolean | null
+  admin_notes?: string | null
+  granted_at?: string | null
+  granted_by?: number | null
 }
 
 interface SessionAccessManagerProps {
@@ -23,52 +43,50 @@ interface SessionAccessManagerProps {
 
 export function SessionAccessManager({ sessionId, sessionTitle, onBack }: SessionAccessManagerProps) {
   const [users, setUsers] = useState<UserWithAccess[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<UserWithAccess[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [processingUsers, setProcessingUsers] = useState<Set<number>>(new Set())
   const { toast } = useToast()
 
-  // Safe filter function that handles null/undefined values
-  useEffect(() => {
+  // Memoized filtered users with safe search
+  const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) {
-      setFilteredUsers(users)
-    } else {
-      try {
-        const filtered = users.filter(user => {
-          const searchLower = searchTerm.toLowerCase()
-          
-          // Safe string checking function
-          const safeIncludes = (value: string | null | undefined): boolean => {
-            return value ? value.toLowerCase().includes(searchLower) : false
-          }
-          
-          return (
-            safeIncludes(user.name) ||
-            safeIncludes(user.email) ||
-            safeIncludes(user.phone) ||
-            safeIncludes(user.field_of_study) ||
-            safeIncludes(user.institution) ||
-            safeIncludes(user.country) ||
-            safeIncludes(user.county) ||
-            safeIncludes(user.preferred_name) ||
-            safeIncludes(user.course_of_study) ||
-            safeIncludes(user.degree) ||
-            safeIncludes(user.year_of_study) ||
-            safeIncludes(user.primary_field_interest) ||
-            safeIncludes(user.signup_source) ||
-            user.id.toString().includes(searchLower)
-          )
-        })
-        setFilteredUsers(filtered)
-      } catch (error) {
-        console.error('Search filter error:', error)
-        setFilteredUsers(users)
-      }
+      return users
     }
-  }, [searchTerm, users])
 
-  // Load real users with their actual access status from database
+    const searchLower = searchTerm.toLowerCase().trim()
+    
+    return users.filter(user => {
+      try {
+        // Safe string checking function
+        const safeIncludes = (value: string | null | undefined): boolean => {
+          return value ? value.toLowerCase().includes(searchLower) : false
+        }
+        
+        return (
+          safeIncludes(user.name) ||
+          safeIncludes(user.email) ||
+          safeIncludes(user.phone) ||
+          safeIncludes(user.field_of_study) ||
+          safeIncludes(user.institution) ||
+          safeIncludes(user.country) ||
+          safeIncludes(user.county) ||
+          safeIncludes(user.preferred_name) ||
+          safeIncludes(user.course_of_study) ||
+          safeIncludes(user.degree) ||
+          safeIncludes(user.year_of_study) ||
+          safeIncludes(user.primary_field_interest) ||
+          safeIncludes(user.signup_source) ||
+          user.id.toString().includes(searchLower)
+        )
+      } catch (error) {
+        console.error('Search filter error for user:', user.id, error)
+        return false
+      }
+    })
+  }, [users, searchTerm])
+
+  // Load users with their access status from database
   useEffect(() => {
     loadUsersWithAccessStatus()
   }, [sessionId])
@@ -77,86 +95,57 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     try {
       setLoading(true)
       
-      // First, get all users
-      const usersResponse = await adminApi.users.getAllUsers({
-        limit: 1000,
-        page: 1
-      })
+      // Get users with their access status for this session from the correct API endpoint
+      const response = await adminApi.sessionAccess.getUsersForSession(sessionId)
       
-      if (!usersResponse.success || !usersResponse.data?.users) {
-        throw new Error(usersResponse.error || 'Failed to load users')
+      if (!response.success || !response.data?.users) {
+        throw new Error(response.error || 'Failed to load users with access status')
       }
 
-      // Then, get access status for this specific session
-      try {
-        const accessResponse = await adminApi.sessionAccess.getUsersForSession(sessionId)
-        
-        if (accessResponse.success && accessResponse.data?.users) {
-          // We have access data from the API
-          const usersWithAccess = accessResponse.data.users.map((accessUser: any) => ({
-            ...accessUser,
-            hasAccess: accessUser.access_granted || false,
-            adminNotes: accessUser.admin_notes || undefined,
-            grantedAt: accessUser.granted_at || undefined,
-            grantedBy: accessUser.granted_by || undefined
-          }))
-          
-          setUsers(usersWithAccess)
-          setFilteredUsers(usersWithAccess)
-          
-          toast({
-            title: "Users Loaded",
-            description: `Loaded ${usersWithAccess.length} users with their current access status`,
-          })
-        } else {
-          // No access data available, show all users with no access
-          const usersWithAccess: UserWithAccess[] = usersResponse.data.users.map(user => ({
-            ...user,
-            hasAccess: false,
-            adminNotes: undefined,
-            grantedAt: undefined,
-            grantedBy: undefined
-          }))
-          
-          setUsers(usersWithAccess)
-          setFilteredUsers(usersWithAccess)
-          
-          toast({
-            title: "Users Loaded",
-            description: `Loaded ${usersWithAccess.length} users. No access permissions set yet for this session.`,
-          })
-        }
-      } catch (accessError) {
-        console.warn('Could not load access data, showing all users with no access:', accessError)
-        
-        // Fallback: show all users with no access
-        const usersWithAccess: UserWithAccess[] = usersResponse.data.users.map(user => ({
-          ...user,
-          hasAccess: false,
-          adminNotes: undefined,
-          grantedAt: undefined,
-          grantedBy: undefined
-        }))
-        
-        setUsers(usersWithAccess)
-        setFilteredUsers(usersWithAccess)
-        
-        toast({
-          title: "Users Loaded",
-          description: `Loaded ${usersWithAccess.length} users. Access management ready.`,
-        })
-      }
+      // Transform the backend data to match our frontend interface
+      const usersWithAccess: UserWithAccess[] = response.data.users.map((user: any) => ({
+        id: user.user_id || user.id,
+        name: user.name || 'N/A',
+        email: user.email || 'N/A',
+        phone: user.phone || 'N/A',
+        country: user.country || 'N/A',
+        county: user.county,
+        field_of_study: user.field_of_study || 'N/A',
+        institution: user.institution || 'N/A',
+        level_of_study: user.level_of_study || 'N/A',
+        created_at: user.created_at || '',
+        updated_at: user.updated_at || '',
+        password: '', // Not needed for display
+        preferred_name: user.preferred_name,
+        date_of_birth: user.date_of_birth,
+        course_of_study: user.course_of_study,
+        degree: user.degree,
+        year_of_study: user.year_of_study,
+        primary_field_interest: user.primary_field_interest,
+        signup_source: user.signup_source,
+        user_id: user.user_id,
+        access_granted: user.access_granted,
+        admin_notes: user.admin_notes,
+        granted_at: user.granted_at,
+        granted_by: user.granted_by
+      }))
+      
+      setUsers(usersWithAccess)
+      
+      toast({
+        title: "Users Loaded Successfully",
+        description: `Loaded ${usersWithAccess.length} users with their current access status from database`,
+      })
       
     } catch (error) {
-      console.error('Error loading users:', error)
+      console.error('Error loading users with access status:', error)
       toast({
-        title: "Error",
-        description: "Failed to load users from database. Please try again.",
+        title: "Database Error",
+        description: "Failed to load users from database. Please check your connection and try again.",
         variant: "destructive",
       })
       
       setUsers([])
-      setFilteredUsers([])
     } finally {
       setLoading(false)
     }
@@ -176,12 +165,12 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     try {
       setProcessingUsers(prev => new Set(prev).add(userId))
       
-      const newAccess = !user.hasAccess
+      const newAccess = !user.access_granted
       const adminNotes = newAccess 
         ? `Access granted for session: ${sessionTitle}` 
         : `Access revoked for session: ${sessionTitle}`
       
-      // Make real API call to update database
+      // Make API call to update database
       const response = await adminApi.sessionAccess.grantAccess({
         userId,
         sessionId,
@@ -190,17 +179,17 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
       })
 
       if (response.success) {
-        // Update local state to reflect database change
-        setUsers(prev => prev.map(u => 
+        // Update ONLY the specific user in local state
+        setUsers(prevUsers => prevUsers.map(u => 
           u.id === userId 
             ? { 
                 ...u, 
-                hasAccess: newAccess,
-                adminNotes: adminNotes,
-                grantedAt: newAccess ? new Date().toISOString() : undefined,
-                grantedBy: newAccess ? 1 : undefined // TODO: Get actual admin ID
+                access_granted: newAccess,
+                admin_notes: adminNotes,
+                granted_at: newAccess ? new Date().toISOString() : null,
+                granted_by: newAccess ? 1 : null // TODO: Get actual admin ID from context
               }
-            : u
+            : u // Keep other users unchanged
         ))
         
         toast({
@@ -215,7 +204,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
       console.error('Error updating access:', error)
       toast({
         title: "Database Error",
-        description: `Failed to ${!user.hasAccess ? 'grant' : 'revoke'} access. Please try again.`,
+        description: `Failed to ${!user.access_granted ? 'grant' : 'revoke'} access. Please try again.`,
         variant: "destructive",
       })
     } finally {
@@ -236,16 +225,16 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
       const response = await adminApi.sessionAccess.grantAccess({
         userId,
         sessionId,
-        accessGranted: user.hasAccess,
+        accessGranted: user.access_granted || false,
         adminNotes: notes
       })
 
       if (response.success) {
-        // Update local state
-        setUsers(prev => prev.map(u => 
+        // Update ONLY the specific user's notes in local state
+        setUsers(prevUsers => prevUsers.map(u => 
           u.id === userId 
-            ? { ...u, adminNotes: notes }
-            : u
+            ? { ...u, admin_notes: notes }
+            : u // Keep other users unchanged
         ))
         
         toast({
@@ -266,9 +255,10 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   }
 
   const getStats = () => {
-    const granted = users.filter(u => u.hasAccess).length
-    const pending = users.filter(u => !u.hasAccess).length
-    return { granted, pending, total: users.length }
+    const granted = users.filter(u => u.access_granted === true).length
+    const denied = users.filter(u => u.access_granted === false).length
+    const pending = users.filter(u => u.access_granted === null).length
+    return { granted, denied, pending, total: users.length }
   }
 
   const stats = getStats()
@@ -324,7 +314,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -349,7 +339,16 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
               <XCircle className="h-4 w-4 text-red-600" />
               <span className="text-sm font-medium">Access Denied</span>
             </div>
-            <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
+            <p className="text-2xl font-bold text-red-600">{stats.denied}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium">Pending</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
           </CardContent>
         </Card>
       </div>
@@ -359,7 +358,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search users safely by any field..."
+            placeholder="Search users by name, email, field, etc..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -368,6 +367,15 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         <div className="text-sm text-muted-foreground">
           Showing: {filteredUsers.length} of {users.length} users
         </div>
+        {searchTerm && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setSearchTerm("")}
+          >
+            Clear Search
+          </Button>
+        )}
       </div>
 
       {/* Users Table */}
@@ -467,18 +475,20 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                       <td className="p-3">
                         <div className="space-y-1">
                           <Badge 
-                            variant={user.hasAccess ? "default" : "secondary"}
+                            variant={user.access_granted === true ? "default" : user.access_granted === false ? "destructive" : "secondary"}
                             className={`text-xs ${
-                              user.hasAccess 
+                              user.access_granted === true
                                 ? 'bg-green-100 text-green-800 border-green-200' 
-                                : 'bg-red-100 text-red-800 border-red-200'
+                                : user.access_granted === false
+                                ? 'bg-red-100 text-red-800 border-red-200'
+                                : 'bg-yellow-100 text-yellow-800 border-yellow-200'
                             }`}
                           >
-                            {user.hasAccess ? 'Access Granted' : 'Access Denied'}
+                            {user.access_granted === true ? 'Access Granted' : user.access_granted === false ? 'Access Denied' : 'Pending Decision'}
                           </Badge>
-                          {user.grantedAt && (
+                          {user.granted_at && (
                             <div className="text-xs text-muted-foreground">
-                              Granted: {new Date(user.grantedAt).toLocaleDateString()}
+                              Updated: {new Date(user.granted_at).toLocaleDateString()}
                             </div>
                           )}
                         </div>
@@ -486,12 +496,12 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                       <td className="p-3">
                         <Textarea
                           placeholder="Add admin notes (saved to database)..."
-                          value={user.adminNotes || ""}
+                          value={user.admin_notes || ""}
                           onChange={(e) => {
                             // Update local state immediately for better UX
-                            setUsers(prev => prev.map(u => 
+                            setUsers(prevUsers => prevUsers.map(u => 
                               u.id === user.id 
-                                ? { ...u, adminNotes: e.target.value }
+                                ? { ...u, admin_notes: e.target.value }
                                 : u
                             ))
                           }}
@@ -503,7 +513,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                       <td className="p-3">
                         <Button
                           size="sm"
-                          variant={user.hasAccess ? "destructive" : "default"}
+                          variant={user.access_granted === true ? "destructive" : "default"}
                           onClick={() => handleToggleAccess(user.id)}
                           disabled={processingUsers.has(user.id)}
                           className="text-xs"
@@ -513,7 +523,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                               Saving...
                             </>
-                          ) : user.hasAccess ? (
+                          ) : user.access_granted === true ? (
                             <>
                               <XCircle className="w-3 h-3 mr-1" />
                               Revoke Access

@@ -1,6 +1,9 @@
+// User Session Access Management Routes
+// Handles admin-controlled session access with RLS bypass using service role key
 const express = require('express');
 const { authenticateAdmin } = require('../middleware/adminAuth');
 const supabase = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin'); // Admin client for RLS bypass
 
 const router = express.Router();
 
@@ -9,8 +12,8 @@ router.get('/session/:sessionId/users', authenticateAdmin, async (req, res) => {
   try {
     const { sessionId } = req.params;
     
-    // Get all users first
-    const { data: users, error: usersError } = await supabase
+    // Get all users first using admin client
+    const { data: users, error: usersError } = await supabaseAdmin
       .from('users')
       .select('*')
       .order('name', { ascending: true });
@@ -19,8 +22,8 @@ router.get('/session/:sessionId/users', authenticateAdmin, async (req, res) => {
       throw usersError;
     }
     
-    // Get session access data for this session
-    const { data: accessData, error: accessError } = await supabase
+    // Get session access data for this session using admin client
+    const { data: accessData, error: accessError } = await supabaseAdmin
       .from('user_session_access')
       .select('*')
       .eq('session_id', sessionId);
@@ -40,6 +43,17 @@ router.get('/session/:sessionId/users', authenticateAdmin, async (req, res) => {
         country: user.country,
         county: user.county,
         field_of_study: user.field_of_study,
+        institution: user.institution,
+        level_of_study: user.level_of_study,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        preferred_name: user.preferred_name,
+        date_of_birth: user.date_of_birth,
+        course_of_study: user.course_of_study,
+        degree: user.degree,
+        year_of_study: user.year_of_study,
+        primary_field_interest: user.primary_field_interest,
+        signup_source: user.signup_source,
         access_granted: access ? access.access_granted : null,
         admin_notes: access ? access.admin_notes : null,
         granted_at: access ? access.granted_at : null,
@@ -76,8 +90,9 @@ router.post('/grant-access', authenticateAdmin, async (req, res) => {
       });
     }
     
+    // Use admin client to bypass RLS
     // Check if record exists
-    const { data: existingRecord, error: checkError } = await supabase
+    const { data: existingRecord, error: checkError } = await supabaseAdmin
       .from('user_session_access')
       .select('id')
       .eq('user_id', userId)
@@ -91,8 +106,8 @@ router.post('/grant-access', authenticateAdmin, async (req, res) => {
     let result;
     
     if (existingRecord) {
-      // Update existing record
-      const { data, error } = await supabase
+      // Update existing record using admin client
+      const { data, error } = await supabaseAdmin
         .from('user_session_access')
         .update({
           access_granted: accessGranted,
@@ -109,8 +124,8 @@ router.post('/grant-access', authenticateAdmin, async (req, res) => {
       if (error) throw error;
       result = data;
     } else {
-      // Create new record
-      const { data, error } = await supabase
+      // Create new record using admin client
+      const { data, error } = await supabaseAdmin
         .from('user_session_access')
         .insert({
           user_id: userId,

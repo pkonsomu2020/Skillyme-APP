@@ -8,6 +8,7 @@ const { securityHeaders, httpsRedirect, corsSecurity } = require('./middleware/s
 const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware/csrfProtection');
 // Database connection is now handled by individual models using Supabase
 // const pool = require('./config/database'); // DEPRECATED: Now using Supabase
+// Updated: 2026-02-02 - Added admin Supabase client for RLS bypass in session access management
 require('dotenv').config();
 
 const app = express();
