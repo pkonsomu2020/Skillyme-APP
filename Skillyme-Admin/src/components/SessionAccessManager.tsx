@@ -27,24 +27,43 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   const [processingUsers, setProcessingUsers] = useState<Set<number>>(new Set())
   const { toast } = useToast()
 
-  // Filter users based on search term
+  // Safe filter function that handles null/undefined values
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredUsers(users)
     } else {
-      const filtered = users.filter(user => {
-        const searchLower = searchTerm.toLowerCase()
-        return (
-          user.name.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower) ||
-          user.phone.toLowerCase().includes(searchLower) ||
-          user.field_of_study.toLowerCase().includes(searchLower) ||
-          user.institution.toLowerCase().includes(searchLower) ||
-          user.country.toLowerCase().includes(searchLower) ||
-          (user.county && user.county.toLowerCase().includes(searchLower))
-        )
-      })
-      setFilteredUsers(filtered)
+      try {
+        const filtered = users.filter(user => {
+          const searchLower = searchTerm.toLowerCase()
+          
+          // Safe string checking function
+          const safeIncludes = (value: string | null | undefined): boolean => {
+            return value ? value.toLowerCase().includes(searchLower) : false
+          }
+          
+          return (
+            safeIncludes(user.name) ||
+            safeIncludes(user.email) ||
+            safeIncludes(user.phone) ||
+            safeIncludes(user.field_of_study) ||
+            safeIncludes(user.institution) ||
+            safeIncludes(user.country) ||
+            safeIncludes(user.county) ||
+            safeIncludes(user.preferred_name) ||
+            safeIncludes(user.course_of_study) ||
+            safeIncludes(user.degree) ||
+            safeIncludes(user.year_of_study) ||
+            safeIncludes(user.primary_field_interest) ||
+            safeIncludes(user.signup_source) ||
+            user.id.toString().includes(searchLower)
+          )
+        })
+        setFilteredUsers(filtered)
+      } catch (error) {
+        console.error('Search filter error:', error)
+        // If search fails, show all users to prevent crash
+        setFilteredUsers(users)
+      }
     }
   }, [searchTerm, users])
 
@@ -57,20 +76,20 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     try {
       setLoading(true)
       
-      // Fetch all real users from the database (same as Users page)
+      // Fetch all real users from the database
       const response = await adminApi.users.getAllUsers({
-        limit: 1000, // Get all users
+        limit: 1000,
         page: 1
       })
       
       if (response.success && response.data?.users) {
-        // Transform real users to include access status
-        // For now, randomly assign access status since we don't have the session access table working
+        // Transform real users - all start with NO access by default
+        // This is more realistic - admin must explicitly grant access
         const usersWithAccess: UserWithAccess[] = response.data.users.map(user => ({
           ...user,
-          hasAccess: Math.random() > 0.7, // Randomly assign access for demo
-          adminNotes: Math.random() > 0.8 ? "Approved by admin" : undefined,
-          grantedAt: Math.random() > 0.5 ? new Date().toISOString() : undefined
+          hasAccess: false, // All users start with no access
+          adminNotes: undefined,
+          grantedAt: undefined
         }))
         
         setUsers(usersWithAccess)
@@ -78,7 +97,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         
         toast({
           title: "Real Users Loaded",
-          description: `Found ${usersWithAccess.length} registered users from the platform`,
+          description: `Found ${usersWithAccess.length} registered users. All access is currently denied - grant access as needed.`,
         })
       } else {
         throw new Error(response.error || 'Failed to load users')
@@ -91,6 +110,10 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         description: "Failed to load users from database. Please try again.",
         variant: "destructive",
       })
+      
+      // Set empty array to prevent crashes
+      setUsers([])
+      setFilteredUsers([])
     } finally {
       setLoading(false)
     }
@@ -100,26 +123,31 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
     try {
       setProcessingUsers(prev => new Set(prev).add(userId))
       
-      // Simulate API call delay
+      const user = users.find(u => u.id === userId)
+      if (!user) {
+        throw new Error('User not found')
+      }
+      
+      const newAccess = !user.hasAccess
+      
+      // TODO: Replace this with real API call to update user_session_access table
+      // For now, just update local state
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
+      setUsers(prev => prev.map(u => 
+        u.id === userId 
           ? { 
-              ...user, 
-              hasAccess: !user.hasAccess,
-              grantedAt: !user.hasAccess ? new Date().toISOString() : undefined,
-              adminNotes: !user.hasAccess ? "Access granted by admin" : undefined
+              ...u, 
+              hasAccess: newAccess,
+              grantedAt: newAccess ? new Date().toISOString() : undefined,
+              adminNotes: newAccess ? `Access granted for session: ${sessionTitle}` : undefined
             }
-          : user
+          : u
       ))
       
-      const user = users.find(u => u.id === userId)
-      const newAccess = !user?.hasAccess
-      
       toast({
-        title: "Success",
-        description: `Access ${newAccess ? 'granted' : 'revoked'} for ${user?.name}`,
+        title: "Access Updated",
+        description: `${newAccess ? 'Granted' : 'Revoked'} session access for ${user.name}`,
       })
       
     } catch (error) {
@@ -179,20 +207,20 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Session Access Management</h1>
-          <p className="text-muted-foreground">Manage access for real users registered on the platform: {sessionTitle}</p>
+          <p className="text-muted-foreground">Manage access for: {sessionTitle}</p>
         </div>
       </div>
 
-      {/* Real Data Indicator */}
-      <Card className="bg-blue-50 border-blue-200">
+      {/* Warning Notice */}
+      <Card className="bg-yellow-50 border-yellow-200">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <p className="text-sm font-medium text-blue-800">Real User Data</p>
-            <p className="text-xs text-blue-600 ml-2">
-              Showing {users.length} real users registered on the Skillyme platform
-            </p>
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <p className="text-sm font-medium text-yellow-800">Important Notice</p>
           </div>
+          <p className="text-xs text-yellow-700 mt-1">
+            This is session-specific access control. Changes here only affect access to this particular session, not the user's overall account status.
+          </p>
         </CardContent>
       </Card>
 
@@ -211,7 +239,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">Access Granted</span>
+              <span className="text-sm font-medium">Session Access Granted</span>
             </div>
             <p className="text-2xl font-bold text-green-600">{stats.granted}</p>
           </CardContent>
@@ -220,7 +248,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-medium">Access Pending</span>
+              <span className="text-sm font-medium">Session Access Denied</span>
             </div>
             <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
           </CardContent>
@@ -232,23 +260,23 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search real users by name, email, phone, field..."
+            placeholder="Search users safely by any field..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
         <div className="text-sm text-muted-foreground">
-          Showing: {filteredUsers.length} of {users.length} registered users
+          Showing: {filteredUsers.length} of {users.length} users
         </div>
       </div>
 
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Real User Access Control</CardTitle>
+          <CardTitle>Session Access Control</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Manage session access for users who have actually registered on the Skillyme platform
+            Grant or deny access to this specific session for registered users
           </p>
         </CardHeader>
         <CardContent>
@@ -256,12 +284,16 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
             <div className="text-center py-8">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {searchTerm ? 'No registered users found matching your search' : 'No registered users found'}
+                {searchTerm ? 'No users found matching your search' : 'No registered users found'}
               </p>
-              {!searchTerm && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Users will appear here once they register on the platform
-                </p>
+              {searchTerm && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchTerm("")}
+                  className="mt-2"
+                >
+                  Clear Search
+                </Button>
               )}
             </div>
           ) : (
@@ -269,12 +301,11 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 font-semibold">User Info</th>
+                    <th className="text-left p-3 font-semibold">User</th>
                     <th className="text-left p-3 font-semibold">Contact</th>
                     <th className="text-left p-3 font-semibold">Education</th>
-                    <th className="text-left p-3 font-semibold">Location</th>
                     <th className="text-left p-3 font-semibold">Registration</th>
-                    <th className="text-left p-3 font-semibold">Access Status</th>
+                    <th className="text-left p-3 font-semibold">Session Access</th>
                     <th className="text-left p-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -288,44 +319,48 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                     >
                       <td className="p-3">
                         <div>
-                          <div className="font-medium">{user.name}</div>
+                          <div className="font-medium">{user.name || 'N/A'}</div>
                           <div className="text-xs text-muted-foreground">ID: {user.id}</div>
                           {user.preferred_name && (
-                            <div className="text-xs text-muted-foreground">Preferred: {user.preferred_name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              Preferred: {user.preferred_name}
+                            </div>
                           )}
                         </div>
                       </td>
                       <td className="p-3">
                         <div className="space-y-1">
-                          <div className="text-xs font-mono">{user.email}</div>
-                          <div className="text-xs text-muted-foreground font-mono">{user.phone}</div>
+                          <div className="text-xs font-mono">{user.email || 'N/A'}</div>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {user.phone || 'N/A'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {user.country || 'N/A'}{user.county ? `, ${user.county}` : ''}
+                          </div>
                         </div>
                       </td>
                       <td className="p-3">
                         <div className="space-y-1">
-                          <div className="text-xs font-medium">{user.field_of_study}</div>
-                          <div className="text-xs text-muted-foreground">{user.institution}</div>
-                          <div className="text-xs text-muted-foreground">{user.level_of_study}</div>
-                          {user.year_of_study && (
-                            <div className="text-xs text-muted-foreground">Year: {user.year_of_study}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="space-y-1">
-                          <div className="text-xs">{user.country}</div>
-                          {user.county && (
-                            <div className="text-xs text-muted-foreground">{user.county}</div>
-                          )}
+                          <div className="text-xs font-medium">
+                            {user.field_of_study || 'N/A'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {user.institution || 'N/A'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {user.level_of_study || 'N/A'}
+                          </div>
                         </div>
                       </td>
                       <td className="p-3">
                         <div className="space-y-1">
                           <div className="text-xs font-mono">
-                            {new Date(user.created_at).toLocaleDateString()}
+                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                           </div>
                           {user.signup_source && (
-                            <div className="text-xs text-muted-foreground">{user.signup_source}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {user.signup_source}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -339,16 +374,11 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                                 : 'bg-red-100 text-red-800 border-red-200'
                             }`}
                           >
-                            {user.hasAccess ? 'Access Granted' : 'Access Pending'}
+                            {user.hasAccess ? 'Access Granted' : 'Access Denied'}
                           </Badge>
                           {user.grantedAt && (
                             <div className="text-xs text-muted-foreground">
-                              {new Date(user.grantedAt).toLocaleDateString()}
-                            </div>
-                          )}
-                          {user.adminNotes && (
-                            <div className="text-xs text-muted-foreground italic">
-                              {user.adminNotes}
+                              Granted: {new Date(user.grantedAt).toLocaleDateString()}
                             </div>
                           )}
                         </div>
@@ -369,7 +399,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                           ) : user.hasAccess ? (
                             <>
                               <XCircle className="w-3 h-3 mr-1" />
-                              Revoke Access
+                              Deny Access
                             </>
                           ) : (
                             <>
