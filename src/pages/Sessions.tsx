@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, ExternalLink, GraduationCap, BookOpen, Users, Lock } from "lucide-react";
+import { Calendar, Clock, Video, GraduationCap, BookOpen, Users, Lock } from "lucide-react";
 import { toast } from "sonner";
 import apiService from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -204,14 +204,6 @@ const Sessions = () => {
             <div className="flex items-center gap-2 text-xs">
               <Clock className="w-3 h-3 text-primary flex-shrink-0" />
               <span className="truncate">{session.time} ({session.duration})</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <Video className="w-3 h-3 text-primary flex-shrink-0" />
-              <span className="text-blue-600 hover:text-blue-800 cursor-pointer truncate" 
-                    onClick={() => window.open(session.google_meet_link, '_blank')}>
-                Google Meet Link
-                <ExternalLink className="w-2 h-2 inline ml-1" />
-              </span>
             </div>
           </div>
 
