@@ -63,6 +63,7 @@ const DashboardOverview = () => {
     upcomingSessions: 0,
     currentLevel: 'Beginner'
   });
+  const [userDiscounts, setUserDiscounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobile, setMobile] = useState(false);
@@ -191,6 +192,17 @@ const DashboardOverview = () => {
         } else {
           setError('Failed to fetch dashboard statistics');
         }
+
+        // Fetch user discounts
+        try {
+          const discountsResponse = await apiService.request('/user/discounts');
+          if (discountsResponse.success) {
+            setUserDiscounts(discountsResponse.data.discounts || []);
+          }
+        } catch (discountError) {
+          console.warn('Failed to fetch user discounts:', discountError);
+        }
+        
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error('Dashboard stats error:', err);
@@ -466,9 +478,48 @@ const DashboardOverview = () => {
           </Card>
         </div>
         
-        {/* Right Column - Leaderboard & Tips */}
+        {/* Right Column - Leaderboard, Discounts & Tips */}
         <div className="space-y-6">
           <TopLeaderboard />
+          
+          {/* User Discounts Card */}
+          {userDiscounts.length > 0 && (
+            <Card className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <Gift className="w-5 h-5" />
+                  Your Discounts
+                  <Badge className="bg-green-100 text-green-800 ml-auto">
+                    {userDiscounts.filter(d => d.status === 'active').length} Active
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {userDiscounts.slice(0, 3).map((discount, index) => (
+                  <div key={discount.id || index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold text-green-700">{discount.discount_percentage}% OFF</p>
+                      <p className="text-xs text-muted-foreground">{discount.discount_type || 'Next Phase'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {discount.status === 'active' ? 'Active' : discount.status}
+                      </p>
+                    </div>
+                    <Badge 
+                      variant={discount.status === 'active' ? 'default' : 'secondary'}
+                      className={discount.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                    >
+                      {discount.status === 'active' ? '✅ Ready to Use' : discount.status}
+                    </Badge>
+                  </div>
+                ))}
+                {userDiscounts.length > 3 && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    +{userDiscounts.length - 3} more discounts available
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
           
           {/* Pro Tips Card */}
           <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">

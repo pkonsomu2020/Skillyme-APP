@@ -81,7 +81,7 @@ export default function Discounts() {
     try {
       setLoading(true)
       const response = await adminApi.discounts.getLeaderboard({
-        limit: 50,
+        limit: 200, // Increased to show all users (120+)
         min_points: minPoints
       })
       
@@ -110,7 +110,7 @@ export default function Discounts() {
   const fetchDiscounts = async () => {
     try {
       const response = await adminApi.discounts.getAll({
-        limit: 50,
+        limit: 200, // Increased to show all discounts
         page: 1
       })
       

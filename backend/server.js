@@ -11,6 +11,7 @@ const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware
 // Updated: 2026-02-02 - Added admin Supabase client for RLS bypass in session access management
 // Updated: 2026-02-02 - Fixed user session access routes to use admin client for reading
 // Updated: 2026-02-02 - Added bulk grant access functionality for session access management
+// Updated: 2026-02-02 - Added session join points system and user discounts display
 require('dotenv').config();
 
 const app = express();
@@ -100,6 +101,7 @@ app.use('/api/payments', paymentLimiter, require('./routes/payment'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/session-access', require('./routes/sessionAccess'));
+app.use('/api/user', require('./routes/userDiscounts'));
 app.use('/api/assignments', require('./routes/assignments'));
 // MySQL setup route removed - now using Supabase
 app.use('/api/diagnostic', require('./routes/diagnostic'));

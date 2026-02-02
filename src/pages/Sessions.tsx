@@ -110,7 +110,7 @@ const Sessions = () => {
     }
   };
 
-  const handleJoinSession = (session: Session) => {
+  const handleJoinSession = async (session: Session) => {
     if (!isAuthenticated) {
       toast.error('Please log in to join sessions');
       return;
@@ -122,20 +122,47 @@ const Sessions = () => {
       return;
     }
     
-    // Open Google Meet link in new tab
-    window.open(session.google_meet_link, '_blank');
-    
-    toast.success('Opening Google Meet session...', {
-      duration: 3000,
-      style: {
-        background: '#10b981',
-        color: 'white',
-        fontSize: '14px',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        border: '1px solid #059669'
+    try {
+      // Call the join session API to award points and get session details
+      const response = await apiService.joinSession(session.id);
+      
+      if (response.success) {
+        // Open Google Meet link in new tab
+        window.open(response.data.googleMeetLink, '_blank');
+        
+        // Show success message with points information
+        if (response.data.isFirstJoin && response.data.pointsAwarded > 0) {
+          toast.success(`🎉 ${response.message} Opening session...`, {
+            duration: 5000,
+            style: {
+              background: '#10b981',
+              color: 'white',
+              fontSize: '14px',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid #059669'
+            }
+          });
+        } else {
+          toast.success('Opening Google Meet session...', {
+            duration: 3000,
+            style: {
+              background: '#10b981',
+              color: 'white',
+              fontSize: '14px',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid #059669'
+            }
+          });
+        }
+      } else {
+        toast.error(response.message || 'Failed to join session');
       }
-    });
+    } catch (error) {
+      console.error('Error joining session:', error);
+      toast.error('Failed to join session. Please try again.');
+    }
   };
 
   // Filter sessions based on active tab

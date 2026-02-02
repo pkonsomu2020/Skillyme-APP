@@ -272,6 +272,13 @@ class ApiService {
   async getMySessionAccess() {
     return this.request('/session-access/my-access');
   }
+
+  // Session join methods
+  async joinSession(sessionId) {
+    return this.request(`/sessions/${sessionId}/join`, {
+      method: 'POST'
+    });
+  }
 }
 
 export default new ApiService();
