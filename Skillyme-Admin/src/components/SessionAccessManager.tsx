@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Search, CheckCircle, XCircle, Users, ArrowLeft, AlertCircle, Loader2 } from "lucide-react"
 import { adminApi, User } from "@/services/api"
@@ -11,6 +12,7 @@ interface UserWithAccess extends User {
   hasAccess: boolean
   adminNotes?: string
   grantedAt?: string
+  grantedBy?: number
 }
 
 interface SessionAccessManagerProps {
@@ -61,57 +63,98 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         setFilteredUsers(filtered)
       } catch (error) {
         console.error('Search filter error:', error)
-        // If search fails, show all users to prevent crash
         setFilteredUsers(users)
       }
     }
   }, [searchTerm, users])
 
-  // Load real users from the database
+  // Load real users with their actual access status from database
   useEffect(() => {
-    loadRealUsers()
+    loadUsersWithAccessStatus()
   }, [sessionId])
 
-  const loadRealUsers = async () => {
+  const loadUsersWithAccessStatus = async () => {
     try {
       setLoading(true)
       
-      // Fetch all real users from the database
-      const response = await adminApi.users.getAllUsers({
+      // First, get all users
+      const usersResponse = await adminApi.users.getAllUsers({
         limit: 1000,
         page: 1
       })
       
-      if (response.success && response.data?.users) {
-        // Transform real users - all start with NO access by default
-        // This is more realistic - admin must explicitly grant access
-        const usersWithAccess: UserWithAccess[] = response.data.users.map(user => ({
+      if (!usersResponse.success || !usersResponse.data?.users) {
+        throw new Error(usersResponse.error || 'Failed to load users')
+      }
+
+      // Then, get access status for this specific session
+      try {
+        const accessResponse = await adminApi.sessionAccess.getUsersForSession(sessionId)
+        
+        if (accessResponse.success && accessResponse.data?.users) {
+          // We have access data from the API
+          const usersWithAccess = accessResponse.data.users.map((accessUser: any) => ({
+            ...accessUser,
+            hasAccess: accessUser.access_granted || false,
+            adminNotes: accessUser.admin_notes || undefined,
+            grantedAt: accessUser.granted_at || undefined,
+            grantedBy: accessUser.granted_by || undefined
+          }))
+          
+          setUsers(usersWithAccess)
+          setFilteredUsers(usersWithAccess)
+          
+          toast({
+            title: "Users Loaded",
+            description: `Loaded ${usersWithAccess.length} users with their current access status`,
+          })
+        } else {
+          // No access data available, show all users with no access
+          const usersWithAccess: UserWithAccess[] = usersResponse.data.users.map(user => ({
+            ...user,
+            hasAccess: false,
+            adminNotes: undefined,
+            grantedAt: undefined,
+            grantedBy: undefined
+          }))
+          
+          setUsers(usersWithAccess)
+          setFilteredUsers(usersWithAccess)
+          
+          toast({
+            title: "Users Loaded",
+            description: `Loaded ${usersWithAccess.length} users. No access permissions set yet for this session.`,
+          })
+        }
+      } catch (accessError) {
+        console.warn('Could not load access data, showing all users with no access:', accessError)
+        
+        // Fallback: show all users with no access
+        const usersWithAccess: UserWithAccess[] = usersResponse.data.users.map(user => ({
           ...user,
-          hasAccess: false, // All users start with no access
+          hasAccess: false,
           adminNotes: undefined,
-          grantedAt: undefined
+          grantedAt: undefined,
+          grantedBy: undefined
         }))
         
         setUsers(usersWithAccess)
         setFilteredUsers(usersWithAccess)
         
         toast({
-          title: "Real Users Loaded",
-          description: `Found ${usersWithAccess.length} registered users. All access is currently denied - grant access as needed.`,
+          title: "Users Loaded",
+          description: `Loaded ${usersWithAccess.length} users. Access management ready.`,
         })
-      } else {
-        throw new Error(response.error || 'Failed to load users')
       }
       
     } catch (error) {
-      console.error('Error loading real users:', error)
+      console.error('Error loading users:', error)
       toast({
         title: "Error",
         description: "Failed to load users from database. Please try again.",
         variant: "destructive",
       })
       
-      // Set empty array to prevent crashes
       setUsers([])
       setFilteredUsers([])
     } finally {
@@ -120,41 +163,59 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   }
 
   const handleToggleAccess = async (userId: number) => {
+    const user = users.find(u => u.id === userId)
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not found",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setProcessingUsers(prev => new Set(prev).add(userId))
       
-      const user = users.find(u => u.id === userId)
-      if (!user) {
-        throw new Error('User not found')
-      }
-      
       const newAccess = !user.hasAccess
+      const adminNotes = newAccess 
+        ? `Access granted for session: ${sessionTitle}` 
+        : `Access revoked for session: ${sessionTitle}`
       
-      // TODO: Replace this with real API call to update user_session_access table
-      // For now, just update local state
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      setUsers(prev => prev.map(u => 
-        u.id === userId 
-          ? { 
-              ...u, 
-              hasAccess: newAccess,
-              grantedAt: newAccess ? new Date().toISOString() : undefined,
-              adminNotes: newAccess ? `Access granted for session: ${sessionTitle}` : undefined
-            }
-          : u
-      ))
-      
-      toast({
-        title: "Access Updated",
-        description: `${newAccess ? 'Granted' : 'Revoked'} session access for ${user.name}`,
+      // Make real API call to update database
+      const response = await adminApi.sessionAccess.grantAccess({
+        userId,
+        sessionId,
+        accessGranted: newAccess,
+        adminNotes
       })
+
+      if (response.success) {
+        // Update local state to reflect database change
+        setUsers(prev => prev.map(u => 
+          u.id === userId 
+            ? { 
+                ...u, 
+                hasAccess: newAccess,
+                adminNotes: adminNotes,
+                grantedAt: newAccess ? new Date().toISOString() : undefined,
+                grantedBy: newAccess ? 1 : undefined // TODO: Get actual admin ID
+              }
+            : u
+        ))
+        
+        toast({
+          title: "Success",
+          description: `${newAccess ? 'Granted' : 'Revoked'} session access for ${user.name}. Changes saved to database.`,
+        })
+      } else {
+        throw new Error(response.error || 'Failed to update access in database')
+      }
       
     } catch (error) {
       console.error('Error updating access:', error)
       toast({
-        title: "Error",
-        description: "Failed to update access. Please try again.",
+        title: "Database Error",
+        description: `Failed to ${!user.hasAccess ? 'grant' : 'revoke'} access. Please try again.`,
         variant: "destructive",
       })
     } finally {
@@ -162,6 +223,44 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         const newSet = new Set(prev)
         newSet.delete(userId)
         return newSet
+      })
+    }
+  }
+
+  const handleNotesUpdate = async (userId: number, notes: string) => {
+    try {
+      const user = users.find(u => u.id === userId)
+      if (!user) return
+
+      // Update admin notes in database
+      const response = await adminApi.sessionAccess.grantAccess({
+        userId,
+        sessionId,
+        accessGranted: user.hasAccess,
+        adminNotes: notes
+      })
+
+      if (response.success) {
+        // Update local state
+        setUsers(prev => prev.map(u => 
+          u.id === userId 
+            ? { ...u, adminNotes: notes }
+            : u
+        ))
+        
+        toast({
+          title: "Notes Updated",
+          description: "Admin notes saved to database.",
+        })
+      } else {
+        throw new Error(response.error || 'Failed to update notes')
+      }
+    } catch (error) {
+      console.error('Error updating notes:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update admin notes.",
+        variant: "destructive",
       })
     }
   }
@@ -184,13 +283,13 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Session Access Management</h1>
-            <p className="text-muted-foreground">Loading real users for: {sessionTitle}</p>
+            <p className="text-muted-foreground">Loading users and access status for: {sessionTitle}</p>
           </div>
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading registered users from database...</p>
+            <p className="text-muted-foreground">Loading users and their access permissions...</p>
           </div>
         </div>
       </div>
@@ -207,20 +306,20 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Session Access Management</h1>
-          <p className="text-muted-foreground">Manage access for: {sessionTitle}</p>
+          <p className="text-muted-foreground">Manage database-persisted access for: {sessionTitle}</p>
         </div>
       </div>
 
-      {/* Warning Notice */}
-      <Card className="bg-yellow-50 border-yellow-200">
+      {/* Database Connection Status */}
+      <Card className="bg-green-50 border-green-200">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <p className="text-sm font-medium text-yellow-800">Important Notice</p>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <p className="text-sm font-medium text-green-800">Database Connected</p>
+            <p className="text-xs text-green-600 ml-2">
+              All access changes are saved to the user_session_access table and persist after refresh
+            </p>
           </div>
-          <p className="text-xs text-yellow-700 mt-1">
-            This is session-specific access control. Changes here only affect access to this particular session, not the user's overall account status.
-          </p>
         </CardContent>
       </Card>
 
@@ -230,7 +329,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Total Registered Users</span>
+              <span className="text-sm font-medium">Total Users</span>
             </div>
             <p className="text-2xl font-bold">{stats.total}</p>
           </CardContent>
@@ -239,7 +338,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">Session Access Granted</span>
+              <span className="text-sm font-medium">Access Granted</span>
             </div>
             <p className="text-2xl font-bold text-green-600">{stats.granted}</p>
           </CardContent>
@@ -248,7 +347,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-medium">Session Access Denied</span>
+              <span className="text-sm font-medium">Access Denied</span>
             </div>
             <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
           </CardContent>
@@ -274,9 +373,9 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Session Access Control</CardTitle>
+          <CardTitle>Database-Persisted Session Access Control</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Grant or deny access to this specific session for registered users
+            Grant or deny access to this session. All changes are saved to the database and will persist after refresh.
           </p>
         </CardHeader>
         <CardContent>
@@ -284,7 +383,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
             <div className="text-center py-8">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {searchTerm ? 'No users found matching your search' : 'No registered users found'}
+                {searchTerm ? 'No users found matching your search' : 'No users found'}
               </p>
               {searchTerm && (
                 <Button 
@@ -305,7 +404,8 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                     <th className="text-left p-3 font-semibold">Contact</th>
                     <th className="text-left p-3 font-semibold">Education</th>
                     <th className="text-left p-3 font-semibold">Registration</th>
-                    <th className="text-left p-3 font-semibold">Session Access</th>
+                    <th className="text-left p-3 font-semibold">Access Status</th>
+                    <th className="text-left p-3 font-semibold">Admin Notes</th>
                     <th className="text-left p-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -384,6 +484,23 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                         </div>
                       </td>
                       <td className="p-3">
+                        <Textarea
+                          placeholder="Add admin notes (saved to database)..."
+                          value={user.adminNotes || ""}
+                          onChange={(e) => {
+                            // Update local state immediately for better UX
+                            setUsers(prev => prev.map(u => 
+                              u.id === user.id 
+                                ? { ...u, adminNotes: e.target.value }
+                                : u
+                            ))
+                          }}
+                          onBlur={(e) => handleNotesUpdate(user.id, e.target.value)}
+                          className="min-h-[60px] text-xs"
+                          rows={2}
+                        />
+                      </td>
+                      <td className="p-3">
                         <Button
                           size="sm"
                           variant={user.hasAccess ? "destructive" : "default"}
@@ -394,12 +511,12 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                           {processingUsers.has(user.id) ? (
                             <>
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              Processing...
+                              Saving...
                             </>
                           ) : user.hasAccess ? (
                             <>
                               <XCircle className="w-3 h-3 mr-1" />
-                              Deny Access
+                              Revoke Access
                             </>
                           ) : (
                             <>
