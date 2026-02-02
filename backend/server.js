@@ -10,6 +10,7 @@ const { csrfProtection, getCSRFToken, csrfErrorHandler } = require('./middleware
 // const pool = require('./config/database'); // DEPRECATED: Now using Supabase
 // Updated: 2026-02-02 - Added admin Supabase client for RLS bypass in session access management
 // Updated: 2026-02-02 - Fixed user session access routes to use admin client for reading
+// Updated: 2026-02-02 - Added bulk grant access functionality for session access management
 require('dotenv').config();
 
 const app = express();

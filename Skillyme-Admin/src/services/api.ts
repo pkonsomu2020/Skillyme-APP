@@ -648,6 +648,17 @@ export const sessionAccessApi = {
     });
   },
 
+  bulkGrantAccess: async (data: {
+    sessionId: number;
+    accessGranted: boolean;
+    adminNotes?: string;
+  }): Promise<ApiResponse<{ totalUsers: number; successful: number; failed: number; results: any[] }>> => {
+    return apiRequest<{ totalUsers: number; successful: number; failed: number; results: any[] }>('/admin/session-access/bulk-grant-access', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   checkUserAccess: async (userId: number, sessionId: number): Promise<ApiResponse<{ hasAccess: boolean; accessDetails: any }>> => {
     return apiRequest<{ hasAccess: boolean; accessDetails: any }>(`/admin/session-access/user/${userId}/session/${sessionId}`);
   },

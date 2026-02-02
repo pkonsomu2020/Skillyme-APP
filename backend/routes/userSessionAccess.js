@@ -156,6 +156,153 @@ router.post('/grant-access', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Bulk grant access to all users for a specific session
+router.post('/bulk-grant-access', authenticateAdmin, async (req, res) => {
+  try {
+    const { sessionId, accessGranted, adminNotes } = req.body;
+    const adminId = req.admin.id;
+    
+    if (!sessionId || typeof accessGranted !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionId and accessGranted are required'
+      });
+    }
+    
+    // Get all users first
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .order('id', { ascending: true });
+    
+    if (usersError) {
+      throw usersError;
+    }
+    
+    if (!users || users.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No users found to grant access to',
+        data: {
+          totalUsers: 0,
+          successful: 0,
+          failed: 0,
+          results: []
+        }
+      });
+    }
+    
+    console.log(`Processing bulk access ${accessGranted ? 'grant' : 'revoke'} for ${users.length} users to session ${sessionId}`);
+    
+    let successful = 0;
+    let failed = 0;
+    const results = [];
+    
+    // Process users in batches to avoid overwhelming the database
+    const batchSize = 10;
+    for (let i = 0; i < users.length; i += batchSize) {
+      const batch = users.slice(i, i + batchSize);
+      
+      const batchPromises = batch.map(async (user) => {
+        try {
+          // Check if record exists
+          const { data: existingRecord, error: checkError } = await supabaseAdmin
+            .from('user_session_access')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('session_id', sessionId)
+            .single();
+          
+          if (checkError && checkError.code !== 'PGRST116') {
+            throw checkError;
+          }
+          
+          let result;
+          
+          if (existingRecord) {
+            // Update existing record
+            const { data, error } = await supabaseAdmin
+              .from('user_session_access')
+              .update({
+                access_granted: accessGranted,
+                admin_notes: adminNotes || `Bulk ${accessGranted ? 'grant' : 'revoke'} access for session: ${sessionId}`,
+                granted_by: adminId,
+                granted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id)
+              .eq('session_id', sessionId)
+              .select()
+              .single();
+            
+            if (error) throw error;
+            result = data;
+          } else {
+            // Create new record
+            const { data, error } = await supabaseAdmin
+              .from('user_session_access')
+              .insert({
+                user_id: user.id,
+                session_id: sessionId,
+                access_granted: accessGranted,
+                admin_notes: adminNotes || `Bulk ${accessGranted ? 'grant' : 'revoke'} access for session: ${sessionId}`,
+                granted_by: adminId
+              })
+              .select()
+              .single();
+            
+            if (error) throw error;
+            result = data;
+          }
+          
+          successful++;
+          return {
+            userId: user.id,
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          failed++;
+          console.error(`Failed to process user ${user.id}:`, error);
+          return {
+            userId: user.id,
+            success: false,
+            error: error.message
+          };
+        }
+      });
+      
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      // Small delay between batches to avoid overwhelming the database
+      if (i + batchSize < users.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    console.log(`Bulk access operation completed: ${successful} successful, ${failed} failed`);
+    
+    res.json({
+      success: true,
+      message: `Bulk access ${accessGranted ? 'granted' : 'revoked'} to ${successful} users successfully. ${failed} failed.`,
+      data: {
+        totalUsers: users.length,
+        successful,
+        failed,
+        results
+      }
+    });
+  } catch (error) {
+    console.error('Error in bulk grant access:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to bulk grant access',
+      error: error.message
+    });
+  }
+});
+
 // Get user's session access status (for frontend to check if join button should be enabled)
 router.get('/user/:userId/session/:sessionId', async (req, res) => {
   try {

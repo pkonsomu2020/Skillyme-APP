@@ -46,6 +46,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [processingUsers, setProcessingUsers] = useState<Set<number>>(new Set())
+  const [bulkProcessing, setBulkProcessing] = useState(false)
   const { toast } = useToast()
 
   // Memoized filtered users with safe search
@@ -148,6 +149,51 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
       setUsers([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleBulkGrantAccess = async (accessGranted: boolean) => {
+    try {
+      setBulkProcessing(true)
+      
+      const adminNotes = accessGranted 
+        ? `Bulk access granted for session: ${sessionTitle}` 
+        : `Bulk access revoked for session: ${sessionTitle}`
+      
+      // Make API call to bulk grant/revoke access
+      const response = await adminApi.sessionAccess.bulkGrantAccess({
+        sessionId,
+        accessGranted,
+        adminNotes
+      })
+
+      if (response.success && response.data) {
+        // Update all users in local state
+        setUsers(prevUsers => prevUsers.map(u => ({
+          ...u,
+          access_granted: accessGranted,
+          admin_notes: adminNotes,
+          granted_at: accessGranted ? new Date().toISOString() : null,
+          granted_by: accessGranted ? 1 : null // TODO: Get actual admin ID from context
+        })))
+        
+        toast({
+          title: "Bulk Operation Successful",
+          description: `${accessGranted ? 'Granted' : 'Revoked'} access for ${response.data.successful} users. ${response.data.failed > 0 ? `${response.data.failed} failed.` : ''}`,
+        })
+      } else {
+        throw new Error(response.error || 'Failed to bulk update access')
+      }
+      
+    } catch (error) {
+      console.error('Error in bulk grant access:', error)
+      toast({
+        title: "Bulk Operation Failed",
+        description: `Failed to bulk ${accessGranted ? 'grant' : 'revoke'} access. Please try again.`,
+        variant: "destructive",
+      })
+    } finally {
+      setBulkProcessing(false)
     }
   }
 
@@ -352,6 +398,54 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
           </CardContent>
         </Card>
       </div>
+
+      {/* Bulk Actions */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Bulk Actions</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Apply access changes to all users at once. This will affect all {users.length} users.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex gap-3">
+            <Button
+              onClick={() => handleBulkGrantAccess(true)}
+              disabled={bulkProcessing}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {bulkProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Grant Access to All ({users.length} users)
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => handleBulkGrantAccess(false)}
+              disabled={bulkProcessing}
+              variant="destructive"
+            >
+              {bulkProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Revoke Access from All ({users.length} users)
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Search */}
       <div className="flex gap-4 items-center">
