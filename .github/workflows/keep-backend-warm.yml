@@ -1,0 +1,54 @@
+# GitHub Actions workflow to keep Render backend warm
+name: Keep Backend Warm
+
+on:
+  schedule:
+    # Run every 8 minutes (GitHub Actions minimum is 5 minutes)
+    - cron: '*/8 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Ping Skillyme Backend
+      run: |
+        echo "🔥 Pinging Skillyme backend to keep it warm..."
+        
+        # Ping the backend
+        response=$(curl -s -o /dev/null -w "%{http_code},%{time_total}" \
+          -X HEAD \
+          -H "User-Agent: GitHub-Actions-Warmer/1.0" \
+          https://skillyme-backend-s3sy.onrender.com/api/admin/sessions)
+        
+        # Parse response
+        http_code=$(echo $response | cut -d',' -f1)
+        response_time=$(echo $response | cut -d',' -f2)
+        
+        # Convert response time to milliseconds
+        response_time_ms=$(echo "$response_time * 1000" | bc -l | cut -d'.' -f1)
+        
+        echo "📊 Response: HTTP $http_code in ${response_time_ms}ms"
+        
+        # Check if successful
+        if [ "$http_code" = "200" ] || [ "$http_code" = "404" ]; then
+          echo "✅ Backend is warm and responding"
+          
+          # Alert if slow response (potential cold start)
+          if [ "$response_time_ms" -gt 3000 ]; then
+            echo "⚠️  Slow response detected (${response_time_ms}ms) - possible cold start"
+          else
+            echo "🚀 Good response time (${response_time_ms}ms)"
+          fi
+        else
+          echo "❌ Backend not responding properly (HTTP $http_code)"
+          exit 1
+        fi
+        
+        echo "🕐 Next ping in 8 minutes"
+
+    - name: Log Warming Activity
+      run: |
+        echo "Backend warming completed at $(date)"
+        echo "This keeps the Render free tier backend active"
