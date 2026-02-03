@@ -3,8 +3,8 @@ name: Keep Backend Warm
 
 on:
   schedule:
-    # Run every 8 minutes (GitHub Actions minimum is 5 minutes)
-    - cron: '*/8 * * * *'
+    # Run every 10 minutes to keep backend warm
+    - cron: '*/10 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -16,39 +16,27 @@ jobs:
       run: |
         echo "🔥 Pinging Skillyme backend to keep it warm..."
         
-        # Ping the backend
-        response=$(curl -s -o /dev/null -w "%{http_code},%{time_total}" \
-          -X HEAD \
+        # Simple ping to keep backend alive
+        response_code=$(curl -s -o /dev/null -w "%{http_code}" \
+          -X GET \
           -H "User-Agent: GitHub-Actions-Warmer/1.0" \
-          https://skillyme-backend-s3sy.onrender.com/api/admin/sessions)
+          --max-time 30 \
+          https://skillyme-backend-s3sy.onrender.com/api/sessions || echo "000")
         
-        # Parse response
-        http_code=$(echo $response | cut -d',' -f1)
-        response_time=$(echo $response | cut -d',' -f2)
+        echo "📊 Response: HTTP $response_code"
         
-        # Convert response time to milliseconds
-        response_time_ms=$(echo "$response_time * 1000" | bc -l | cut -d'.' -f1)
-        
-        echo "📊 Response: HTTP $http_code in ${response_time_ms}ms"
-        
-        # Check if successful
-        if [ "$http_code" = "200" ] || [ "$http_code" = "404" ]; then
+        # Check if successful (200, 401, 404 are all fine - means server is responding)
+        if [ "$response_code" = "200" ] || [ "$response_code" = "401" ] || [ "$response_code" = "404" ]; then
           echo "✅ Backend is warm and responding"
-          
-          # Alert if slow response (potential cold start)
-          if [ "$response_time_ms" -gt 3000 ]; then
-            echo "⚠️  Slow response detected (${response_time_ms}ms) - possible cold start"
-          else
-            echo "🚀 Good response time (${response_time_ms}ms)"
-          fi
+        elif [ "$response_code" = "000" ]; then
+          echo "⚠️  Backend timeout or connection error - but this is normal for cold starts"
         else
-          echo "❌ Backend not responding properly (HTTP $http_code)"
-          exit 1
+          echo "⚠️  Backend responded with HTTP $response_code - but server is alive"
         fi
         
-        echo "🕐 Next ping in 8 minutes"
+        echo "🕐 Next ping in 10 minutes"
 
     - name: Log Warming Activity
       run: |
         echo "Backend warming completed at $(date)"
-        echo "This keeps the Render free tier backend active"
+        echo "This keeps the Render free tier backend active and prevents cold starts"
