@@ -184,8 +184,70 @@ const careerFields: CareerField[] = [
             keySkills: ["Science foundation", "Communication", "Empathy"],
             kcseGrade: "B+ (70+ points)",
             clusterPoints: "Cluster 2B: 70+"
+          },
+          {
+            title: "Nursing School",
+            duration: "4 years",
+            description: "Comprehensive nursing education with clinical practice",
+            requirements: [
+              "Complete nursing curriculum",
+              "Clinical rotations in hospitals",
+              "Pass nursing examinations",
+              "Community health practice"
+            ],
+            keySkills: ["Patient care", "Medical procedures", "Health assessment", "Communication"],
+            kcseGrade: "Maintained performance",
+            clusterPoints: "University requirements"
+          },
+          {
+            title: "Nursing Council Registration",
+            duration: "6 months",
+            description: "Register with Nursing Council of Kenya for practice license",
+            requirements: [
+              "Pass Nursing Council exams",
+              "Complete internship",
+              "Professional registration",
+              "Continuous professional development"
+            ],
+            keySkills: ["Professional ethics", "Clinical competence", "Leadership"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
           }
         ]
+      },
+      {
+        id: "pharmacy",
+        title: "Bachelor of Pharmacy",
+        duration: "5 years",
+        kcseRequirement: "A- (80+ points)",
+        clusterPoints: "Cluster 2A: 80+ points",
+        description: "Pharmaceutical sciences and drug dispensing practice",
+        careerOpportunities: [
+          "Community Pharmacist (KSh 80,000 - 180,000)",
+          "Hospital Pharmacist (KSh 100,000 - 220,000)",
+          "Industrial Pharmacist (KSh 120,000 - 300,000)",
+          "Regulatory Affairs Officer (KSh 150,000 - 350,000)"
+        ],
+        salaryRange: "KSh 80,000 - 350,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University"],
+        steps: []
+      },
+      {
+        id: "clinical-medicine",
+        title: "Bachelor of Clinical Medicine",
+        duration: "5 years",
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 2B: 70+ points",
+        description: "Clinical officer training for primary healthcare delivery",
+        careerOpportunities: [
+          "Clinical Officer (KSh 70,000 - 150,000)",
+          "Senior Clinical Officer (KSh 100,000 - 200,000)",
+          "Public Health Officer (KSh 80,000 - 180,000)",
+          "Healthcare Administrator (KSh 120,000 - 250,000)"
+        ],
+        salaryRange: "KSh 70,000 - 250,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University", "KMTC"],
+        steps: []
       }
     ]
   },
@@ -228,8 +290,68 @@ const careerFields: CareerField[] = [
             keySkills: ["Critical thinking", "Communication", "Analysis", "Writing"],
             kcseGrade: "B+ (70+ points)",
             clusterPoints: "Cluster 1: 70+"
+          },
+          {
+            title: "Law School",
+            duration: "4 years",
+            description: "Comprehensive legal education covering Kenyan and international law",
+            requirements: [
+              "Complete LL.B curriculum",
+              "Constitutional Law, Contract Law, Tort Law",
+              "Criminal Law, Commercial Law",
+              "Legal research and writing",
+              "Moot court participation"
+            ],
+            keySkills: ["Legal research", "Case analysis", "Oral advocacy", "Legal writing"],
+            kcseGrade: "Maintained performance",
+            clusterPoints: "University requirements"
+          },
+          {
+            title: "Kenya School of Law",
+            duration: "1 year",
+            description: "Postgraduate diploma for admission to the bar",
+            requirements: [
+              "Complete Postgraduate Diploma in Law",
+              "Practical legal training",
+              "Court attachments",
+              "Legal clinic work"
+            ],
+            keySkills: ["Practical law", "Client handling", "Court procedures"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Admission to the Bar",
+            duration: "6 months",
+            description: "Admission as an Advocate of the High Court of Kenya",
+            requirements: [
+              "Pass Kenya School of Law exams",
+              "Character and fitness evaluation",
+              "Law Society of Kenya membership",
+              "Practicing certificate"
+            ],
+            keySkills: ["Professional ethics", "Legal practice", "Client relations"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
           }
         ]
+      },
+      {
+        id: "criminology",
+        title: "Bachelor of Arts in Criminology",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 1: 48+ points",
+        description: "Study of crime, criminal behavior, and justice systems",
+        careerOpportunities: [
+          "Police Officer (KSh 45,000 - 120,000)",
+          "Criminal Investigator (KSh 60,000 - 150,000)",
+          "Probation Officer (KSh 50,000 - 130,000)",
+          "Security Consultant (KSh 80,000 - 200,000)"
+        ],
+        salaryRange: "KSh 45,000 - 200,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University"],
+        steps: []
       }
     ]
   },
@@ -257,6 +379,57 @@ const careerFields: CareerField[] = [
         ],
         salaryRange: "KSh 80,000 - 400,000",
         topUniversities: ["University of Nairobi", "JKUAT", "Moi University", "Technical University of Kenya"],
+        steps: []
+      },
+      {
+        id: "mechanical-engineering",
+        title: "Bachelor of Mechanical Engineering",
+        duration: "5 years",
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 3: 70+ points",
+        description: "Design and manufacturing of mechanical systems",
+        careerOpportunities: [
+          "Mechanical Engineer (KSh 90,000 - 280,000)",
+          "Manufacturing Engineer (KSh 100,000 - 250,000)",
+          "Project Engineer (KSh 120,000 - 350,000)",
+          "Maintenance Manager (KSh 150,000 - 400,000)"
+        ],
+        salaryRange: "KSh 90,000 - 400,000",
+        topUniversities: ["University of Nairobi", "JKUAT", "Moi University", "Technical University of Kenya"],
+        steps: []
+      },
+      {
+        id: "electrical-engineering",
+        title: "Bachelor of Electrical Engineering",
+        duration: "5 years",
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 3: 70+ points",
+        description: "Electrical systems, power generation, and electronics",
+        careerOpportunities: [
+          "Electrical Engineer (KSh 85,000 - 270,000)",
+          "Power Systems Engineer (KSh 120,000 - 350,000)",
+          "Control Systems Engineer (KSh 100,000 - 300,000)",
+          "Telecommunications Engineer (KSh 90,000 - 280,000)"
+        ],
+        salaryRange: "KSh 85,000 - 350,000",
+        topUniversities: ["University of Nairobi", "JKUAT", "Moi University", "Technical University of Kenya"],
+        steps: []
+      },
+      {
+        id: "computer-engineering",
+        title: "Bachelor of Computer Engineering",
+        duration: "5 years",
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 3: 70+ points",
+        description: "Hardware and software integration for computing systems",
+        careerOpportunities: [
+          "Computer Engineer (KSh 80,000 - 250,000)",
+          "Systems Engineer (KSh 100,000 - 300,000)",
+          "Hardware Engineer (KSh 90,000 - 280,000)",
+          "Embedded Systems Engineer (KSh 110,000 - 320,000)"
+        ],
+        salaryRange: "KSh 80,000 - 320,000",
+        topUniversities: ["University of Nairobi", "JKUAT", "Strathmore University", "Technical University of Kenya"],
         steps: []
       }
     ]
@@ -286,6 +459,57 @@ const careerFields: CareerField[] = [
         salaryRange: "KSh 80,000 - 300,000",
         topUniversities: ["University of Nairobi", "Strathmore University", "USIU", "KCA University"],
         steps: []
+      },
+      {
+        id: "accounting",
+        title: "Bachelor of Commerce (Accounting)",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 4: 48+ points",
+        description: "Financial accounting, auditing, and business finance",
+        careerOpportunities: [
+          "Accountant (KSh 60,000 - 180,000)",
+          "Auditor (KSh 80,000 - 220,000)",
+          "Financial Analyst (KSh 90,000 - 250,000)",
+          "Chief Financial Officer (KSh 200,000 - 500,000)"
+        ],
+        salaryRange: "KSh 60,000 - 500,000",
+        topUniversities: ["University of Nairobi", "Strathmore University", "USIU", "KCA University"],
+        steps: []
+      },
+      {
+        id: "economics",
+        title: "Bachelor of Arts in Economics",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 4: 48+ points",
+        description: "Economic theory, policy analysis, and market research",
+        careerOpportunities: [
+          "Economist (KSh 70,000 - 200,000)",
+          "Policy Analyst (KSh 80,000 - 220,000)",
+          "Market Research Analyst (KSh 60,000 - 180,000)",
+          "Development Officer (KSh 90,000 - 250,000)"
+        ],
+        salaryRange: "KSh 60,000 - 250,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Strathmore University"],
+        steps: []
+      },
+      {
+        id: "finance",
+        title: "Bachelor of Science in Finance",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 4: 48+ points",
+        description: "Corporate finance, investment analysis, and banking",
+        careerOpportunities: [
+          "Financial Advisor (KSh 70,000 - 200,000)",
+          "Investment Analyst (KSh 90,000 - 280,000)",
+          "Bank Manager (KSh 120,000 - 350,000)",
+          "Portfolio Manager (KSh 150,000 - 400,000)"
+        ],
+        salaryRange: "KSh 70,000 - 400,000",
+        topUniversities: ["Strathmore University", "USIU", "University of Nairobi", "KCA University"],
+        steps: []
       }
     ]
   },
@@ -313,6 +537,57 @@ const careerFields: CareerField[] = [
         ],
         salaryRange: "KSh 70,000 - 300,000",
         topUniversities: ["University of Nairobi", "JKUAT", "Strathmore University", "KCA University"],
+        steps: []
+      },
+      {
+        id: "information-technology",
+        title: "Bachelor of Science in Information Technology",
+        duration: "4 years",
+        kcseRequirement: "B- (60+ points)",
+        clusterPoints: "Cluster 5: 60+ points",
+        description: "IT systems, network administration, and cybersecurity",
+        careerOpportunities: [
+          "IT Specialist (KSh 65,000 - 180,000)",
+          "Network Administrator (KSh 70,000 - 200,000)",
+          "Cybersecurity Analyst (KSh 90,000 - 250,000)",
+          "IT Manager (KSh 120,000 - 300,000)"
+        ],
+        salaryRange: "KSh 65,000 - 300,000",
+        topUniversities: ["Strathmore University", "JKUAT", "University of Nairobi", "KCA University"],
+        steps: []
+      },
+      {
+        id: "software-engineering",
+        title: "Bachelor of Software Engineering",
+        duration: "4 years",
+        kcseRequirement: "B- (60+ points)",
+        clusterPoints: "Cluster 5: 60+ points",
+        description: "Software development, programming, and system design",
+        careerOpportunities: [
+          "Software Developer (KSh 70,000 - 220,000)",
+          "Full Stack Developer (KSh 80,000 - 250,000)",
+          "Software Architect (KSh 120,000 - 350,000)",
+          "Technical Lead (KSh 150,000 - 400,000)"
+        ],
+        salaryRange: "KSh 70,000 - 400,000",
+        topUniversities: ["Strathmore University", "JKUAT", "University of Nairobi", "Multimedia University"],
+        steps: []
+      },
+      {
+        id: "data-science",
+        title: "Bachelor of Science in Data Science",
+        duration: "4 years",
+        kcseRequirement: "B- (60+ points)",
+        clusterPoints: "Cluster 5: 60+ points",
+        description: "Big data analytics, machine learning, and statistical analysis",
+        careerOpportunities: [
+          "Data Scientist (KSh 90,000 - 280,000)",
+          "Data Analyst (KSh 70,000 - 200,000)",
+          "Machine Learning Engineer (KSh 100,000 - 320,000)",
+          "Business Intelligence Analyst (KSh 80,000 - 240,000)"
+        ],
+        salaryRange: "KSh 70,000 - 320,000",
+        topUniversities: ["Strathmore University", "University of Nairobi", "JKUAT", "USIU"],
         steps: []
       }
     ]
@@ -342,6 +617,57 @@ const careerFields: CareerField[] = [
         salaryRange: "KSh 50,000 - 200,000",
         topUniversities: ["University of Nairobi", "Egerton University", "JKUAT", "Moi University"],
         steps: []
+      },
+      {
+        id: "agricultural-economics",
+        title: "Bachelor of Agricultural Economics",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 6: 48+ points",
+        description: "Agricultural business, farm management, and rural development",
+        careerOpportunities: [
+          "Agricultural Economist (KSh 60,000 - 180,000)",
+          "Farm Business Advisor (KSh 70,000 - 160,000)",
+          "Agricultural Credit Officer (KSh 55,000 - 140,000)",
+          "Rural Development Officer (KSh 65,000 - 170,000)"
+        ],
+        salaryRange: "KSh 55,000 - 180,000",
+        topUniversities: ["Egerton University", "University of Nairobi", "JKUAT", "Moi University"],
+        steps: []
+      },
+      {
+        id: "veterinary-medicine",
+        title: "Bachelor of Veterinary Medicine",
+        duration: "6 years",
+        kcseRequirement: "A- (80+ points)",
+        clusterPoints: "Cluster 6A: 80+ points",
+        description: "Animal health, livestock management, and veterinary practice",
+        careerOpportunities: [
+          "Veterinarian (KSh 80,000 - 250,000)",
+          "Livestock Officer (KSh 60,000 - 150,000)",
+          "Veterinary Consultant (KSh 100,000 - 300,000)",
+          "Animal Health Inspector (KSh 70,000 - 180,000)"
+        ],
+        salaryRange: "KSh 60,000 - 300,000",
+        topUniversities: ["University of Nairobi", "Egerton University"],
+        steps: []
+      },
+      {
+        id: "food-science",
+        title: "Bachelor of Food Science & Technology",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 6: 48+ points",
+        description: "Food processing, quality control, and nutrition",
+        careerOpportunities: [
+          "Food Technologist (KSh 65,000 - 180,000)",
+          "Quality Control Manager (KSh 80,000 - 220,000)",
+          "Food Safety Inspector (KSh 60,000 - 160,000)",
+          "Product Development Manager (KSh 90,000 - 250,000)"
+        ],
+        salaryRange: "KSh 60,000 - 250,000",
+        topUniversities: ["University of Nairobi", "JKUAT", "Egerton University"],
+        steps: []
       }
     ]
   },
@@ -369,6 +695,57 @@ const careerFields: CareerField[] = [
         ],
         salaryRange: "KSh 35,000 - 150,000",
         topUniversities: ["Kenyatta University", "Moi University", "Egerton University", "Maseno University"],
+        steps: []
+      },
+      {
+        id: "early-childhood-education",
+        title: "Bachelor of Early Childhood Development Education",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 7: 48+ points",
+        description: "Early childhood development and pre-primary education",
+        careerOpportunities: [
+          "ECD Teacher (KSh 30,000 - 70,000)",
+          "ECD Center Manager (KSh 50,000 - 120,000)",
+          "Child Development Specialist (KSh 60,000 - 140,000)",
+          "Education Officer (KSh 70,000 - 150,000)"
+        ],
+        salaryRange: "KSh 30,000 - 150,000",
+        topUniversities: ["Kenyatta University", "Moi University", "Mount Kenya University"],
+        steps: []
+      },
+      {
+        id: "special-needs-education",
+        title: "Bachelor of Special Needs Education",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 7: 48+ points",
+        description: "Education for learners with special needs and disabilities",
+        careerOpportunities: [
+          "Special Needs Teacher (KSh 40,000 - 90,000)",
+          "Special Education Coordinator (KSh 60,000 - 130,000)",
+          "Rehabilitation Specialist (KSh 70,000 - 160,000)",
+          "Inclusive Education Consultant (KSh 80,000 - 180,000)"
+        ],
+        salaryRange: "KSh 40,000 - 180,000",
+        topUniversities: ["Kenyatta University", "Moi University", "Maseno University"],
+        steps: []
+      },
+      {
+        id: "educational-psychology",
+        title: "Bachelor of Educational Psychology",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 7: 48+ points",
+        description: "Psychology applied to learning and educational settings",
+        careerOpportunities: [
+          "Educational Psychologist (KSh 70,000 - 180,000)",
+          "School Counselor (KSh 50,000 - 120,000)",
+          "Learning Support Specialist (KSh 60,000 - 150,000)",
+          "Educational Consultant (KSh 80,000 - 200,000)"
+        ],
+        salaryRange: "KSh 50,000 - 200,000",
+        topUniversities: ["Kenyatta University", "University of Nairobi", "Moi University"],
         steps: []
       }
     ]
@@ -398,6 +775,119 @@ const careerFields: CareerField[] = [
         salaryRange: "KSh 40,000 - 200,000",
         topUniversities: ["University of Nairobi", "Kenyatta University", "Technical University of Kenya"],
         steps: []
+      },
+      {
+        id: "journalism",
+        title: "Bachelor of Arts in Journalism",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 8: 48+ points",
+        description: "Media, broadcasting, and digital journalism",
+        careerOpportunities: [
+          "Journalist (KSh 45,000 - 120,000)",
+          "News Anchor (KSh 80,000 - 250,000)",
+          "Media Producer (KSh 60,000 - 180,000)",
+          "Editor (KSh 70,000 - 200,000)"
+        ],
+        salaryRange: "KSh 45,000 - 250,000",
+        topUniversities: ["University of Nairobi", "Moi University", "Daystar University"],
+        steps: []
+      },
+      {
+        id: "film-production",
+        title: "Bachelor of Film and Television Production",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 8: 48+ points",
+        description: "Film making, video production, and digital media",
+        careerOpportunities: [
+          "Film Director (KSh 60,000 - 200,000)",
+          "Video Producer (KSh 50,000 - 150,000)",
+          "Cinematographer (KSh 70,000 - 180,000)",
+          "Film Editor (KSh 55,000 - 140,000)"
+        ],
+        salaryRange: "KSh 50,000 - 200,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "USIU"],
+        steps: []
+      },
+      {
+        id: "graphic-design",
+        title: "Bachelor of Graphic Design",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 8: 48+ points",
+        description: "Visual communication, branding, and digital design",
+        careerOpportunities: [
+          "Graphic Designer (KSh 40,000 - 120,000)",
+          "Brand Designer (KSh 60,000 - 160,000)",
+          "UI/UX Designer (KSh 70,000 - 200,000)",
+          "Creative Director (KSh 100,000 - 250,000)"
+        ],
+        salaryRange: "KSh 40,000 - 250,000",
+        topUniversities: ["University of Nairobi", "Technical University of Kenya", "USIU"],
+        steps: []
+      }
+    ]
+  },
+  {
+    id: "social-sciences",
+    title: "Social Sciences & Humanities",
+    icon: Users,
+    description: "Understanding society, culture, and human behavior",
+    color: "bg-indigo-50 border-indigo-200 text-indigo-800",
+    marketDemand: "Medium",
+    averageSalary: "KSh 40,000 - 180,000",
+    courses: [
+      {
+        id: "psychology",
+        title: "Bachelor of Arts in Psychology",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 9: 48+ points",
+        description: "Human behavior, mental health, and psychological research",
+        careerOpportunities: [
+          "Psychologist (KSh 60,000 - 180,000)",
+          "Counselor (KSh 50,000 - 130,000)",
+          "Human Resources Specialist (KSh 70,000 - 160,000)",
+          "Research Analyst (KSh 65,000 - 150,000)"
+        ],
+        salaryRange: "KSh 50,000 - 180,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University", "USIU"],
+        steps: []
+      },
+      {
+        id: "sociology",
+        title: "Bachelor of Arts in Sociology",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 9: 48+ points",
+        description: "Society, social institutions, and community development",
+        careerOpportunities: [
+          "Social Worker (KSh 45,000 - 120,000)",
+          "Community Development Officer (KSh 55,000 - 140,000)",
+          "Social Researcher (KSh 60,000 - 150,000)",
+          "NGO Program Manager (KSh 80,000 - 200,000)"
+        ],
+        salaryRange: "KSh 45,000 - 200,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University"],
+        steps: []
+      },
+      {
+        id: "political-science",
+        title: "Bachelor of Arts in Political Science",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 9: 48+ points",
+        description: "Government, politics, and public administration",
+        careerOpportunities: [
+          "Political Analyst (KSh 60,000 - 160,000)",
+          "Public Administrator (KSh 70,000 - 180,000)",
+          "Diplomat (KSh 100,000 - 300,000)",
+          "Policy Researcher (KSh 65,000 - 170,000)"
+        ],
+        salaryRange: "KSh 60,000 - 300,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University"],
+        steps: []
       }
     ]
   }
@@ -409,17 +899,23 @@ const CareerPaths = () => {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'overview' | 'course-detail'>('overview');
+  const [demandFilter, setDemandFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
 
   const currentField = careerFields.find(field => field.id === selectedField);
-  const currentCourse = currentField?.courses.find(course => course.id === selectedCourse);
+  const currentCourse = selectedCourse ? 
+    careerFields.flatMap(field => field.courses).find(course => course.id === selectedCourse) : null;
 
-  const filteredFields = careerFields.filter(field =>
-    field.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    field.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    field.courses.some(course => 
-      course.title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const filteredFields = careerFields.filter(field => {
+    const matchesSearch = field.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      field.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      field.courses.some(course => 
+        course.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    
+    const matchesDemand = demandFilter === 'All' || field.marketDemand === demandFilter;
+    
+    return matchesSearch && matchesDemand;
+  });
 
   const handleCourseSelect = (courseId: string) => {
     setSelectedCourse(courseId);
@@ -429,6 +925,15 @@ const CareerPaths = () => {
   const handleBackToOverview = () => {
     setSelectedCourse(null);
     setViewMode('overview');
+  };
+
+  const handleBackToTop = () => {
+    setSelectedCourse(null);
+    // Smooth scroll back to top
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
   };
 
   const getDemandColor = (demand: string) => {
@@ -631,15 +1136,67 @@ const CareerPaths = () => {
           Explore comprehensive career roadmaps based on Kenya's education system and job market
         </p>
         
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search career fields or courses..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        {/* Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-primary">{careerFields.length}</p>
+            <p className="text-xs text-muted-foreground">Career Fields</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-primary">
+              {careerFields.reduce((total, field) => total + field.courses.length, 0)}
+            </p>
+            <p className="text-xs text-muted-foreground">Total Courses</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-primary">
+              {careerFields.filter(field => field.marketDemand === 'High').length}
+            </p>
+            <p className="text-xs text-muted-foreground">High Demand Fields</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-primary">C+ to A-</p>
+            <p className="text-xs text-muted-foreground">KCSE Range</p>
+          </div>
+        </div>
+        
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search career fields or courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant={demandFilter === 'All' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDemandFilter('All')}
+            >
+              All Fields
+            </Button>
+            <Button
+              variant={demandFilter === 'High' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDemandFilter('High')}
+              className="text-green-700 border-green-200 hover:bg-green-50"
+            >
+              High Demand
+            </Button>
+            <Button
+              variant={demandFilter === 'Medium' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDemandFilter('Medium')}
+              className="text-yellow-700 border-yellow-200 hover:bg-yellow-50"
+            >
+              Medium
+            </Button>
+          </div>
         </div>
       </div>
 
