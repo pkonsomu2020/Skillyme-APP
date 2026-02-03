@@ -87,68 +87,88 @@ const careerFields: CareerField[] = [
         clusterPoints: "Cluster 2A: 84+ points",
         description: "Comprehensive medical training to become a licensed doctor in Kenya",
         careerOpportunities: [
-          "Medical Doctor (KSh 200,000 - 500,000)",
-          "Specialist Consultant (KSh 300,000 - 800,000)",
-          "Medical Researcher (KSh 150,000 - 400,000)",
-          "Public Health Officer (KSh 120,000 - 300,000)"
+          "Medical Intern (KSh 100,000 - 150,000)",
+          "Medical Officer (KSh 200,000 - 350,000)",
+          "Senior Medical Officer (KSh 300,000 - 450,000)",
+          "Consultant Specialist (KSh 400,000 - 700,000)",
+          "Senior Consultant (KSh 600,000 - 1,000,000)",
+          "Chief Medical Officer (KSh 800,000 - 1,500,000+)"
         ],
         salaryRange: "KSh 200,000 - 500,000+",
         topUniversities: ["University of Nairobi", "Moi University", "Kenyatta University", "Egerton University"],
         steps: [
           {
-            title: "KCSE Excellence",
+            title: "Pre-Medical Foundation",
             duration: "Form 4",
-            description: "Achieve exceptional grades in science subjects for medical school entry",
+            description: "Excel in science subjects and build strong foundation for medical school admission",
             requirements: [
-              "KCSE Mean Grade A- (84+ points)",
-              "Biology A (12 points)",
-              "Chemistry A (12 points)", 
-              "Physics/Mathematics A- (11+ points)",
-              "English/Kiswahili B+ (10+ points)"
+              "KCSE Mean Grade A- (84+ points) - Highly competitive",
+              "Biology A (12 points) - Essential for medical sciences",
+              "Chemistry A (12 points) - Biochemistry foundation", 
+              "Physics/Mathematics A- (11+ points) - Scientific reasoning",
+              "English/Kiswahili B+ (10+ points) - Communication skills"
             ],
-            keySkills: ["Scientific reasoning", "Critical thinking", "Academic excellence"],
+            keySkills: ["Scientific reasoning", "Critical thinking", "Academic excellence", "Time management", "Stress resilience"],
             kcseGrade: "A- (84+ points)",
             clusterPoints: "Cluster 2A: 84+"
           },
           {
-            title: "Medical School",
-            duration: "6 years",
-            description: "Intensive medical education combining theory and clinical practice",
+            title: "Medical School - Pre-Clinical Years",
+            duration: "3 years",
+            description: "Intensive study of basic medical sciences including anatomy, physiology, and pathology",
             requirements: [
-              "Complete pre-clinical studies (3 years)",
-              "Clinical rotations (3 years)",
-              "Pass all medical examinations",
-              "Complete internship requirements"
+              "Master human anatomy and physiology",
+              "Understand disease processes (pathology)",
+              "Learn pharmacology and therapeutics",
+              "Develop clinical reasoning skills",
+              "Pass comprehensive examinations"
             ],
-            keySkills: ["Medical knowledge", "Patient care", "Clinical skills", "Communication"],
+            keySkills: ["Medical knowledge", "Scientific analysis", "Memory and retention", "Study discipline", "Peer collaboration"],
             kcseGrade: "Maintained throughout",
             clusterPoints: "University performance"
           },
           {
-            title: "Medical Internship",
-            duration: "1 year",
-            description: "Supervised clinical practice in Kenyan hospitals",
+            title: "Medical School - Clinical Years",
+            duration: "3 years",
+            description: "Hands-on patient care experience through clinical rotations in major medical specialties",
             requirements: [
-              "Register with Medical Practitioners Board",
-              "Complete rotations in major departments",
-              "Pass internship assessments",
-              "Maintain professional standards"
+              "Complete rotations: Internal Medicine, Surgery, Pediatrics",
+              "Obstetrics & Gynecology, Psychiatry rotations",
+              "Community health and family medicine exposure",
+              "Develop patient communication skills",
+              "Pass clinical assessments and OSCEs"
             ],
-            keySkills: ["Practical medicine", "Patient management", "Professional ethics"],
+            keySkills: ["Patient care", "Clinical examination", "Medical procedures", "Communication", "Professional ethics", "Teamwork"],
             kcseGrade: "N/A",
             clusterPoints: "N/A"
           },
           {
-            title: "Medical Practice/Specialization",
-            duration: "3-5 years (specialization)",
-            description: "Begin practice or pursue specialization in chosen field",
+            title: "Medical Internship",
+            duration: "1 year",
+            description: "Supervised clinical practice in Kenyan hospitals under senior physician guidance",
             requirements: [
-              "Obtain medical license",
-              "Choose specialization (optional)",
-              "Complete residency training",
-              "Continuous professional development"
+              "Register with Medical Practitioners and Dentists Council",
+              "Complete rotations in major departments",
+              "Demonstrate clinical competency",
+              "Pass internship assessments",
+              "Maintain professional and ethical standards"
             ],
-            keySkills: ["Specialized expertise", "Leadership", "Research", "Teaching"],
+            keySkills: ["Practical medicine", "Patient management", "Emergency care", "Professional responsibility", "Clinical decision-making"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Medical Practice & Specialization",
+            duration: "3-7 years (if specializing)",
+            description: "Begin independent practice or pursue specialization through residency programs",
+            requirements: [
+              "Obtain full medical license from MPDC",
+              "Choose between general practice or specialization",
+              "Complete residency training (if specializing)",
+              "Maintain continuous professional development",
+              "Consider fellowship for subspecialization"
+            ],
+            keySkills: ["Specialized medical expertise", "Leadership", "Research capabilities", "Teaching abilities", "Healthcare management"],
             kcseGrade: "N/A",
             clusterPoints: "N/A"
           }
@@ -268,69 +288,89 @@ const careerFields: CareerField[] = [
         clusterPoints: "Cluster 1: 70+ points",
         description: "Comprehensive legal education for practice in Kenyan courts",
         careerOpportunities: [
-          "Advocate/Lawyer (KSh 80,000 - 300,000)",
-          "Corporate Counsel (KSh 120,000 - 400,000)",
-          "Magistrate/Judge (KSh 200,000 - 600,000)",
-          "Legal Advisor (KSh 100,000 - 250,000)"
+          "Pupil Advocate/Junior Associate (KSh 60,000 - 100,000)",
+          "Associate Lawyer (KSh 100,000 - 200,000)",
+          "Senior Associate (KSh 200,000 - 350,000)",
+          "Partner/Senior Counsel (KSh 400,000 - 800,000)",
+          "Judge/Magistrate (KSh 500,000 - 1,200,000)",
+          "Chief Justice/Attorney General (KSh 1,000,000+)"
         ],
         salaryRange: "KSh 80,000 - 300,000+",
         topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University", "Strathmore University"],
         steps: [
           {
-            title: "KCSE Achievement",
+            title: "KCSE Achievement & Pre-Law Preparation",
             duration: "Form 4",
-            description: "Strong academic performance across subjects for law school",
+            description: "Excel academically while developing critical thinking and communication skills essential for legal studies",
             requirements: [
               "KCSE Mean Grade B+ (70+ points)",
-              "English A- (11+ points)",
-              "Kiswahili B+ (10+ points)",
-              "Mathematics B (9+ points)",
-              "Any other subject B+ (10+ points)"
+              "English A- (11+ points) - Critical for legal writing",
+              "Kiswahili B+ (10+ points) - Local legal context",
+              "Mathematics B (9+ points) - Logical reasoning",
+              "History/Government B+ (10+ points) - Legal foundation"
             ],
-            keySkills: ["Critical thinking", "Communication", "Analysis", "Writing"],
+            keySkills: ["Critical thinking", "Analytical writing", "Public speaking", "Research abilities", "Logical argumentation"],
             kcseGrade: "B+ (70+ points)",
             clusterPoints: "Cluster 1: 70+"
           },
           {
-            title: "Law School",
+            title: "Law School (LL.B Program)",
             duration: "4 years",
-            description: "Comprehensive legal education covering Kenyan and international law",
+            description: "Comprehensive legal education covering Kenyan law, international law, and legal practice",
             requirements: [
-              "Complete LL.B curriculum",
-              "Constitutional Law, Contract Law, Tort Law",
-              "Criminal Law, Commercial Law",
-              "Legal research and writing",
-              "Moot court participation"
+              "Master Constitutional Law and Human Rights",
+              "Study Contract Law, Tort Law, and Criminal Law",
+              "Learn Commercial Law and Company Law",
+              "Understand Land Law and Family Law",
+              "Complete legal research and writing courses",
+              "Participate in moot court competitions"
             ],
-            keySkills: ["Legal research", "Case analysis", "Oral advocacy", "Legal writing"],
+            keySkills: ["Legal research and analysis", "Case law interpretation", "Legal writing", "Oral advocacy", "Client counseling", "Professional ethics"],
             kcseGrade: "Maintained performance",
             clusterPoints: "University requirements"
           },
           {
             title: "Kenya School of Law",
             duration: "1 year",
-            description: "Postgraduate diploma for admission to the bar",
+            description: "Postgraduate diploma focusing on practical legal skills and Kenyan legal practice",
             requirements: [
-              "Complete Postgraduate Diploma in Law",
-              "Practical legal training",
-              "Court attachments",
-              "Legal clinic work"
+              "Complete Postgraduate Diploma in Law (PGDL)",
+              "Practical legal training and advocacy skills",
+              "Court attachments and legal clinic work",
+              "Professional conduct and ethics training",
+              "Pass comprehensive bar examinations"
             ],
-            keySkills: ["Practical law", "Client handling", "Court procedures"],
+            keySkills: ["Practical legal skills", "Court procedures", "Client handling", "Legal drafting", "Advocacy techniques", "Professional responsibility"],
             kcseGrade: "N/A",
             clusterPoints: "N/A"
           },
           {
             title: "Admission to the Bar",
             duration: "6 months",
-            description: "Admission as an Advocate of the High Court of Kenya",
+            description: "Complete admission process to become an Advocate of the High Court of Kenya",
             requirements: [
-              "Pass Kenya School of Law exams",
-              "Character and fitness evaluation",
-              "Law Society of Kenya membership",
-              "Practicing certificate"
+              "Pass Kenya School of Law final examinations",
+              "Character and fitness evaluation by Law Society",
+              "Take oath of office before High Court Judge",
+              "Obtain practicing certificate from LSK",
+              "Complete mandatory continuing legal education"
             ],
-            keySkills: ["Professional ethics", "Legal practice", "Client relations"],
+            keySkills: ["Professional ethics", "Legal practice management", "Client relations", "Business development", "Regulatory compliance"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Legal Practice & Career Development",
+            duration: "Ongoing",
+            description: "Build legal career through practice experience, specialization, and professional growth",
+            requirements: [
+              "Join law firm or establish solo practice",
+              "Develop expertise in chosen legal areas",
+              "Build client base and professional network",
+              "Pursue specialization certifications",
+              "Consider judicial or academic career paths"
+            ],
+            keySkills: ["Specialized legal expertise", "Business development", "Leadership", "Mentoring", "Strategic thinking", "Industry knowledge"],
             kcseGrade: "N/A",
             clusterPoints: "N/A"
           }
@@ -460,46 +500,64 @@ const careerFields: CareerField[] = [
         topUniversities: ["University of Nairobi", "Strathmore University", "USIU", "KCA University"],
         steps: [
           {
-            title: "KCSE Achievement",
+            title: "KCSE Achievement & Business Foundation",
             duration: "Form 4",
-            description: "Meet minimum requirements for business studies admission",
+            description: "Meet minimum requirements while developing business acumen and leadership potential",
             requirements: [
               "KCSE Mean Grade C+ (48+ points)",
-              "Mathematics C+ (7+ points)",
-              "English C+ (7+ points)",
-              "Kiswahili C+ (7+ points)",
-              "Any other subject C+ (7+ points)"
+              "Mathematics C+ (7+ points) - Business calculations",
+              "English C+ (7+ points) - Communication skills",
+              "Kiswahili C+ (7+ points) - Local market understanding",
+              "Business Studies/Economics B (9+ points) - Preferred"
             ],
-            keySkills: ["Numerical skills", "Communication", "Critical thinking", "Leadership potential"],
+            keySkills: ["Numerical skills", "Communication", "Critical thinking", "Leadership potential", "Analytical reasoning"],
             kcseGrade: "C+ (48+ points)",
             clusterPoints: "Cluster 4: 48+"
           },
           {
             title: "Business Degree Program",
             duration: "4 years",
-            description: "Comprehensive business education covering all aspects of management",
+            description: "Comprehensive business education covering management, finance, marketing, and operations",
             requirements: [
-              "Complete business core subjects",
-              "Management, Marketing, Finance, HR",
-              "Business law and economics",
-              "Internship/attachment program",
-              "Business plan project"
+              "Master core business subjects: Management, Marketing",
+              "Financial Management and Accounting principles",
+              "Human Resource Management and Organizational Behavior",
+              "Business Law, Economics, and Statistics",
+              "Strategic Management and Business Ethics",
+              "Complete internship/industrial attachment",
+              "Develop business plan or capstone project"
             ],
-            keySkills: ["Business analysis", "Strategic thinking", "Leadership", "Financial literacy"],
+            keySkills: ["Business analysis", "Strategic thinking", "Financial literacy", "Leadership", "Project management", "Team collaboration"],
             kcseGrade: "Maintained performance",
             clusterPoints: "University requirements"
           },
           {
-            title: "Professional Development",
-            duration: "Ongoing",
-            description: "Build career through experience and professional certifications",
+            title: "Entry-Level Management",
+            duration: "2-3 years",
+            description: "Start career in management trainee or junior management positions",
             requirements: [
-              "Entry-level management position",
-              "Professional certifications (CPA, CHRM)",
-              "Networking and industry connections",
-              "Continuous professional development"
+              "Secure management trainee position",
+              "Learn industry-specific operations",
+              "Develop practical management skills",
+              "Build professional network",
+              "Consider professional certifications (CIM, CHRM)"
             ],
-            keySkills: ["Management", "Business development", "Networking", "Professional ethics"],
+            keySkills: ["Operational management", "Team leadership", "Customer relations", "Process improvement", "Performance management"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Professional Development & Specialization",
+            duration: "Ongoing",
+            description: "Advance to senior management through experience and specialized expertise",
+            requirements: [
+              "Pursue advanced certifications (MBA, CPA, CHRM)",
+              "Specialize in specific business areas",
+              "Take on larger management responsibilities",
+              "Develop strategic business thinking",
+              "Build industry expertise and reputation"
+            ],
+            keySkills: ["Strategic management", "Business development", "Financial planning", "Organizational leadership", "Innovation management"],
             kcseGrade: "N/A",
             clusterPoints: "N/A"
           }
@@ -575,55 +633,89 @@ const careerFields: CareerField[] = [
         clusterPoints: "Cluster 5: 60+ points",
         description: "Software development and computer systems",
         careerOpportunities: [
-          "Software Developer (KSh 70,000 - 200,000)",
-          "Systems Analyst (KSh 80,000 - 180,000)",
-          "IT Manager (KSh 120,000 - 300,000)",
-          "Data Scientist (KSh 100,000 - 250,000)"
+          "Junior Software Developer (KSh 70,000 - 120,000)",
+          "Mid-Level Software Engineer (KSh 120,000 - 200,000)",
+          "Senior Software Engineer (KSh 200,000 - 350,000)",
+          "Technical Lead/Architect (KSh 300,000 - 500,000)",
+          "Engineering Manager (KSh 400,000 - 600,000)",
+          "CTO/VP Engineering (KSh 500,000 - 1,000,000+)"
         ],
         salaryRange: "KSh 70,000 - 300,000",
         topUniversities: ["University of Nairobi", "JKUAT", "Strathmore University", "KCA University"],
         steps: [
           {
-            title: "KCSE Excellence",
+            title: "KCSE Excellence & Foundation Building",
             duration: "Form 4",
-            description: "Achieve strong grades in mathematics and sciences for computer science admission",
+            description: "Achieve strong grades in mathematics and sciences while building foundational programming knowledge",
             requirements: [
               "KCSE Mean Grade B- (60+ points)",
-              "Mathematics B+ (10+ points)",
-              "Physics B (9+ points)",
+              "Mathematics B+ (10+ points) - Essential for algorithms",
+              "Physics B (9+ points) - Logic and problem-solving",
               "Chemistry/Biology B (9+ points)",
-              "English B+ (10+ points)"
+              "English B+ (10+ points) - Technical communication"
             ],
-            keySkills: ["Mathematical reasoning", "Logical thinking", "Problem-solving", "English proficiency"],
+            keySkills: ["Mathematical reasoning", "Logical thinking", "Problem-solving", "Basic programming concepts", "English proficiency"],
             kcseGrade: "B- (60+ points)",
             clusterPoints: "Cluster 5: 60+"
           },
           {
             title: "University Computer Science Program",
             duration: "4 years",
-            description: "Comprehensive computer science education with programming and system design",
+            description: "Comprehensive computer science education covering programming, algorithms, and system design",
             requirements: [
-              "Complete core CS curriculum",
-              "Programming languages (Java, Python, C++)",
-              "Data structures and algorithms",
-              "Database systems and software engineering",
-              "Final year project"
+              "Master core programming languages (Java, Python, C++)",
+              "Data structures and algorithms proficiency",
+              "Database systems and software engineering principles",
+              "Computer systems architecture and networks",
+              "Final year project with real-world application",
+              "Internship or industrial attachment"
             ],
-            keySkills: ["Programming", "Software development", "System analysis", "Database design"],
+            keySkills: ["Programming proficiency", "Software development lifecycle", "System analysis", "Database design", "Version control (Git)", "Agile methodologies"],
             kcseGrade: "Maintained performance",
             clusterPoints: "University requirements"
           },
           {
-            title: "Industry Experience & Specialization",
+            title: "Junior Developer (Entry Level)",
             duration: "1-2 years",
-            description: "Gain practical experience through internships and entry-level positions",
+            description: "Start career as junior developer, gaining practical experience and building professional skills",
             requirements: [
-              "Complete internship programs",
-              "Build portfolio of projects",
-              "Learn industry tools and frameworks",
-              "Obtain relevant certifications"
+              "Complete coding bootcamps or certifications",
+              "Build portfolio of personal projects",
+              "Learn industry-standard frameworks and tools",
+              "Participate in open-source projects",
+              "Develop soft skills: teamwork, communication"
             ],
-            keySkills: ["Industry tools", "Team collaboration", "Project management", "Continuous learning"],
+            keySkills: ["Industry tools and frameworks", "Code review processes", "Team collaboration", "Testing and debugging", "Technical documentation", "Continuous learning"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Mid-Level Developer",
+            duration: "2-4 years",
+            description: "Advance to mid-level with increased responsibilities and technical leadership opportunities",
+            requirements: [
+              "2-4 years professional experience",
+              "Lead small projects or features",
+              "Mentor junior developers",
+              "Contribute to architectural decisions",
+              "Specialize in specific technologies or domains"
+            ],
+            keySkills: ["System design", "Performance optimization", "Security best practices", "Project management", "Technical leadership", "Cross-functional collaboration"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Senior Developer & Specialization",
+            duration: "Ongoing",
+            description: "Become senior engineer, tech lead, or specialize in high-demand areas like AI, cloud, or cybersecurity",
+            requirements: [
+              "5+ years professional experience",
+              "Deep technical expertise in chosen specialization",
+              "Leadership and mentoring capabilities",
+              "Strategic thinking and business acumen",
+              "Industry recognition and networking"
+            ],
+            keySkills: ["Advanced system architecture", "Team leadership", "Technology strategy", "Innovation and R&D", "Business alignment", "Industry expertise"],
             kcseGrade: "N/A",
             clusterPoints: "N/A"
           }
