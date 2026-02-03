@@ -19,8 +19,8 @@ const menuItems = [
   { title: "Sessions", url: "/dashboard/sessions", icon: Video },
   { title: "Assignments", url: "/dashboard/assignments", icon: FileText },
   { title: "Leaderboard", url: "/dashboard/leaderboard", icon: Trophy },
-  { title: "Find Recruiters", url: "/dashboard/find-recruiters", icon: Search },
-  { title: "Community", url: "/dashboard/community", icon: MessageSquare },
+  // { title: "Find Recruiters", url: "/dashboard/find-recruiters", icon: Search }, // Hidden for now - will be used later
+  // { title: "Community", url: "/dashboard/community", icon: MessageSquare }, // Hidden for now - will be used later
   { title: "Contact", url: "/dashboard/contact", icon: Phone },
 ];
 
