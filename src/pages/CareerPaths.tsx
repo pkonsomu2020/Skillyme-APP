@@ -458,7 +458,52 @@ const careerFields: CareerField[] = [
         ],
         salaryRange: "KSh 80,000 - 300,000",
         topUniversities: ["University of Nairobi", "Strathmore University", "USIU", "KCA University"],
-        steps: []
+        steps: [
+          {
+            title: "KCSE Achievement",
+            duration: "Form 4",
+            description: "Meet minimum requirements for business studies admission",
+            requirements: [
+              "KCSE Mean Grade C+ (48+ points)",
+              "Mathematics C+ (7+ points)",
+              "English C+ (7+ points)",
+              "Kiswahili C+ (7+ points)",
+              "Any other subject C+ (7+ points)"
+            ],
+            keySkills: ["Numerical skills", "Communication", "Critical thinking", "Leadership potential"],
+            kcseGrade: "C+ (48+ points)",
+            clusterPoints: "Cluster 4: 48+"
+          },
+          {
+            title: "Business Degree Program",
+            duration: "4 years",
+            description: "Comprehensive business education covering all aspects of management",
+            requirements: [
+              "Complete business core subjects",
+              "Management, Marketing, Finance, HR",
+              "Business law and economics",
+              "Internship/attachment program",
+              "Business plan project"
+            ],
+            keySkills: ["Business analysis", "Strategic thinking", "Leadership", "Financial literacy"],
+            kcseGrade: "Maintained performance",
+            clusterPoints: "University requirements"
+          },
+          {
+            title: "Professional Development",
+            duration: "Ongoing",
+            description: "Build career through experience and professional certifications",
+            requirements: [
+              "Entry-level management position",
+              "Professional certifications (CPA, CHRM)",
+              "Networking and industry connections",
+              "Continuous professional development"
+            ],
+            keySkills: ["Management", "Business development", "Networking", "Professional ethics"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          }
+        ]
       },
       {
         id: "accounting",
@@ -537,7 +582,52 @@ const careerFields: CareerField[] = [
         ],
         salaryRange: "KSh 70,000 - 300,000",
         topUniversities: ["University of Nairobi", "JKUAT", "Strathmore University", "KCA University"],
-        steps: []
+        steps: [
+          {
+            title: "KCSE Excellence",
+            duration: "Form 4",
+            description: "Achieve strong grades in mathematics and sciences for computer science admission",
+            requirements: [
+              "KCSE Mean Grade B- (60+ points)",
+              "Mathematics B+ (10+ points)",
+              "Physics B (9+ points)",
+              "Chemistry/Biology B (9+ points)",
+              "English B+ (10+ points)"
+            ],
+            keySkills: ["Mathematical reasoning", "Logical thinking", "Problem-solving", "English proficiency"],
+            kcseGrade: "B- (60+ points)",
+            clusterPoints: "Cluster 5: 60+"
+          },
+          {
+            title: "University Computer Science Program",
+            duration: "4 years",
+            description: "Comprehensive computer science education with programming and system design",
+            requirements: [
+              "Complete core CS curriculum",
+              "Programming languages (Java, Python, C++)",
+              "Data structures and algorithms",
+              "Database systems and software engineering",
+              "Final year project"
+            ],
+            keySkills: ["Programming", "Software development", "System analysis", "Database design"],
+            kcseGrade: "Maintained performance",
+            clusterPoints: "University requirements"
+          },
+          {
+            title: "Industry Experience & Specialization",
+            duration: "1-2 years",
+            description: "Gain practical experience through internships and entry-level positions",
+            requirements: [
+              "Complete internship programs",
+              "Build portfolio of projects",
+              "Learn industry tools and frameworks",
+              "Obtain relevant certifications"
+            ],
+            keySkills: ["Industry tools", "Team collaboration", "Project management", "Continuous learning"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          }
+        ]
       },
       {
         id: "information-technology",
@@ -904,6 +994,8 @@ const CareerPaths = () => {
   const currentField = careerFields.find(field => field.id === selectedField);
   const currentCourse = selectedCourse ? 
     careerFields.flatMap(field => field.courses).find(course => course.id === selectedCourse) : null;
+  const currentCourseField = selectedCourse ? 
+    careerFields.find(field => field.courses.some(course => course.id === selectedCourse)) : null;
 
   const filteredFields = careerFields.filter(field => {
     const matchesSearch = field.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -920,6 +1012,8 @@ const CareerPaths = () => {
   const handleCourseSelect = (courseId: string) => {
     setSelectedCourse(courseId);
     setViewMode('course-detail');
+    // Scroll to top when showing course details
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToOverview = () => {
@@ -945,11 +1039,20 @@ const CareerPaths = () => {
     }
   };
 
-  if (viewMode === 'course-detail' && currentCourse) {
+  if (viewMode === 'course-detail' && currentCourse && currentCourseField) {
     return (
       <div className="p-3 md:p-8">
         {/* Course Detail Header */}
         <div className="mb-6">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <span>Career Paths</span>
+            <ChevronRight className="w-4 h-4" />
+            <span>{currentCourseField?.title}</span>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-foreground font-medium">{currentCourse.title}</span>
+          </div>
+          
           <Button 
             variant="ghost" 
             onClick={handleBackToOverview}
@@ -961,7 +1064,7 @@ const CareerPaths = () => {
           
           <div className="flex items-start gap-4 mb-6">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-              {currentField && <currentField.icon className="w-8 h-8 text-primary" />}
+              {currentCourseField && <currentCourseField.icon className="w-8 h-8 text-primary" />}
             </div>
             <div className="flex-1">
               <h1 className="text-2xl md:text-3xl font-bold mb-2">{currentCourse.title}</h1>
@@ -1040,7 +1143,7 @@ const CareerPaths = () => {
         </div>
 
         {/* Career Roadmap */}
-        {currentCourse.steps.length > 0 && (
+        {currentCourse.steps.length > 0 ? (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1101,6 +1204,80 @@ const CareerPaths = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-orange-600" />
+                General Career Path
+              </CardTitle>
+              <CardDescription>
+                Standard progression for {currentCourse.title}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-bold">1</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2">KCSE Preparation</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Achieve the required KCSE grade of {currentCourse.kcseRequirement} to qualify for university admission.
+                    </p>
+                    <Badge variant="outline" className="text-xs">
+                      {currentCourse.clusterPoints}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-bold">2</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2">University Education</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Complete your {currentCourse.duration} degree program at one of Kenya's top universities.
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {currentCourse.topUniversities.slice(0, 3).map((uni, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {uni}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-bold">3</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2">Career Development</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Start your career and grow through experience, with salary potential of {currentCourse.salaryRange}.
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {currentCourse.careerOpportunities.slice(0, 2).map((opportunity, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {opportunity.split(' (')[0]}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1266,21 +1443,33 @@ const CareerPaths = () => {
           </CardHeader>
           
           <CardContent>
-            <h3 className="font-semibold mb-4">Available Courses</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Available Courses</h3>
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                💡 Click any course for detailed information
+              </Badge>
+            </div>
             <div className="grid gap-4">
               {currentField.courses.map((course) => (
                 <Card 
                   key={course.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-primary/20 hover:border-l-primary"
                   onClick={() => handleCourseSelect(course.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-base mb-1">{course.title}</h4>
+                        <h4 className="font-semibold text-base mb-1 text-primary hover:text-primary/80">
+                          {course.title}
+                        </h4>
                         <p className="text-sm text-muted-foreground mb-2">{course.description}</p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" />
+                      <div className="flex items-center gap-2 ml-2">
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                          Click for Details
+                        </Badge>
+                        <ChevronRight className="w-5 h-5 text-primary flex-shrink-0" />
+                      </div>
                     </div>
                     
                     <div className="flex flex-wrap gap-2 mb-3">
