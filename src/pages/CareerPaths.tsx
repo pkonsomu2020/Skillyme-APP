@@ -1377,15 +1377,44 @@ const CareerPaths = () => {
         </div>
       </div>
 
+      {/* User Guide */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-blue-600 font-bold text-sm">💡</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-blue-900">How to explore careers:</p>
+            <p className="text-xs text-blue-700">
+              1. Click on any career field above to see available courses
+              2. Click on specific courses for detailed requirements and roadmaps
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Career Fields Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="career-fields-grid">
         {filteredFields.map((field) => (
           <Card 
             key={field.id}
             className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
               selectedField === field.id ? 'ring-2 ring-primary shadow-lg' : ''
             }`}
-            onClick={() => setSelectedField(field.id)}
+            onClick={() => {
+              setSelectedField(field.id);
+              // Scroll to the selected field details section
+              setTimeout(() => {
+                const detailsSection = document.getElementById('selected-field-details');
+                if (detailsSection) {
+                  detailsSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                  });
+                }
+              }, 100);
+            }}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -1404,9 +1433,14 @@ const CareerPaths = () => {
             </CardHeader>
             <CardContent className="pt-0">
               <p className="text-sm text-muted-foreground mb-3">{field.description}</p>
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs mb-2">
                 <span className="font-medium text-green-600">{field.averageSalary}</span>
                 <span className="text-muted-foreground">{field.courses.length} courses</span>
+              </div>
+              <div className="flex items-center justify-center pt-2 border-t border-border/50">
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                  👆 Click to explore courses
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -1415,8 +1449,16 @@ const CareerPaths = () => {
 
       {/* Selected Field Details */}
       {currentField && (
-        <Card>
-          <CardHeader>
+        <div className="relative">
+          {/* Scroll indicator */}
+          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
+            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-bounce">
+              📍 {currentField.title} Details
+            </div>
+          </div>
+          
+          <Card id="selected-field-details">
+            <CardHeader>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <currentField.icon className="w-6 h-6 text-primary" />
@@ -1454,7 +1496,13 @@ const CareerPaths = () => {
                 <Card 
                   key={course.id}
                   className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-primary/20 hover:border-l-primary"
-                  onClick={() => handleCourseSelect(course.id)}
+                  onClick={() => {
+                    handleCourseSelect(course.id);
+                    // Additional scroll to course details after state update
+                    setTimeout(() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 150);
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
@@ -1498,6 +1546,7 @@ const CareerPaths = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
     </div>
   );
