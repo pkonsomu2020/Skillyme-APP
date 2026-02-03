@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   GraduationCap, 
   Stethoscope, 
@@ -17,7 +18,21 @@ import {
   ArrowRight,
   Users,
   DollarSign,
-  Target
+  Target,
+  Search,
+  Building,
+  Briefcase,
+  Cpu,
+  Leaf,
+  Palette,
+  Calculator,
+  Globe,
+  Heart,
+  Wrench,
+  ChevronRight,
+  Star,
+  MapPin,
+  Calendar
 } from "lucide-react";
 
 interface CareerStep {
@@ -26,634 +41,718 @@ interface CareerStep {
   description: string;
   requirements: string[];
   keySkills: string[];
-  isCompleted?: boolean;
+  kcseGrade: string;
+  clusterPoints?: string;
 }
 
-interface CareerPath {
+interface CareerField {
   id: string;
   title: string;
   icon: any;
   description: string;
+  color: string;
+  courses: Course[];
+  marketDemand: 'High' | 'Medium' | 'Low';
   averageSalary: string;
-  jobOutlook: string;
-  totalDuration: string;
-  steps: CareerStep[];
-  specializations: string[];
-  keyStats: {
-    averageStartingSalary: string;
-    experiencedSalary: string;
-    jobGrowth: string;
-    workEnvironment: string[];
-  };
 }
 
-const careerPaths: CareerPath[] = [
+interface Course {
+  id: string;
+  title: string;
+  duration: string;
+  kcseRequirement: string;
+  clusterPoints: string;
+  description: string;
+  careerOpportunities: string[];
+  salaryRange: string;
+  topUniversities: string[];
+  steps: CareerStep[];
+}
+
+const careerFields: CareerField[] = [
   {
-    id: "medicine",
-    title: "Medicine & Healthcare",
+    id: "health-medical",
+    title: "Health & Medical Sciences",
     icon: Stethoscope,
-    description: "Become a medical doctor and save lives while making a significant impact on healthcare and society.",
-    averageSalary: "$200,000 - $500,000+",
-    jobOutlook: "Excellent (7% growth)",
-    totalDuration: "11-16 years",
-    steps: [
+    description: "Healthcare careers serving Kenya's growing medical needs",
+    color: "bg-red-50 border-red-200 text-red-800",
+    marketDemand: "High",
+    averageSalary: "KSh 80,000 - 500,000",
+    courses: [
       {
-        title: "Undergraduate Degree",
+        id: "medicine-surgery",
+        title: "Bachelor of Medicine & Surgery (MBChB)",
+        duration: "6 years",
+        kcseRequirement: "A- (84+ points)",
+        clusterPoints: "Cluster 2A: 84+ points",
+        description: "Comprehensive medical training to become a licensed doctor in Kenya",
+        careerOpportunities: [
+          "Medical Doctor (KSh 200,000 - 500,000)",
+          "Specialist Consultant (KSh 300,000 - 800,000)",
+          "Medical Researcher (KSh 150,000 - 400,000)",
+          "Public Health Officer (KSh 120,000 - 300,000)"
+        ],
+        salaryRange: "KSh 200,000 - 500,000+",
+        topUniversities: ["University of Nairobi", "Moi University", "Kenyatta University", "Egerton University"],
+        steps: [
+          {
+            title: "KCSE Excellence",
+            duration: "Form 4",
+            description: "Achieve exceptional grades in science subjects for medical school entry",
+            requirements: [
+              "KCSE Mean Grade A- (84+ points)",
+              "Biology A (12 points)",
+              "Chemistry A (12 points)", 
+              "Physics/Mathematics A- (11+ points)",
+              "English/Kiswahili B+ (10+ points)"
+            ],
+            keySkills: ["Scientific reasoning", "Critical thinking", "Academic excellence"],
+            kcseGrade: "A- (84+ points)",
+            clusterPoints: "Cluster 2A: 84+"
+          },
+          {
+            title: "Medical School",
+            duration: "6 years",
+            description: "Intensive medical education combining theory and clinical practice",
+            requirements: [
+              "Complete pre-clinical studies (3 years)",
+              "Clinical rotations (3 years)",
+              "Pass all medical examinations",
+              "Complete internship requirements"
+            ],
+            keySkills: ["Medical knowledge", "Patient care", "Clinical skills", "Communication"],
+            kcseGrade: "Maintained throughout",
+            clusterPoints: "University performance"
+          },
+          {
+            title: "Medical Internship",
+            duration: "1 year",
+            description: "Supervised clinical practice in Kenyan hospitals",
+            requirements: [
+              "Register with Medical Practitioners Board",
+              "Complete rotations in major departments",
+              "Pass internship assessments",
+              "Maintain professional standards"
+            ],
+            keySkills: ["Practical medicine", "Patient management", "Professional ethics"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          },
+          {
+            title: "Medical Practice/Specialization",
+            duration: "3-5 years (specialization)",
+            description: "Begin practice or pursue specialization in chosen field",
+            requirements: [
+              "Obtain medical license",
+              "Choose specialization (optional)",
+              "Complete residency training",
+              "Continuous professional development"
+            ],
+            keySkills: ["Specialized expertise", "Leadership", "Research", "Teaching"],
+            kcseGrade: "N/A",
+            clusterPoints: "N/A"
+          }
+        ]
+      },
+      {
+        id: "nursing",
+        title: "Bachelor of Science in Nursing",
         duration: "4 years",
-        description: "Complete a bachelor's degree with strong science foundation. While any major is acceptable, focus on prerequisite courses.",
-        requirements: [
-          "Bachelor's degree (any major)",
-          "Biology (1 year with lab)",
-          "General Chemistry (1 year with lab)", 
-          "Organic Chemistry (1 year with lab)",
-          "Physics (1 year with lab)",
-          "Mathematics (1 year)",
-          "English (1 year)"
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 2B: 70+ points",
+        description: "Professional nursing education for healthcare delivery in Kenya",
+        careerOpportunities: [
+          "Registered Nurse (KSh 60,000 - 150,000)",
+          "Nurse Manager (KSh 100,000 - 200,000)",
+          "Clinical Specialist (KSh 80,000 - 180,000)",
+          "Public Health Nurse (KSh 70,000 - 160,000)"
         ],
-        keySkills: [
-          "Strong GPA (3.5+ competitive)",
-          "Scientific reasoning",
-          "Research experience",
-          "Volunteer work in healthcare",
-          "Leadership activities"
-        ]
-      },
-      {
-        title: "MCAT Preparation & Medical School Application",
-        duration: "1 year",
-        description: "Prepare for and take the Medical College Admission Test (MCAT). Apply to medical schools through AMCAS.",
-        requirements: [
-          "MCAT score (competitive: 510+)",
-          "Medical school applications",
-          "Personal statement",
-          "Letters of recommendation",
-          "Medical school interviews"
-        ],
-        keySkills: [
-          "Test-taking strategies",
-          "Interview skills",
-          "Communication abilities",
-          "Time management",
-          "Stress management"
-        ]
-      },
-      {
-        title: "Medical School",
-        duration: "4 years",
-        description: "Intensive medical education combining classroom learning with clinical rotations in various specialties.",
-        requirements: [
-          "Complete medical curriculum",
-          "Pass USMLE Step 1",
-          "Pass USMLE Step 2 CK & CS",
-          "Clinical rotations",
-          "Research projects"
-        ],
-        keySkills: [
-          "Medical knowledge",
-          "Clinical skills",
-          "Patient communication",
-          "Diagnostic reasoning",
-          "Professional ethics"
-        ]
-      },
-      {
-        title: "Residency Training",
-        duration: "3-7 years",
-        description: "Specialized training in chosen medical specialty under supervision of experienced physicians.",
-        requirements: [
-          "Match into residency program",
-          "Complete residency requirements",
-          "Pass USMLE Step 3",
-          "Board certification exam",
-          "Continuous medical education"
-        ],
-        keySkills: [
-          "Specialty expertise",
-          "Surgical skills (if applicable)",
-          "Emergency medicine",
-          "Patient management",
-          "Teaching abilities"
-        ]
-      },
-      {
-        title: "Fellowship (Optional)",
-        duration: "1-3 years",
-        description: "Additional subspecialty training for highly specialized areas of medicine.",
-        requirements: [
-          "Complete residency",
-          "Fellowship application",
-          "Subspecialty training",
-          "Board certification in subspecialty"
-        ],
-        keySkills: [
-          "Advanced subspecialty knowledge",
-          "Research capabilities",
-          "Innovation in medicine",
-          "Leadership in healthcare"
+        salaryRange: "KSh 60,000 - 200,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University", "KMTC"],
+        steps: [
+          {
+            title: "KCSE Preparation",
+            duration: "Form 4",
+            description: "Strong performance in science subjects for nursing admission",
+            requirements: [
+              "KCSE Mean Grade B+ (70+ points)",
+              "Biology B+ (10+ points)",
+              "Chemistry B+ (10+ points)",
+              "Mathematics/Physics B (9+ points)",
+              "English B+ (10+ points)"
+            ],
+            keySkills: ["Science foundation", "Communication", "Empathy"],
+            kcseGrade: "B+ (70+ points)",
+            clusterPoints: "Cluster 2B: 70+"
+          }
         ]
       }
-    ],
-    specializations: [
-      "Internal Medicine",
-      "Surgery", 
-      "Pediatrics",
-      "Psychiatry",
-      "Radiology",
-      "Emergency Medicine",
-      "Cardiology",
-      "Neurology",
-      "Oncology",
-      "Anesthesiology"
-    ],
-    keyStats: {
-      averageStartingSalary: "$200,000",
-      experiencedSalary: "$300,000 - $500,000+",
-      jobGrowth: "7% (Faster than average)",
-      workEnvironment: ["Hospitals", "Clinics", "Private Practice", "Research Institutions"]
-    }
+    ]
   },
   {
-    id: "law",
-    title: "Law & Legal Practice",
+    id: "law-legal",
+    title: "Law & Legal Studies",
     icon: Scale,
-    description: "Advocate for justice, represent clients, and navigate the complex world of legal systems and regulations.",
-    averageSalary: "$80,000 - $200,000+",
-    jobOutlook: "Good (5% growth)",
-    totalDuration: "7-8 years",
-    steps: [
+    description: "Legal careers in Kenya's justice system and corporate sector",
+    color: "bg-blue-50 border-blue-200 text-blue-800",
+    marketDemand: "High",
+    averageSalary: "KSh 60,000 - 300,000",
+    courses: [
       {
-        title: "Undergraduate Degree",
+        id: "law",
+        title: "Bachelor of Laws (LL.B)",
         duration: "4 years",
-        description: "Complete a bachelor's degree in any field. Popular pre-law majors include Political Science, History, English, and Philosophy.",
-        requirements: [
-          "Bachelor's degree (any major)",
-          "High GPA (3.5+ competitive)",
-          "Strong writing skills",
-          "Critical thinking development",
-          "Liberal arts foundation"
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 1: 70+ points",
+        description: "Comprehensive legal education for practice in Kenyan courts",
+        careerOpportunities: [
+          "Advocate/Lawyer (KSh 80,000 - 300,000)",
+          "Corporate Counsel (KSh 120,000 - 400,000)",
+          "Magistrate/Judge (KSh 200,000 - 600,000)",
+          "Legal Advisor (KSh 100,000 - 250,000)"
         ],
-        keySkills: [
-          "Analytical reasoning",
-          "Written communication",
-          "Research abilities",
-          "Public speaking",
-          "Logical argumentation"
-        ]
-      },
-      {
-        title: "LSAT Preparation & Law School Application",
-        duration: "1 year",
-        description: "Prepare for the Law School Admission Test (LSAT) and apply to law schools through LSAC.",
-        requirements: [
-          "LSAT score (competitive: 160+)",
-          "Law school applications",
-          "Personal statement",
-          "Letters of recommendation",
-          "Law school interviews"
-        ],
-        keySkills: [
-          "Logical reasoning",
-          "Reading comprehension",
-          "Analytical writing",
-          "Time management",
-          "Test strategy"
-        ]
-      },
-      {
-        title: "Law School (Juris Doctor)",
-        duration: "3 years",
-        description: "Intensive legal education covering constitutional law, contracts, torts, criminal law, and specialized areas.",
-        requirements: [
-          "Complete JD curriculum",
-          "Maintain good academic standing",
-          "Participate in moot court/mock trial",
-          "Complete internships/externships",
-          "Law review participation (optional)"
-        ],
-        keySkills: [
-          "Legal research and writing",
-          "Case analysis",
-          "Oral advocacy",
-          "Client counseling",
-          "Professional ethics"
-        ]
-      },
-      {
-        title: "Bar Examination & Licensing",
-        duration: "6 months",
-        description: "Pass the bar examination in the state where you plan to practice law and complete character and fitness evaluation.",
-        requirements: [
-          "Pass state bar examination",
-          "Character and fitness evaluation",
-          "Continuing legal education",
-          "State bar admission",
-          "Professional liability insurance"
-        ],
-        keySkills: [
-          "State-specific law knowledge",
-          "Professional responsibility",
-          "Client relations",
-          "Practice management",
-          "Ethical decision-making"
-        ]
-      },
-      {
-        title: "Legal Practice & Specialization",
-        duration: "Ongoing",
-        description: "Begin practicing law and develop expertise in specific areas through experience and additional certifications.",
-        requirements: [
-          "Join law firm or start practice",
-          "Develop client base",
-          "Specialize in practice areas",
-          "Continuing education",
-          "Professional development"
-        ],
-        keySkills: [
-          "Client development",
-          "Case management",
-          "Negotiation",
-          "Trial advocacy",
-          "Business development"
+        salaryRange: "KSh 80,000 - 300,000+",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Moi University", "Strathmore University"],
+        steps: [
+          {
+            title: "KCSE Achievement",
+            duration: "Form 4",
+            description: "Strong academic performance across subjects for law school",
+            requirements: [
+              "KCSE Mean Grade B+ (70+ points)",
+              "English A- (11+ points)",
+              "Kiswahili B+ (10+ points)",
+              "Mathematics B (9+ points)",
+              "Any other subject B+ (10+ points)"
+            ],
+            keySkills: ["Critical thinking", "Communication", "Analysis", "Writing"],
+            kcseGrade: "B+ (70+ points)",
+            clusterPoints: "Cluster 1: 70+"
+          }
         ]
       }
-    ],
-    specializations: [
-      "Corporate Law",
-      "Criminal Law",
-      "Family Law",
-      "Personal Injury",
-      "Real Estate Law",
-      "Immigration Law",
-      "Intellectual Property",
-      "Environmental Law",
-      "Tax Law",
-      "Employment Law"
-    ],
-    keyStats: {
-      averageStartingSalary: "$80,000",
-      experiencedSalary: "$120,000 - $200,000+",
-      jobGrowth: "5% (As fast as average)",
-      workEnvironment: ["Law Firms", "Government", "Corporations", "Non-profits"]
-    }
+    ]
+  },
+  {
+    id: "engineering-technology",
+    title: "Engineering & Technology",
+    icon: Wrench,
+    description: "Technical careers driving Kenya's infrastructure development",
+    color: "bg-orange-50 border-orange-200 text-orange-800",
+    marketDemand: "High",
+    averageSalary: "KSh 70,000 - 400,000",
+    courses: [
+      {
+        id: "civil-engineering",
+        title: "Bachelor of Civil Engineering",
+        duration: "5 years",
+        kcseRequirement: "B+ (70+ points)",
+        clusterPoints: "Cluster 3: 70+ points",
+        description: "Infrastructure development and construction engineering",
+        careerOpportunities: [
+          "Civil Engineer (KSh 80,000 - 250,000)",
+          "Project Manager (KSh 150,000 - 400,000)",
+          "Structural Engineer (KSh 120,000 - 350,000)",
+          "Construction Manager (KSh 100,000 - 300,000)"
+        ],
+        salaryRange: "KSh 80,000 - 400,000",
+        topUniversities: ["University of Nairobi", "JKUAT", "Moi University", "Technical University of Kenya"],
+        steps: []
+      }
+    ]
+  },
+  {
+    id: "business-economics",
+    title: "Business & Economics",
+    icon: Briefcase,
+    description: "Commercial and financial careers in Kenya's growing economy",
+    color: "bg-green-50 border-green-200 text-green-800",
+    marketDemand: "High",
+    averageSalary: "KSh 50,000 - 350,000",
+    courses: [
+      {
+        id: "business-administration",
+        title: "Bachelor of Business Administration",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 4: 48+ points",
+        description: "Comprehensive business management and administration",
+        careerOpportunities: [
+          "Business Manager (KSh 80,000 - 200,000)",
+          "Marketing Manager (KSh 100,000 - 250,000)",
+          "Human Resources Manager (KSh 90,000 - 220,000)",
+          "Operations Manager (KSh 120,000 - 300,000)"
+        ],
+        salaryRange: "KSh 80,000 - 300,000",
+        topUniversities: ["University of Nairobi", "Strathmore University", "USIU", "KCA University"],
+        steps: []
+      }
+    ]
   },
   {
     id: "computer-science",
-    title: "Computer Science & Technology",
+    title: "Computer Science & IT",
     icon: Code,
-    description: "Build the future through software development, artificial intelligence, and cutting-edge technology solutions.",
-    averageSalary: "$70,000 - $150,000+",
-    jobOutlook: "Excellent (13% growth)",
-    totalDuration: "4-6 years",
-    steps: [
+    description: "Technology careers in Kenya's digital transformation",
+    color: "bg-purple-50 border-purple-200 text-purple-800",
+    marketDemand: "High",
+    averageSalary: "KSh 60,000 - 300,000",
+    courses: [
       {
-        title: "Computer Science Degree",
+        id: "computer-science",
+        title: "Bachelor of Computer Science",
         duration: "4 years",
-        description: "Complete a bachelor's degree in Computer Science, Software Engineering, or related field with strong programming foundation.",
-        requirements: [
-          "Bachelor's in Computer Science/related field",
-          "Programming languages (Python, Java, C++)",
-          "Data structures and algorithms",
-          "Computer systems and architecture",
-          "Mathematics (Calculus, Statistics)"
+        kcseRequirement: "B- (60+ points)",
+        clusterPoints: "Cluster 5: 60+ points",
+        description: "Software development and computer systems",
+        careerOpportunities: [
+          "Software Developer (KSh 70,000 - 200,000)",
+          "Systems Analyst (KSh 80,000 - 180,000)",
+          "IT Manager (KSh 120,000 - 300,000)",
+          "Data Scientist (KSh 100,000 - 250,000)"
         ],
-        keySkills: [
-          "Programming proficiency",
-          "Problem-solving",
-          "Logical thinking",
-          "Software design",
-          "Version control (Git)"
-        ]
-      },
-      {
-        title: "Skill Development & Projects",
-        duration: "Ongoing",
-        description: "Build a strong portfolio through personal projects, internships, and open-source contributions.",
-        requirements: [
-          "Personal coding projects",
-          "GitHub portfolio",
-          "Internship experience",
-          "Technical certifications",
-          "Coding bootcamps (optional)"
-        ],
-        keySkills: [
-          "Full-stack development",
-          "Database management",
-          "Web technologies",
-          "Mobile development",
-          "Cloud platforms"
-        ]
-      },
-      {
-        title: "Entry-Level Position",
-        duration: "1-2 years",
-        description: "Start as Junior Developer, Software Engineer, or similar role to gain professional experience.",
-        requirements: [
-          "Technical interviews",
-          "Coding assessments",
-          "Portfolio demonstration",
-          "Professional references",
-          "Continuous learning"
-        ],
-        keySkills: [
-          "Code review",
-          "Agile methodologies",
-          "Team collaboration",
-          "Testing and debugging",
-          "Documentation"
-        ]
-      },
-      {
-        title: "Mid-Level Development",
-        duration: "2-4 years",
-        description: "Advance to mid-level positions with increased responsibilities and technical leadership opportunities.",
-        requirements: [
-          "2-4 years experience",
-          "Technical leadership",
-          "Mentoring junior developers",
-          "Architecture decisions",
-          "Specialized expertise"
-        ],
-        keySkills: [
-          "System design",
-          "Performance optimization",
-          "Security best practices",
-          "Project management",
-          "Technical communication"
-        ]
-      },
-      {
-        title: "Senior Level & Specialization",
-        duration: "Ongoing",
-        description: "Become a senior engineer, tech lead, or specialize in areas like AI, cybersecurity, or data science.",
-        requirements: [
-          "5+ years experience",
-          "Technical expertise",
-          "Leadership skills",
-          "Strategic thinking",
-          "Industry recognition"
-        ],
-        keySkills: [
-          "Advanced system architecture",
-          "Team leadership",
-          "Technology strategy",
-          "Innovation",
-          "Cross-functional collaboration"
-        ]
+        salaryRange: "KSh 70,000 - 300,000",
+        topUniversities: ["University of Nairobi", "JKUAT", "Strathmore University", "KCA University"],
+        steps: []
       }
-    ],
-    specializations: [
-      "Software Development",
-      "Data Science",
-      "Artificial Intelligence",
-      "Cybersecurity",
-      "Mobile Development",
-      "Web Development",
-      "DevOps Engineering",
-      "Game Development",
-      "Blockchain",
-      "Cloud Computing"
-    ],
-    keyStats: {
-      averageStartingSalary: "$70,000",
-      experiencedSalary: "$100,000 - $150,000+",
-      jobGrowth: "13% (Much faster than average)",
-      workEnvironment: ["Tech Companies", "Startups", "Corporations", "Remote Work"]
-    }
+    ]
+  },
+  {
+    id: "agriculture",
+    title: "Agriculture & Food Security",
+    icon: Leaf,
+    description: "Agricultural careers supporting Kenya's food security",
+    color: "bg-emerald-50 border-emerald-200 text-emerald-800",
+    marketDemand: "Medium",
+    averageSalary: "KSh 45,000 - 200,000",
+    courses: [
+      {
+        id: "agriculture",
+        title: "Bachelor of Agriculture",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 6: 48+ points",
+        description: "Modern farming and agricultural technology",
+        careerOpportunities: [
+          "Agricultural Officer (KSh 50,000 - 120,000)",
+          "Farm Manager (KSh 60,000 - 150,000)",
+          "Agricultural Consultant (KSh 80,000 - 200,000)",
+          "Research Scientist (KSh 70,000 - 180,000)"
+        ],
+        salaryRange: "KSh 50,000 - 200,000",
+        topUniversities: ["University of Nairobi", "Egerton University", "JKUAT", "Moi University"],
+        steps: []
+      }
+    ]
+  },
+  {
+    id: "education",
+    title: "Education & Teaching",
+    icon: BookOpen,
+    description: "Educational careers shaping Kenya's future generations",
+    color: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    marketDemand: "Medium",
+    averageSalary: "KSh 35,000 - 150,000",
+    courses: [
+      {
+        id: "education",
+        title: "Bachelor of Education",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 7: 48+ points",
+        description: "Professional teacher training for Kenyan schools",
+        careerOpportunities: [
+          "Primary Teacher (KSh 35,000 - 80,000)",
+          "Secondary Teacher (KSh 45,000 - 100,000)",
+          "Head Teacher (KSh 80,000 - 150,000)",
+          "Education Officer (KSh 60,000 - 120,000)"
+        ],
+        salaryRange: "KSh 35,000 - 150,000",
+        topUniversities: ["Kenyatta University", "Moi University", "Egerton University", "Maseno University"],
+        steps: []
+      }
+    ]
+  },
+  {
+    id: "creative-arts",
+    title: "Creative Arts & Media",
+    icon: Palette,
+    description: "Creative careers in Kenya's growing entertainment industry",
+    color: "bg-pink-50 border-pink-200 text-pink-800",
+    marketDemand: "Medium",
+    averageSalary: "KSh 40,000 - 200,000",
+    courses: [
+      {
+        id: "fine-arts",
+        title: "Bachelor of Fine Arts",
+        duration: "4 years",
+        kcseRequirement: "C+ (48+ points)",
+        clusterPoints: "Cluster 8: 48+ points",
+        description: "Creative arts and design for media and entertainment",
+        careerOpportunities: [
+          "Graphic Designer (KSh 40,000 - 100,000)",
+          "Art Director (KSh 80,000 - 180,000)",
+          "Media Producer (KSh 60,000 - 150,000)",
+          "Creative Director (KSh 100,000 - 200,000)"
+        ],
+        salaryRange: "KSh 40,000 - 200,000",
+        topUniversities: ["University of Nairobi", "Kenyatta University", "Technical University of Kenya"],
+        steps: []
+      }
+    ]
   }
 ];
 
 const CareerPaths = () => {
   const navigate = useNavigate();
-  const [selectedPath, setSelectedPath] = useState<string>("medicine");
-  const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [selectedField, setSelectedField] = useState<string>("health-medical");
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<'overview' | 'course-detail'>('overview');
 
-  const currentPath = careerPaths.find(path => path.id === selectedPath);
+  const currentField = careerFields.find(field => field.id === selectedField);
+  const currentCourse = currentField?.courses.find(course => course.id === selectedCourse);
 
-  const toggleStep = (stepIndex: number) => {
-    setExpandedStep(expandedStep === stepIndex ? null : stepIndex);
+  const filteredFields = careerFields.filter(field =>
+    field.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    field.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    field.courses.some(course => 
+      course.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const handleCourseSelect = (courseId: string) => {
+    setSelectedCourse(courseId);
+    setViewMode('course-detail');
   };
 
-  return (
-    <div className="p-3 md:p-8">
-      <div className="mb-6 md:mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">Career Paths</h2>
-        <p className="text-sm md:text-base text-muted-foreground">
-          Explore detailed roadmaps for Medicine, Law, and Computer Science careers
-        </p>
-      </div>
+  const handleBackToOverview = () => {
+    setSelectedCourse(null);
+    setViewMode('overview');
+  };
 
-      <Tabs value={selectedPath} onValueChange={setSelectedPath} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6 md:mb-8 h-auto">
-          {careerPaths.map((path) => (
-            <TabsTrigger 
-              key={path.id} 
-              value={path.id} 
-              className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 md:p-3 text-xs md:text-sm"
-            >
-              <path.icon className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-center leading-tight">{path.title.split(' ')[0]}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+  const getDemandColor = (demand: string) => {
+    switch (demand) {
+      case 'High': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Low': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
-        {currentPath && (
-          <TabsContent value={selectedPath} className="mt-0">
-            {/* Career Overview */}
-            <Card className="mb-6">
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <currentPath.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl md:text-2xl mb-2">{currentPath.title}</CardTitle>
-                    <CardDescription className="text-sm md:text-base">
-                      {currentPath.description}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <DollarSign className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Salary Range</p>
-                    <p className="font-semibold text-sm">{currentPath.averageSalary}</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Job Outlook</p>
-                    <p className="font-semibold text-sm">{currentPath.jobOutlook}</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <Clock className="w-5 h-5 text-orange-600 mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Total Duration</p>
-                    <p className="font-semibold text-sm">{currentPath.totalDuration}</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <Target className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Steps</p>
-                    <p className="font-semibold text-sm">{currentPath.steps.length} Phases</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+  if (viewMode === 'course-detail' && currentCourse) {
+    return (
+      <div className="p-3 md:p-8">
+        {/* Course Detail Header */}
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={handleBackToOverview}
+            className="mb-4 hover:bg-muted"
+          >
+            <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+            Back to Career Fields
+          </Button>
+          
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+              {currentField && <currentField.icon className="w-8 h-8 text-primary" />}
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">{currentCourse.title}</h1>
+              <p className="text-muted-foreground mb-4">{currentCourse.description}</p>
+              
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {currentCourse.duration}
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Target className="w-3 h-3" />
+                  {currentCourse.kcseRequirement}
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  {currentCourse.salaryRange}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* Career Steps Roadmap */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
-                  Career Roadmap
-                </CardTitle>
-                <CardDescription>
-                  Follow this step-by-step path to build your career in {currentPath.title.toLowerCase()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {currentPath.steps.map((step, index) => (
-                    <div key={index} className="relative">
-                      {/* Timeline connector */}
-                      {index < currentPath.steps.length - 1 && (
-                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-border"></div>
-                      )}
-                      
-                      <div 
-                        className="flex gap-4 cursor-pointer hover:bg-muted/30 p-3 rounded-lg transition-colors"
-                        onClick={() => toggleStep(index)}
-                      >
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-primary font-bold">{index + 1}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-sm md:text-base">{step.title}</h3>
-                            <Badge variant="outline" className="text-xs">
-                              {step.duration}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">{step.description}</p>
-                          
-                          {expandedStep === index && (
-                            <div className="mt-4 space-y-4 border-t pt-4">
-                              <div>
-                                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
-                                  Requirements
-                                </h4>
-                                <ul className="space-y-1">
-                                  {step.requirements.map((req, reqIndex) => (
-                                    <li key={reqIndex} className="text-xs text-muted-foreground flex items-start gap-2">
-                                      <ArrowRight className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                      {req}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                                  <Award className="w-4 h-4 text-blue-600" />
-                                  Key Skills to Develop
-                                </h4>
-                                <div className="flex flex-wrap gap-1">
-                                  {step.keySkills.map((skill, skillIndex) => (
-                                    <Badge key={skillIndex} variant="secondary" className="text-xs">
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+        {/* Course Details Grid */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Requirements & Entry */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                Entry Requirements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="font-medium text-sm mb-2">KCSE Requirement</p>
+                <Badge className="bg-blue-100 text-blue-800">{currentCourse.kcseRequirement}</Badge>
+              </div>
+              <div>
+                <p className="font-medium text-sm mb-2">KUCCPS Cluster</p>
+                <Badge className="bg-purple-100 text-purple-800">{currentCourse.clusterPoints}</Badge>
+              </div>
+              <div>
+                <p className="font-medium text-sm mb-2">Top Universities</p>
+                <div className="space-y-1">
+                  {currentCourse.topUniversities.map((uni, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      <Star className="w-3 h-3 text-yellow-500" />
+                      {uni}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Specializations and Stats */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Specializations */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Users className="w-5 h-5" />
-                    Popular Specializations
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-2">
-                    {currentPath.specializations.map((spec, index) => (
-                      <Badge key={index} variant="outline" className="justify-center p-2 text-xs">
-                        {spec}
-                      </Badge>
-                    ))}
+          {/* Career Opportunities */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-blue-600" />
+                Career Opportunities
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {currentCourse.careerOpportunities.map((opportunity, index) => (
+                  <div key={index} className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                    <ChevronRight className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{opportunity}</span>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              {/* Key Statistics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <TrendingUp className="w-5 h-5" />
-                    Career Statistics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium">Starting Salary</p>
-                    <p className="text-lg font-bold text-green-600">{currentPath.keyStats.averageStartingSalary}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Experienced Salary</p>
-                    <p className="text-lg font-bold text-green-600">{currentPath.keyStats.experiencedSalary}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Job Growth Rate</p>
-                    <p className="text-sm text-blue-600">{currentPath.keyStats.jobGrowth}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Work Environment</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {currentPath.keyStats.workEnvironment.map((env, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {env}
-                        </Badge>
-                      ))}
+        {/* Career Roadmap */}
+        {currentCourse.steps.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-orange-600" />
+                Career Roadmap
+              </CardTitle>
+              <CardDescription>
+                Step-by-step path to success in {currentCourse.title}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {currentCourse.steps.map((step, index) => (
+                  <div key={index} className="relative">
+                    {index < currentCourse.steps.length - 1 && (
+                      <div className="absolute left-6 top-16 w-0.5 h-20 bg-border"></div>
+                    )}
+                    
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary font-bold">{index + 1}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">{step.title}</h3>
+                          <Badge variant="outline">{step.duration}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">{step.description}</p>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-medium text-sm mb-2 text-green-700">Requirements</h4>
+                            <ul className="space-y-1">
+                              {step.requirements.map((req, reqIndex) => (
+                                <li key={reqIndex} className="text-xs flex items-start gap-2">
+                                  <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                  {req}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-medium text-sm mb-2 text-blue-700">Key Skills</h4>
+                            <div className="flex flex-wrap gap-1">
+                              {step.keySkills.map((skill, skillIndex) => (
+                                <Badge key={skillIndex} variant="secondary" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Call to Action */}
-            <Card className="mt-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="p-6 text-center">
-                <h3 className="text-lg font-semibold mb-2">Ready to Start Your Journey?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Join our career sessions to get personalized guidance from industry professionals
-                </p>
-                <Button 
-                  variant="hero" 
-                  className="w-full md:w-auto"
-                  onClick={() => navigate('/dashboard/sessions')}
-                >
-                  <GraduationCap className="w-4 h-4 mr-2" />
-                  Explore Career Sessions
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </Tabs>
+
+        {/* Call to Action */}
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+          <CardContent className="p-6 text-center">
+            <h3 className="text-lg font-semibold mb-2">Ready to Start Your Journey?</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Join our career sessions to get personalized guidance from Kenyan professionals
+            </p>
+            <Button 
+              variant="hero" 
+              className="w-full md:w-auto"
+              onClick={() => navigate('/dashboard/sessions')}
+            >
+              <GraduationCap className="w-4 h-4 mr-2" />
+              Explore Career Sessions
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 md:p-8">
+      {/* Header */}
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">Kenya Career Paths</h2>
+        <p className="text-sm md:text-base text-muted-foreground mb-4">
+          Explore comprehensive career roadmaps based on Kenya's education system and job market
+        </p>
+        
+        {/* Search */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search career fields or courses..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Career Fields Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {filteredFields.map((field) => (
+          <Card 
+            key={field.id}
+            className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              selectedField === field.id ? 'ring-2 ring-primary shadow-lg' : ''
+            }`}
+            onClick={() => setSelectedField(field.id)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <field.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{field.title}</CardTitle>
+                    <Badge className={`text-xs mt-1 ${getDemandColor(field.marketDemand)}`}>
+                      {field.marketDemand} Demand
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground mb-3">{field.description}</p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-green-600">{field.averageSalary}</span>
+                <span className="text-muted-foreground">{field.courses.length} courses</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Selected Field Details */}
+      {currentField && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <currentField.icon className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">{currentField.title}</CardTitle>
+                <CardDescription>{currentField.description}</CardDescription>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <Badge className={getDemandColor(currentField.marketDemand)}>
+                {currentField.marketDemand} Market Demand
+              </Badge>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <DollarSign className="w-3 h-3" />
+                {currentField.averageSalary}
+              </Badge>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <BookOpen className="w-3 h-3" />
+                {currentField.courses.length} Courses Available
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            <h3 className="font-semibold mb-4">Available Courses</h3>
+            <div className="grid gap-4">
+              {currentField.courses.map((course) => (
+                <Card 
+                  key={course.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleCourseSelect(course.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-base mb-1">{course.title}</h4>
+                        <p className="text-sm text-muted-foreground mb-2">{course.description}</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" />
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <Badge variant="outline" className="text-xs">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {course.duration}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        <Target className="w-3 h-3 mr-1" />
+                        {course.kcseRequirement}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        <DollarSign className="w-3 h-3 mr-1" />
+                        {course.salaryRange}
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium">Top Universities: </span>
+                      {course.topUniversities.slice(0, 2).join(", ")}
+                      {course.topUniversities.length > 2 && ` +${course.topUniversities.length - 2} more`}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
