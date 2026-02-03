@@ -130,10 +130,14 @@ const Sessions = () => {
         // Open Google Meet link in new tab
         window.open(response.data.googleMeetLink, '_blank');
         
-        // Show success message with points information
+        // Show success message with points and discount information
         if (response.data.isFirstJoin && response.data.pointsAwarded > 0) {
-          toast.success(`🎉 ${response.message} Opening session...`, {
-            duration: 5000,
+          const discountMessage = response.data.discountCreated 
+            ? ` 🎉 Plus you earned a ${response.data.discountPercentage}% discount!`
+            : '';
+          
+          toast.success(`🎉 ${response.message} Opening session...${discountMessage}`, {
+            duration: 6000,
             style: {
               background: '#10b981',
               color: 'white',

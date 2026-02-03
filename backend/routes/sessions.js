@@ -20,6 +20,17 @@ router.post('/:sessionId/join', authenticateToken, async (req, res) => {
     const { sessionId } = req.params;
     const userId = req.user.id;
     
+    // Get session details first (needed for discount creation)
+    const { data: sessionData, error: sessionError } = await supabaseAdmin
+      .from('sessions')
+      .select('title, google_meet_link')
+      .eq('id', sessionId)
+      .single();
+    
+    if (sessionError) {
+      throw sessionError;
+    }
+    
     // Check if user has access to this session
     const { data: accessData, error: accessError } = await supabaseAdmin
       .from('user_session_access')
@@ -52,6 +63,7 @@ router.post('/:sessionId/join', authenticateToken, async (req, res) => {
     }
     
     let pointsAwarded = 0;
+    let discountCreated = false;
     let isFirstJoin = !existingJoin;
     
     if (isFirstJoin) {
@@ -79,34 +91,69 @@ router.post('/:sessionId/join', authenticateToken, async (req, res) => {
           console.error('Error recording session join:', insertError);
         }
         
+        // Create 5% discount for the user using existing table structure
+        try {
+          // Get current user points for the discount record
+          const currentUserPoints = await UserPoints.getUserPoints(userId);
+          
+          // Generate unique discount code
+          const discountCode = `SKILL${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+          
+          const { data: discountData, error: discountError } = await supabaseAdmin
+            .from('user_discounts')
+            .insert({
+              user_id: userId,
+              discount_percentage: 5,
+              discount_type: 'session_join',
+              status: 'active',
+              awarded_by: 1, // System admin ID
+              awarded_at: new Date().toISOString(),
+              valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+              reason: `Session participation reward - Joined session: ${sessionData.title}`,
+              user_points_at_award: currentUserPoints.total_points + sessionJoinPoints,
+              discount_code: discountCode,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+          
+          if (discountError) {
+            console.error('Error creating discount:', discountError);
+          } else {
+            discountCreated = true;
+            console.log('Created 5% discount for user:', userId, 'with code:', discountCode);
+          }
+        } catch (discountCreationError) {
+          console.error('Error in discount creation:', discountCreationError);
+        }
+        
       } catch (pointsError) {
         console.error('Error awarding points:', pointsError);
         // Continue even if points fail - don't block session access
       }
     }
     
-    // Get session details for response
-    const { data: sessionData, error: sessionError } = await supabaseAdmin
-      .from('sessions')
-      .select('title, google_meet_link')
-      .eq('id', sessionId)
-      .single();
+    // Prepare success message
+    let message = isFirstJoin 
+      ? `Successfully joined session! You earned ${pointsAwarded} points.`
+      : 'Welcome back to the session!';
     
-    if (sessionError) {
-      throw sessionError;
+    if (discountCreated) {
+      message += ' 🎉 You also received a 5% discount for your next phase!';
     }
     
     res.json({
       success: true,
-      message: isFirstJoin 
-        ? `Successfully joined session! You earned ${pointsAwarded} points.`
-        : 'Welcome back to the session!',
+      message,
       data: {
         sessionId: parseInt(sessionId),
         sessionTitle: sessionData.title,
         googleMeetLink: sessionData.google_meet_link,
         pointsAwarded,
-        isFirstJoin
+        isFirstJoin,
+        discountCreated,
+        discountPercentage: discountCreated ? 5 : 0
       }
     });
     

@@ -95,7 +95,7 @@ class UserPoints {
 
   static async recordTransaction(userId, type, amount, source_type, source_id, description) {
     const { data, error } = await supabase
-      .from('points_transactions')
+      .from('points_transactions')  // Changed from point_transactions to points_transactions
       .insert([{
         user_id: userId,
         transaction_type: type,
@@ -114,7 +114,7 @@ class UserPoints {
 
   static async getTransactionHistory(userId, limit = 50) {
     const { data, error } = await supabase
-      .from('points_transactions')
+      .from('points_transactions')  // Changed from point_transactions to points_transactions
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
@@ -163,7 +163,7 @@ class UserPoints {
 
       // Get users with their recent points from transactions
       const { data: recentTransactions, error: transError } = await supabase
-        .from('points_transactions')
+        .from('points_transactions')  // Changed from point_transactions to points_transactions
         .select(`
           user_id,
           points_amount,

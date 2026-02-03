@@ -195,15 +195,10 @@ class ApiService {
     return this.request(endpoint);
   }
 
-  async getUserPoints() {
-    return this.request('/assignments/user/points');
-  }
-
   async getLeaderboard(limit = 10, period = null) {
-    // Try Supabase first, fallback to backend API
     try {
       const supabaseService = (await import('./supabase.js')).default;
-      const response = await supabaseService.getLeaderboard(limit);
+      const response = await supabaseService.getLeaderboard(limit, period);
       if (response.success) {
         return response;
       }
@@ -278,6 +273,15 @@ class ApiService {
     return this.request(`/sessions/${sessionId}/join`, {
       method: 'POST'
     });
+  }
+
+  // User discounts and points methods
+  async getUserDiscounts() {
+    return this.request('/user/discounts');
+  }
+
+  async getUserPoints() {
+    return this.request('/user/points');
   }
 }
 

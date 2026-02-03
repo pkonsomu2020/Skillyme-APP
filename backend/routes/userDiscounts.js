@@ -8,10 +8,23 @@ router.get('/discounts', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Get user's discounts from database
+    // Get user's discounts from database using correct column names
     const { data: discounts, error } = await supabaseAdmin
       .from('user_discounts')
-      .select('*')
+      .select(`
+        id,
+        discount_percentage,
+        discount_type,
+        status,
+        awarded_at,
+        used_at,
+        valid_until,
+        reason,
+        user_points_at_award,
+        discount_code,
+        created_at,
+        updated_at
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
@@ -19,10 +32,27 @@ router.get('/discounts', authenticateToken, async (req, res) => {
       throw error;
     }
     
+    // Format discounts for frontend
+    const formattedDiscounts = discounts?.map(discount => ({
+      id: discount.id,
+      percentage: discount.discount_percentage,
+      type: discount.discount_type,
+      status: discount.status,
+      awardedAt: discount.awarded_at,
+      usedAt: discount.used_at,
+      validUntil: discount.valid_until,
+      reason: discount.reason,
+      pointsAtAward: discount.user_points_at_award,
+      code: discount.discount_code,
+      createdAt: discount.created_at,
+      isExpired: discount.valid_until ? new Date(discount.valid_until) < new Date() : false,
+      isUsed: !!discount.used_at
+    })) || [];
+    
     res.json({
       success: true,
       data: {
-        discounts: discounts || []
+        discounts: formattedDiscounts
       }
     });
     
@@ -54,7 +84,7 @@ router.get('/points', authenticateToken, async (req, res) => {
     
     // Get recent point transactions
     const { data: transactions, error: transError } = await supabaseAdmin
-      .from('point_transactions')
+      .from('points_transactions')  // Changed from point_transactions to points_transactions
       .select('points_amount, transaction_type, description, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })

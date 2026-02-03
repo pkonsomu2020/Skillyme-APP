@@ -189,26 +189,110 @@ class SupabaseService {
     }
   }
 
-  async getLeaderboard(limit = 10) {
+  async getLeaderboard(limit = 10, period = null) {
     if (!this.checkConfiguration()) {
       return { success: false, error: 'Supabase not configured' };
     }
 
+    try {
+      // Get users with their points from user_points table
+      let query = this.client
+        .from('user_points')
+        .select(`
+          user_id,
+          total_points,
+          level_name,
+          users(id, name, email, country, field_of_study, level_of_study)
+        `)
+        .gt('total_points', 0)
+        .order('total_points', { ascending: false })
+        .limit(limit);
+
+      const { data: userPointsData, error: pointsError } = await query;
+
+      if (pointsError) {
+        console.warn('Error fetching from user_points, falling back to calculated stats:', pointsError);
+        // Fallback to the old method
+        return this.getLeaderboardFallback(limit);
+      }
+
+      // Get additional stats for each user
+      const userIds = userPointsData.map(up => up.user_id);
+      
+      // Get session joins count
+      const { data: sessionJoins, error: sessionError } = await this.client
+        .from('session_joins')
+        .select('user_id')
+        .in('user_id', userIds);
+
+      // Get assignment submissions count
+      const { data: assignments, error: assignmentError } = await this.client
+        .from('assignment_submissions')
+        .select('user_id')
+        .eq('status', 'approved')
+        .in('user_id', userIds);
+
+      // Get payments count
+      const { data: payments, error: paymentError } = await this.client
+        .from('payments')
+        .select('user_id')
+        .eq('status', 'approved')
+        .in('user_id', userIds);
+
+      // Count stats per user
+      const sessionCounts = {};
+      const assignmentCounts = {};
+      const paymentCounts = {};
+
+      sessionJoins?.forEach(sj => {
+        sessionCounts[sj.user_id] = (sessionCounts[sj.user_id] || 0) + 1;
+      });
+
+      assignments?.forEach(a => {
+        assignmentCounts[a.user_id] = (assignmentCounts[a.user_id] || 0) + 1;
+      });
+
+      payments?.forEach(p => {
+        paymentCounts[p.user_id] = (paymentCounts[p.user_id] || 0) + 1;
+      });
+
+      // Format leaderboard data
+      const leaderboard = userPointsData.map((userPoint, index) => ({
+        user_id: userPoint.user_id,
+        name: userPoint.users?.name || 'Unknown User',
+        email: userPoint.users?.email || '',
+        total_points: userPoint.total_points,
+        level_name: userPoint.level_name,
+        rank: index + 1,
+        country: userPoint.users?.country || '',
+        field_of_study: userPoint.users?.field_of_study || '',
+        assignments_completed: assignmentCounts[userPoint.user_id] || 0,
+        sessions_attended: sessionCounts[userPoint.user_id] || 0,
+        payments_count: paymentCounts[userPoint.user_id] || 0
+      }));
+
+      return { success: true, data: { leaderboard } };
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getLeaderboardFallback(limit = 10) {
+    // Fallback method using the old calculation
     try {
       const usersResponse = await this.getUsersWithStats();
       if (!usersResponse.success) {
         throw new Error(usersResponse.error);
       }
 
-      // Filter users who have activity (assignments, sessions, or payments)
-      // Only show users who have submitted assignments OR attended sessions OR made payments
+      // Filter users who have activity
       const activeUsers = usersResponse.data.filter(user => {
         const hasAssignments = user.assignments_completed > 0;
         const hasSessions = user.sessions_attended > 0;
         const hasPayments = user.payments_count > 0;
         const hasPoints = user.total_points > 0;
         
-        // Show users who have any meaningful activity
         return hasAssignments || hasSessions || hasPayments || hasPoints;
       });
 
@@ -232,7 +316,7 @@ class SupabaseService {
 
       return { success: true, data: { leaderboard: sortedUsers } };
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      console.error('Error in leaderboard fallback:', error);
       return { success: false, error: error.message };
     }
   }

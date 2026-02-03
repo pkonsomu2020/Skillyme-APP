@@ -195,7 +195,7 @@ const DashboardOverview = () => {
 
         // Fetch user discounts
         try {
-          const discountsResponse = await apiService.request('/user/discounts');
+          const discountsResponse = await apiService.getUserDiscounts();
           if (discountsResponse.success) {
             setUserDiscounts(discountsResponse.data.discounts || []);
           }
@@ -490,7 +490,7 @@ const DashboardOverview = () => {
                   <Gift className="w-5 h-5" />
                   Your Discounts
                   <Badge className="bg-green-100 text-green-800 ml-auto">
-                    {userDiscounts.filter(d => d.status === 'active').length} Active
+                    {userDiscounts.filter(d => d.status === 'active' && !d.isExpired && !d.isUsed).length} Active
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -498,17 +498,22 @@ const DashboardOverview = () => {
                 {userDiscounts.slice(0, 3).map((discount, index) => (
                   <div key={discount.id || index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
                     <div>
-                      <p className="font-semibold text-green-700">{discount.discount_percentage}% OFF</p>
-                      <p className="text-xs text-muted-foreground">{discount.discount_type || 'Next Phase'}</p>
+                      <p className="font-semibold text-green-700">{discount.percentage}% OFF</p>
+                      <p className="text-xs text-muted-foreground">{discount.type || 'Next Phase'}</p>
                       <p className="text-xs text-muted-foreground">
                         {discount.status === 'active' ? 'Active' : discount.status}
+                        {discount.validUntil && !discount.isExpired && (
+                          <span className="ml-2">• Expires {new Date(discount.validUntil).toLocaleDateString()}</span>
+                        )}
                       </p>
                     </div>
                     <Badge 
-                      variant={discount.status === 'active' ? 'default' : 'secondary'}
-                      className={discount.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                      variant={discount.status === 'active' && !discount.isExpired && !discount.isUsed ? 'default' : 'secondary'}
+                      className={discount.status === 'active' && !discount.isExpired && !discount.isUsed ? 'bg-green-100 text-green-800' : ''}
                     >
-                      {discount.status === 'active' ? '✅ Ready to Use' : discount.status}
+                      {discount.isUsed ? '✅ Used' : 
+                       discount.isExpired ? '⏰ Expired' :
+                       discount.status === 'active' ? '✅ Ready to Use' : discount.status}
                     </Badge>
                   </div>
                 ))}
