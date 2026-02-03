@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserSidebar } from "@/components/UserSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardOverview from "./DashboardOverview";
+import CareerPaths from "./CareerPaths";
 import Sessions from "./Sessions";
 import Assignments from "./Assignments";
 import Leaderboard from "./Leaderboard";
@@ -56,6 +57,7 @@ const Dashboard = () => {
             <main className="flex-1">
               <Routes>
                 <Route index element={<DashboardOverview />} />
+                <Route path="career-paths" element={<CareerPaths />} />
                 <Route path="sessions" element={<Sessions />} />
                 <Route path="assignments" element={<Assignments />} />
                 <Route path="leaderboard" element={<Leaderboard />} />

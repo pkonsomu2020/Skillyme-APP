@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Search, Video, MessageSquare, Phone, FileText, Trophy, User, LogOut, MapPin } from "lucide-react";
+import { LayoutDashboard, Video, MessageSquare, Phone, FileText, Trophy, User, LogOut, MapPin, Map } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Career Paths", url: "/dashboard/career-paths", icon: Map },
   { title: "Sessions", url: "/dashboard/sessions", icon: Video },
   { title: "Assignments", url: "/dashboard/assignments", icon: FileText },
   { title: "Leaderboard", url: "/dashboard/leaderboard", icon: Trophy },
