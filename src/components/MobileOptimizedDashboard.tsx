@@ -7,7 +7,6 @@ import {
   Award, 
   CheckCircle, 
   Calendar, 
-  Star, 
   Crown,
   Flame,
   Trophy,
@@ -39,19 +38,35 @@ const MobileOptimizedDashboard: React.FC<MobileOptimizedDashboardProps> = ({
   const mobile = isMobile();
 
   // Memoize expensive calculations
+  const currentLevel = useMemo(() => {
+    const points = stats.pointsEarned;
+    if (points >= 1000) return 'Expert';
+    if (points >= 500) return 'Advanced';
+    if (points >= 250) return 'Intermediate';
+    if (points >= 100) return 'Explorer';
+    return 'Beginner';
+  }, [stats.pointsEarned]);
+
   const levelProgress = useMemo(() => {
-    const levels = ['Beginner', 'Explorer', 'Intermediate', 'Advanced', 'Expert'];
-    const currentIndex = levels.indexOf(stats.currentLevel || 'Beginner');
-    return ((currentIndex + 1) / levels.length) * 100;
-  }, [stats.currentLevel]);
+    const points = stats.pointsEarned;
+    const levelThresholds: Record<string, [number, number]> = {
+      Beginner:     [0,    100],
+      Explorer:     [100,  250],
+      Intermediate: [250,  500],
+      Advanced:     [500,  1000],
+      Expert:       [1000, 1000],
+    };
+    const [min, max] = levelThresholds[currentLevel] || [0, 100];
+    if (currentLevel === 'Expert') return 100;
+    return Math.min(Math.max(((points - min) / (max - min)) * 100, 0), 100);
+  }, [stats.pointsEarned, currentLevel]);
 
   const nextLevelPoints = useMemo(() => {
-    const levelThresholds = { Beginner: 100, Explorer: 250, Intermediate: 500, Advanced: 1000, Expert: 2000 };
-    const levels = ['Beginner', 'Explorer', 'Intermediate', 'Advanced', 'Expert'];
-    const currentIndex = levels.indexOf(stats.currentLevel || 'Beginner');
-    const nextLevel = levels[currentIndex + 1];
-    return nextLevel ? levelThresholds[nextLevel as keyof typeof levelThresholds] : 2000;
-  }, [stats.currentLevel]);
+    const thresholds: Record<string, number> = {
+      Beginner: 100, Explorer: 250, Intermediate: 500, Advanced: 1000, Expert: 1000
+    };
+    return thresholds[currentLevel] ?? 100;
+  }, [currentLevel]);
 
   // Optimized stats cards for mobile
   const statsCards = useMemo(() => [
@@ -78,8 +93,8 @@ const MobileOptimizedDashboard: React.FC<MobileOptimizedDashboardProps> = ({
     },
     {
       title: "Rank",
-      value: stats.currentLevel,
-      icon: Star,
+      value: currentLevel,
+      icon: Trophy,
       color: "yellow",
       badge: "Top 10%"
     }
@@ -124,7 +139,7 @@ const MobileOptimizedDashboard: React.FC<MobileOptimizedDashboardProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Crown className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-semibold">{stats.currentLevel}</span>
+                <span className="text-sm font-semibold">{currentLevel}</span>
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
                 {stats.pointsEarned} / {nextLevelPoints} pts

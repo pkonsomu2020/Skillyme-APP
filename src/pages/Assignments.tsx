@@ -18,8 +18,7 @@ import {
   XCircle, 
   AlertCircle,
   Trophy,
-  Target,
-  Star
+  Target
 } from "lucide-react";
 import { toast } from "sonner";
 import apiService from "@/services/api";
@@ -279,7 +278,7 @@ const Assignments = () => {
               </div>
               <div className="text-center">
                 <Badge variant="outline" className="text-lg px-3 py-1">
-                  <Star className="w-4 h-4 mr-1" />
+                  <Award className="w-4 h-4 mr-1" />
                   {userStats.level_name}
                 </Badge>
               </div>

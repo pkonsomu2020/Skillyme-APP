@@ -7,7 +7,6 @@ import {
   Calendar, 
   Award, 
   CheckCircle, 
-  Star, 
   TrendingUp, 
   Target, 
   Zap, 
@@ -215,31 +214,25 @@ const DashboardOverview = () => {
   }, [user]);
 
   const getLevelProgress = () => {
-    const levels = ['Beginner', 'Explorer', 'Intermediate', 'Advanced', 'Expert'];
-    const currentLevel = getCurrentLevel();
-    const currentIndex = levels.indexOf(currentLevel);
     const points = stats.pointsEarned;
-    
-    // Calculate progress within current level
-    const levelThresholds = [0, 100, 250, 500, 1000, 2000]; // Points needed for each level
-    const currentLevelMin = levelThresholds[currentIndex];
-    const nextLevelMin = levelThresholds[currentIndex + 1] || 2000;
-    
-    if (currentIndex === levels.length - 1) {
-      return 100; // Max level reached
-    }
-    
-    const progressInLevel = ((points - currentLevelMin) / (nextLevelMin - currentLevelMin)) * 100;
-    return Math.min(progressInLevel, 100);
+    const level = getCurrentLevel();
+    const levelThresholds: Record<string, [number, number]> = {
+      Beginner:     [0,    100],
+      Explorer:     [100,  250],
+      Intermediate: [250,  500],
+      Advanced:     [500,  1000],
+      Expert:       [1000, 1000], // max
+    };
+    const [min, max] = levelThresholds[level] || [0, 100];
+    if (level === 'Expert') return 100;
+    return Math.min(Math.max(((points - min) / (max - min)) * 100, 0), 100);
   };
 
   const getNextLevelPoints = () => {
-    const levelThresholds = { Beginner: 100, Explorer: 250, Intermediate: 500, Advanced: 1000, Expert: 2000 };
-    const levels = ['Beginner', 'Explorer', 'Intermediate', 'Advanced', 'Expert'];
-    const currentLevel = getCurrentLevel();
-    const currentIndex = levels.indexOf(currentLevel);
-    const nextLevel = levels[currentIndex + 1];
-    return nextLevel ? levelThresholds[nextLevel as keyof typeof levelThresholds] : 2000;
+    const thresholds: Record<string, number> = {
+      Beginner: 100, Explorer: 250, Intermediate: 500, Advanced: 1000, Expert: 1000
+    };
+    return thresholds[getCurrentLevel()] ?? 100;
   };
   
   // Use mobile-optimized version on small screens
@@ -363,7 +356,7 @@ const DashboardOverview = () => {
           <CardContent className="pt-6 relative z-10">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Star className="w-6 h-6 text-yellow-600" />
+                <Trophy className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Rank</p>
@@ -483,7 +476,7 @@ const DashboardOverview = () => {
           <TopLeaderboard />
           
           {/* User Discounts Card */}
-          {userDiscounts.length > 0 && (
+          {userDiscounts.length > 0 ? (
             <Card className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-700">
@@ -496,32 +489,74 @@ const DashboardOverview = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {userDiscounts.slice(0, 3).map((discount, index) => (
-                  <div key={discount.id || index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                  <div key={discount.id || index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border">
                     <div>
-                      <p className="font-semibold text-green-700">{discount.percentage}% OFF</p>
-                      <p className="text-xs text-muted-foreground">{discount.type || 'Next Phase'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {discount.status === 'active' ? 'Active' : discount.status}
-                        {discount.validUntil && !discount.isExpired && (
-                          <span className="ml-2">• Expires {new Date(discount.validUntil).toLocaleDateString()}</span>
-                        )}
-                      </p>
+                      <p className="font-bold text-green-700 text-lg">{discount.percentage}% OFF</p>
+                      <p className="text-xs text-muted-foreground capitalize">{(discount.type || 'next_phase').replace('_', ' ')}</p>
+                      {discount.validUntil && !discount.isExpired && (
+                        <p className="text-xs text-muted-foreground">
+                          Expires {new Date(discount.validUntil).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
-                    <Badge 
-                      variant={discount.status === 'active' && !discount.isExpired && !discount.isUsed ? 'default' : 'secondary'}
-                      className={discount.status === 'active' && !discount.isExpired && !discount.isUsed ? 'bg-green-100 text-green-800' : ''}
+                    <Badge
+                      className={
+                        discount.isUsed ? 'bg-gray-100 text-gray-600' :
+                        discount.isExpired ? 'bg-red-100 text-red-600' :
+                        'bg-green-100 text-green-800'
+                      }
                     >
-                      {discount.isUsed ? '✅ Used' : 
-                       discount.isExpired ? '⏰ Expired' :
-                       discount.status === 'active' ? '✅ Ready to Use' : discount.status}
+                      {discount.isUsed ? '✅ Used' :
+                       discount.isExpired ? '⏰ Expired' : '🎉 Active'}
                     </Badge>
                   </div>
                 ))}
                 {userDiscounts.length > 3 && (
                   <p className="text-xs text-center text-muted-foreground">
-                    +{userDiscounts.length - 3} more discounts available
+                    +{userDiscounts.length - 3} more discounts
                   </p>
                 )}
+              </CardContent>
+            </Card>
+          ) : (
+            /* Discount Progress Card — always show so students know how to earn discounts */
+            <Card className="bg-gradient-to-br from-amber-500/5 to-orange-500/5 border-amber-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-700">
+                  <Gift className="w-5 h-5" />
+                  Earn Discounts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Complete assignments to earn points and unlock session discounts automatically.
+                </p>
+                {[
+                  { pts: 5,   pct: 5,  label: 'Starter' },
+                  { pts: 20,  pct: 10, label: 'Explorer' },
+                  { pts: 50,  pct: 15, label: 'Intermediate' },
+                  { pts: 100, pct: 20, label: 'Advanced' },
+                  { pts: 200, pct: 30, label: 'Elite' },
+                ].map((tier) => {
+                  const reached = stats.pointsEarned >= tier.pts;
+                  return (
+                    <div key={tier.pts} className={`flex items-center justify-between p-2 rounded-lg ${reached ? 'bg-green-50 border border-green-200' : 'bg-muted/30'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{reached ? '✅' : '🔒'}</span>
+                        <div>
+                          <p className={`text-xs font-medium ${reached ? 'text-green-700' : 'text-muted-foreground'}`}>{tier.label}</p>
+                          <p className="text-xs text-muted-foreground">{tier.pts} pts</p>
+                        </div>
+                      </div>
+                      <Badge className={reached ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'}>
+                        {tier.pct}% OFF
+                      </Badge>
+                    </div>
+                  );
+                })}
+                <p className="text-xs text-center text-muted-foreground pt-1">
+                  You have <span className="font-bold text-primary">{stats.pointsEarned} pts</span> — {stats.pointsEarned < 5 ? `${5 - stats.pointsEarned} more to first discount` : 'keep earning to upgrade!'}
+                </p>
               </CardContent>
             </Card>
           )}

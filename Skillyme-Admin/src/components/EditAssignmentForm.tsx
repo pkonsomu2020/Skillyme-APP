@@ -112,10 +112,10 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
 
   const getDefaultPoints = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 10
-      case 'medium': return 25
-      case 'hard': return 50
-      default: return 10
+      case 'easy': return 5
+      case 'medium': return 10
+      case 'hard': return 15
+      default: return 5
     }
   }
 
@@ -260,9 +260,9 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
                     <SelectValue placeholder="Select difficulty" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="easy">Easy (10 pts default)</SelectItem>
-                    <SelectItem value="medium">Medium (25 pts default)</SelectItem>
-                    <SelectItem value="hard">Hard (50 pts default)</SelectItem>
+                    <SelectItem value="easy">Easy — 5 pts</SelectItem>
+                    <SelectItem value="medium">Medium — 10 pts</SelectItem>
+                    <SelectItem value="hard">Hard — 15 pts</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

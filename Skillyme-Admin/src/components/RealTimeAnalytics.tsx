@@ -55,6 +55,7 @@ export function RealTimeAnalytics() {
   const [signupTrends, setSignupTrends] = useState<SignupTrend[]>([])
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
+  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
 
@@ -162,8 +163,12 @@ export function RealTimeAnalytics() {
   }, [stats.totalRevenue])
 
   // Refresh all data
-  const refreshData = useCallback(async () => {
-    setLoading(true)
+  const refreshData = useCallback(async (isBackground = false) => {
+    if (isBackground) {
+      setBackgroundRefreshing(true)
+    } else {
+      setLoading(true)
+    }
     try {
       await Promise.all([
         fetchDashboardStats(),
@@ -175,6 +180,7 @@ export function RealTimeAnalytics() {
       console.error('Failed to refresh data:', error)
     } finally {
       setLoading(false)
+      setBackgroundRefreshing(false)
     }
   }, [fetchDashboardStats, fetchSignupTrends, generateRecentActivity])
 
@@ -188,7 +194,7 @@ export function RealTimeAnalytics() {
     if (!autoRefresh) return
 
     const interval = setInterval(() => {
-      refreshData()
+      refreshData(true)
     }, 30000) // 30 seconds
 
     return () => clearInterval(interval)
@@ -272,10 +278,10 @@ export function RealTimeAnalytics() {
           <Button
             variant="outline"
             size="sm"
-            onClick={refreshData}
-            disabled={loading}
+            onClick={() => refreshData(true)}
+            disabled={loading || backgroundRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${(loading || backgroundRefreshing) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -366,12 +372,20 @@ export function RealTimeAnalytics() {
         </Card>
       </div>
 
-      {/* Loading Overlay */}
+      {/* Background refresh indicator — small, non-blocking */}
+      {backgroundRefreshing && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-background border rounded-lg shadow-md px-3 py-2 text-sm text-muted-foreground">
+          <RefreshCw className="h-3 w-3 animate-spin" />
+          Updating...
+        </div>
+      )}
+
+      {/* Initial load overlay only */}
       {loading && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="text-center">
             <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
-            <p className="text-muted-foreground">Updating analytics...</p>
+            <p className="text-muted-foreground">Loading analytics...</p>
           </div>
         </div>
       )}

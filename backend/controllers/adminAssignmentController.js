@@ -1,6 +1,7 @@
 const Assignment = require('../models/Assignment');
 const AssignmentSubmission = require('../models/AssignmentSubmission');
 const UserPoints = require('../models/UserPoints');
+const { autoUpdateUserDiscount } = require('./adminDiscountController');
 const { body, validationResult } = require('express-validator');
 
 // Get all assignments (admin view)
@@ -140,8 +141,8 @@ const getAllSubmissions = async (req, res) => {
   }
 };
 
-// Review submission
-const reviewSubmission = async (req, res) => {
+  // Review submission — awards points to user on approval
+  const reviewSubmission = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -165,10 +166,18 @@ const reviewSubmission = async (req, res) => {
       });
     }
 
+    // Only allow reviewing pending submissions
+    if (submission.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Submission has already been reviewed'
+      });
+    }
+
     // Calculate points based on status and assignment difficulty
     let finalPoints = 0;
     if (status === 'approved') {
-      finalPoints = points_earned || submission.assignments.points_reward;
+      finalPoints = points_earned !== undefined ? parseInt(points_earned) : submission.assignments.points_reward;
     }
 
     const reviewData = {
@@ -179,6 +188,24 @@ const reviewSubmission = async (req, res) => {
     };
 
     const reviewedSubmission = await AssignmentSubmission.review(id, reviewData);
+
+    // Award points to user if approved
+    if (status === 'approved' && finalPoints > 0) {
+      try {
+        const updatedPoints = await UserPoints.addPoints(
+          submission.user_id,
+          finalPoints,
+          'assignment',
+          submission.assignment_id,
+          `Assignment approved: ${submission.assignments.title}`
+        );
+        // Auto-update discount tier based on new total points
+        await autoUpdateUserDiscount(submission.user_id, updatedPoints.total_points);
+      } catch (pointsError) {
+        // Log but don't fail the review if points update fails
+        console.error('Failed to award points after approval:', pointsError);
+      }
+    }
 
     res.json({
       success: true,

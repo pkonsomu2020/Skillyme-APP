@@ -16,9 +16,9 @@ class Assignment {
 
     // Calculate points based on difficulty if not provided
     const defaultPoints = {
-      easy: 10,
-      medium: 25,
-      hard: 50
+      easy: 5,
+      medium: 10,
+      hard: 15
     };
 
     const finalPointsReward = points_reward || defaultPoints[difficulty_level] || 10;

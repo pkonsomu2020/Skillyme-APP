@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const supabaseAdmin = require('../config/supabaseAdmin');
+const { DISCOUNT_TIERS, calculateDiscountForPoints } = require('../controllers/adminDiscountController');
+
+// Get discount tiers (public — no auth needed)
+router.get('/discount-tiers', (req, res) => {
+  res.json({ success: true, data: { tiers: DISCOUNT_TIERS } });
+});
 
 // Get user's discounts
 router.get('/discounts', authenticateToken, async (req, res) => {

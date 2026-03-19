@@ -12,9 +12,10 @@ import {
   Award, 
   Mail, 
   CheckCircle, 
-  Star,
   Target,
-  TrendingUp
+  TrendingUp,
+  Code2,
+  Scale
 } from "lucide-react"
 import { adminApi } from "@/services/api"
 
@@ -36,16 +37,15 @@ interface LeaderboardUser {
     average_points_per_assignment: number
     recent_submissions: any[]
   }
+  discount_tier: { discount: number; label: string } | null
   discount_eligibility: {
     is_eligible: boolean
+    can_upgrade: boolean
+    suggested_discount: number
+    tier_label: string
     points_requirement: number
-    assignments_requirement: number
-    points_per_assignment_requirement: number
-    high_points_threshold: number
+    next_tier: { minPoints: number; discount: number; label: string } | null
     meets_points: boolean
-    meets_assignments: boolean
-    meets_points_per_assignment: boolean
-    has_high_points: boolean
     eligibility_reason: string
   }
   existing_discounts: any[]
@@ -74,6 +74,7 @@ export default function Discounts() {
   const [minPoints, setMinPoints] = useState(10)
   const [discountPercentage, setDiscountPercentage] = useState(20)
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'discounts'>('leaderboard')
+  const [fieldFilter, setFieldFilter] = useState<'all' | 'software-engineering' | 'law'>('all')
   const [autoRefresh, setAutoRefresh] = useState(true)
   const { toast } = useToast()
 
@@ -127,11 +128,15 @@ export default function Discounts() {
   const awardDiscount = async (userId: number, userPoints: number) => {
     try {
       setAwarding(userId)
+      // Find the user's tier-suggested discount
+      const user = leaderboard.find(u => u.user_id === userId)
+      const suggestedPct = user?.discount_eligibility?.suggested_discount || discountPercentage
+
       const response = await adminApi.discounts.award({
         user_id: userId,
-        discount_percentage: discountPercentage,
+        discount_percentage: suggestedPct,
         discount_type: 'next_phase',
-        reason: `Top performer with ${userPoints} points - Leaderboard achievement`
+        reason: `${user?.discount_eligibility?.tier_label || 'Performance'} tier discount — ${userPoints} points earned`
       })
       
       if (response.success) {
@@ -237,13 +242,6 @@ export default function Discounts() {
     return <Badge variant={variants[status as keyof typeof variants] || "outline"}>{status}</Badge>
   }
 
-  const getEligibilityBadge = (user: LeaderboardUser) => {
-    if (user.discount_eligibility.is_eligible) {
-      return <Badge className="bg-green-100 text-green-800">✅ Eligible</Badge>
-    }
-    return <Badge variant="outline">❌ Not Eligible</Badge>
-  }
-
   if (loading) {
     return (
       <DashboardLayout>
@@ -260,6 +258,18 @@ export default function Discounts() {
   }
 
   const eligibleCount = leaderboard.filter(user => user.discount_eligibility.is_eligible).length
+
+  const filteredLeaderboard = leaderboard.filter(user => {
+    if (fieldFilter === 'all') return true
+    const field = user.users.field_of_study?.toLowerCase() || ''
+    if (fieldFilter === 'software-engineering') {
+      return field.includes('software') || field.includes('engineering') || field.includes('computer')
+    }
+    if (fieldFilter === 'law') {
+      return field.includes('law') || field.includes('legal')
+    }
+    return true
+  })
 
   return (
     <DashboardLayout>
@@ -490,89 +500,128 @@ export default function Discounts() {
             {/* Leaderboard */}
             <Card>
               <CardHeader>
-                <CardTitle>Top Performers - Discount Eligibility</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  <strong>Eligibility Criteria:</strong> ≥{minPoints} points + (≥100 total points OR good assignment performance ≥15 pts avg)
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  💡 High performers (≥100 points) qualify automatically. Others need good assignment scores (≥15 pts avg)
-                </p>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <CardTitle>Top Performers — Discount Tiers</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Discounts are auto-awarded based on points: 5pts=5% · 20pts=10% · 50pts=15% · 100pts=20% · 200pts=30%
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={fieldFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFieldFilter('all')}
+                    >
+                      <Trophy className="mr-1 h-3 w-3" />
+                      All
+                    </Button>
+                    <Button
+                      variant={fieldFilter === 'software-engineering' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFieldFilter('software-engineering')}
+                    >
+                      <Code2 className="mr-1 h-3 w-3" />
+                      Software Engineering
+                    </Button>
+                    <Button
+                      variant={fieldFilter === 'law' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFieldFilter('law')}
+                    >
+                      <Scale className="mr-1 h-3 w-3" />
+                      Law
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {leaderboard.map((user, index) => (
+                  {filteredLeaderboard.map((user, index) => {
+                    const activeDiscount = user.existing_discounts.find((d: any) => d.status === 'active')
+                    const suggestedPct = user.discount_eligibility.suggested_discount || discountPercentage
+                    const canUpgrade = user.discount_eligibility.can_upgrade
+                    const hasDiscount = !!activeDiscount
+
+                    return (
                     <div
                       key={user.user_id}
                       className={`p-4 border rounded-lg ${
-                        user.discount_eligibility.is_eligible 
-                          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' 
+                        user.discount_eligibility.is_eligible
+                          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
                           : 'border-border'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full font-bold">
+                          <div className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full font-bold text-sm">
                             {index + 1}
                           </div>
                           <div>
                             <h3 className="font-semibold">{user.users.name}</h3>
                             <p className="text-sm text-muted-foreground">{user.users.email}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               {user.users.field_of_study} • {user.users.level_of_study}
                             </p>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-4">
+
+                        <div className="flex items-center gap-3 flex-wrap">
                           <div className="text-right">
-                            <div className="flex items-center space-x-2">
-                              <Star className="h-4 w-4 text-yellow-500" />
+                            <div className="flex items-center gap-1">
+                            <Trophy className="h-4 w-4 text-yellow-500" />
                               <span className="font-bold">{user.total_points} pts</span>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {user.assignment_stats.approved_submissions} assignments • 
-                              {user.assignment_stats.average_points_per_assignment.toFixed(1)} pts avg
+                            <div className="text-xs text-muted-foreground">
+                              {user.assignment_stats.approved_submissions} assignments approved
                             </div>
                           </div>
-                          
-                          {getEligibilityBadge(user)}
-                          
-                          {user.existing_discounts.length > 0 ? (
-                            <Badge variant="secondary">
-                              <CheckCircle className="mr-1 h-3 w-3" />
-                              Has Discount
+
+                          {/* Tier badge */}
+                          {user.discount_eligibility.is_eligible ? (
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {user.discount_eligibility.tier_label} — {suggestedPct}% tier
                             </Badge>
-                          ) : user.discount_eligibility.is_eligible ? (
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              {user.discount_eligibility.eligibility_reason}
+                            </Badge>
+                          )}
+
+                          {/* Active discount badge */}
+                          {hasDiscount && (
+                            <Badge className="bg-green-100 text-green-800">
+                              <CheckCircle className="mr-1 h-3 w-3" />
+                              {activeDiscount.discount_percentage}% Active
+                            </Badge>
+                          )}
+
+                          {/* Action button */}
+                          {user.discount_eligibility.is_eligible && (
                             <Button
                               size="sm"
                               onClick={() => awardDiscount(user.user_id, user.total_points)}
                               disabled={awarding === user.user_id}
-                              className="bg-green-600 hover:bg-green-700"
+                              className={canUpgrade ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}
                             >
                               {awarding === user.user_id ? (
                                 <>
                                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                  Awarding...
+                                  {canUpgrade ? 'Upgrading...' : 'Awarding...'}
                                 </>
                               ) : (
                                 <>
                                   <Gift className="mr-1 h-3 w-3" />
-                                  Award {discountPercentage}%
+                                  {canUpgrade ? `Upgrade to ${suggestedPct}%` : `Award ${suggestedPct}%`}
                                 </>
                               )}
                             </Button>
-                          ) : (
-                            <div className="text-xs text-muted-foreground">
-                              {user.discount_eligibility.eligibility_reason || 
-                               `Need: ${!user.discount_eligibility.meets_points ? 'More points' : 
-                                       user.discount_eligibility.has_high_points ? 'Already qualified!' : 
-                                       'Complete assignments or reach 100+ points'}`}
-                            </div>
                           )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>

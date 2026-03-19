@@ -4,7 +4,97 @@ const ErrorHandler = require('../middleware/errorHandler');
 const emailService = require('../services/emailService');
 const UserPoints = require('../models/UserPoints');
 
-// Get leaderboard with discount eligibility
+// Points → Discount tier mapping
+// More points = higher discount
+const DISCOUNT_TIERS = [
+  { minPoints: 200, discount: 30, label: 'Elite' },
+  { minPoints: 100, discount: 20, label: 'Advanced' },
+  { minPoints: 50,  discount: 15, label: 'Intermediate' },
+  { minPoints: 20,  discount: 10, label: 'Explorer' },
+  { minPoints: 5,   discount: 5,  label: 'Starter' },
+];
+
+function calculateDiscountForPoints(totalPoints) {
+  for (const tier of DISCOUNT_TIERS) {
+    if (totalPoints >= tier.minPoints) {
+      return { discount: tier.discount, label: tier.label };
+    }
+  }
+  return null; // Not eligible yet
+}
+
+// Auto-award or upgrade discount when user earns points
+// Called internally after points are awarded
+const autoUpdateUserDiscount = async (userId, totalPoints) => {
+  try {
+    const tier = calculateDiscountForPoints(totalPoints);
+    if (!tier) return; // Not eligible yet
+
+    // Get user details
+    const { data: user } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', userId)
+      .single();
+
+    if (!user) return;
+
+    // Check existing active discount
+    const { data: existing } = await supabase
+      .from('user_discounts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (existing) {
+      // Only upgrade if new tier is higher
+      if (tier.discount <= existing.discount_percentage) return;
+
+      // Upgrade existing discount
+      await supabase
+        .from('user_discounts')
+        .update({
+          discount_percentage: tier.discount,
+          reason: `Auto-upgraded to ${tier.label} tier — ${totalPoints} points earned`,
+          user_points_at_award: totalPoints,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id);
+    } else {
+      // Create new discount
+      await supabase
+        .from('user_discounts')
+        .insert([{
+          user_id: userId,
+          discount_percentage: tier.discount,
+          discount_type: 'next_phase',
+          status: 'active',
+          awarded_at: new Date().toISOString(),
+          reason: `Auto-awarded ${tier.label} tier discount — ${totalPoints} points earned`,
+          user_points_at_award: totalPoints
+        }]);
+
+      // Send email notification
+      try {
+        await emailService.sendDiscountAwardEmail(
+          user.email,
+          user.name,
+          tier.discount,
+          'next_phase',
+          totalPoints,
+          `You've reached ${totalPoints} points and unlocked a ${tier.discount}% discount!`
+        );
+      } catch (e) {
+        console.warn('Discount email failed:', e.message);
+      }
+    }
+  } catch (err) {
+    console.error('autoUpdateUserDiscount error:', err.message);
+  }
+};
+
+
 const getLeaderboardForDiscounts = async (req, res) => {
   try {
     const { 
@@ -87,20 +177,10 @@ const getLeaderboardForDiscounts = async (req, res) => {
             ? totalPointsEarned / approvedSubmissions.length 
             : 0;
 
-          // Check discount eligibility - More flexible approach
-          // Primary criteria: Points (always required)
+          // Check discount eligibility using points tier system
+          const tierResult = calculateDiscountForPoints(userPoints.total_points);
+          const isEligible = tierResult !== null;
           const meetsPoints = userPoints.total_points >= parseInt(min_points);
-          
-          // Secondary criteria: Assignments OR high points
-          const meetsAssignments = approvedSubmissions.length >= 3;
-          const meetsPointsPerAssignment = averagePointsPerAssignment >= 15; // Good performance
-          const hasHighPoints = userPoints.total_points >= 100; // High performers with points alone
-          
-          // Eligible if: Has minimum points AND (has high points OR good assignment performance OR is developing user)
-          const isEligible = meetsPoints && 
-                           (hasHighPoints || 
-                            (meetsAssignments && meetsPointsPerAssignment) || 
-                            (approvedSubmissions.length < 3 && meetsPointsPerAssignment));
 
           // Get existing discount records
           const { data: existingDiscounts, error: discountError } = await supabase
@@ -112,6 +192,9 @@ const getLeaderboardForDiscounts = async (req, res) => {
           if (discountError) {
             console.warn(`Discounts error for user ${user.id}:`, discountError);
           }
+
+          const activeDiscount = existingDiscounts?.find(d => d.status === 'active');
+          const canUpgrade = activeDiscount && tierResult && tierResult.discount > activeDiscount.discount_percentage;
 
           return {
             user_id: user.id,
@@ -131,21 +214,18 @@ const getLeaderboardForDiscounts = async (req, res) => {
               average_points_per_assignment: Math.round(averagePointsPerAssignment * 100) / 100,
               recent_submissions: submissions?.slice(0, 5) || []
             },
+            discount_tier: tierResult,
             discount_eligibility: {
-              is_eligible: isEligible,
+              is_eligible: isEligible && meetsPoints,
+              can_upgrade: canUpgrade || false,
+              suggested_discount: tierResult?.discount || 0,
+              tier_label: tierResult?.label || 'Not eligible',
               points_requirement: parseInt(min_points),
-              assignments_requirement: 3,
-              points_per_assignment_requirement: 15,
-              high_points_threshold: 100,
+              next_tier: DISCOUNT_TIERS.slice().reverse().find(t => t.minPoints > userPoints.total_points) || null,
               meets_points: meetsPoints,
-              meets_assignments: meetsAssignments,
-              meets_points_per_assignment: meetsPointsPerAssignment,
-              has_high_points: hasHighPoints,
-              eligibility_reason: isEligible 
-                ? (hasHighPoints ? 'High points achiever (≥100 points)' : 
-                   (meetsAssignments && meetsPointsPerAssignment) ? 'Excellent assignment performance' :
-                   'Good performance, developing user')
-                : 'Needs more points or better assignment performance'
+              eligibility_reason: isEligible
+                ? `${tierResult.label} tier — ${tierResult.discount}% discount (${userPoints.total_points} pts)`
+                : `Earn ${5 - userPoints.total_points > 0 ? 5 - userPoints.total_points : 0} more points to unlock first discount`
             },
             existing_discounts: existingDiscounts || []
           };
@@ -206,10 +286,8 @@ const getLeaderboardForDiscounts = async (req, res) => {
           eligible_users: enhancedData.filter(u => u.discount_eligibility.is_eligible).length,
           users_with_discounts: enhancedData.filter(u => u.existing_discounts.length > 0).length,
           criteria: {
-            min_points: parseInt(min_points),
-            min_assignments: 3,
-            min_points_per_assignment: 15,
-            high_points_threshold: 100
+            tiers: DISCOUNT_TIERS,
+            min_points: parseInt(min_points)
           }
         }
       }
@@ -266,7 +344,7 @@ const awardDiscount = async (req, res) => {
       });
     }
 
-    // Check if user already has an active discount
+    // Check if user already has an active discount — upgrade if new % is higher
     const { data: existingDiscount, error: existingError } = await supabase
       .from('user_discounts')
       .select('*')
@@ -279,9 +357,31 @@ const awardDiscount = async (req, res) => {
     }
 
     if (existingDiscount) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already has an active discount'
+      if (parseInt(discount_percentage) <= existingDiscount.discount_percentage) {
+        return res.status(400).json({
+          success: false,
+          message: `User already has an active ${existingDiscount.discount_percentage}% discount. Award a higher percentage to upgrade.`
+        });
+      }
+      // Upgrade existing discount
+      const { data: upgraded, error: upgradeError } = await supabase
+        .from('user_discounts')
+        .update({
+          discount_percentage: parseInt(discount_percentage),
+          reason: reason || `Upgraded to ${discount_percentage}% — ${userPoints.total_points} points`,
+          user_points_at_award: userPoints.total_points,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingDiscount.id)
+        .select()
+        .single();
+
+      if (upgradeError) throw upgradeError;
+
+      return res.json({
+        success: true,
+        message: `Discount upgraded to ${discount_percentage}% successfully`,
+        data: { discount: upgraded, user: { id: user.id, name: user.name, email: user.email, points: userPoints.total_points } }
       });
     }
 
@@ -565,5 +665,8 @@ module.exports = {
   getLeaderboardForDiscounts,
   awardDiscount,
   getAllDiscounts,
-  bulkAwardDiscounts
+  bulkAwardDiscounts,
+  autoUpdateUserDiscount,
+  calculateDiscountForPoints,
+  DISCOUNT_TIERS
 };

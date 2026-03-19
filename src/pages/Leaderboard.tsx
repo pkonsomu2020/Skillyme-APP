@@ -8,11 +8,11 @@ import {
   Medal, 
   Award, 
   Crown, 
-  Star, 
   TrendingUp,
-  Calendar,
   Users,
-  Target
+  Target,
+  Code2,
+  Scale
 } from "lucide-react";
 import { toast } from "sonner";
 import apiService from "@/services/api";
@@ -28,6 +28,7 @@ interface LeaderboardEntry {
   sessions_attended?: number;
   payments_count?: number;
   rank: number;
+  field_of_study?: string;
 }
 
 interface LeaderboardStats {
@@ -45,55 +46,41 @@ const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [stats, setStats] = useState<LeaderboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all-time");
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [activeTab]);
+  }, []);
 
   const fetchLeaderboard = async () => {
     try {
       setIsLoading(true);
       
-      // Determine the period based on active tab
-      let period = undefined;
-      if (activeTab === "weekly") period = "week";
-      if (activeTab === "monthly") period = "month";
-      
-      // Try Supabase first, then fallback to API
-      const response = await apiService.getLeaderboard(50, period);
+      const response = await apiService.getLeaderboard(100);
       
       if (response.success && response.data.leaderboard) {
         setLeaderboard(response.data.leaderboard);
         
-        // Calculate stats from the leaderboard data
         const leaderboardData = response.data.leaderboard;
         if (leaderboardData.length > 0) {
           const totalPoints = leaderboardData.reduce((sum: number, entry: LeaderboardEntry) => sum + entry.total_points, 0);
           const averagePoints = totalPoints / leaderboardData.length;
           const topPerformer = leaderboardData[0];
           
-          // Find user's rank if authenticated
           let userRank = undefined;
           if (isAuthenticated && user) {
             const userEntry = leaderboardData.find((entry: LeaderboardEntry) => entry.user_id === user.id);
-            if (userEntry) {
-              userRank = userEntry.rank;
-            }
+            if (userEntry) userRank = userEntry.rank;
           }
           
           setStats({
             total_participants: leaderboardData.length,
             average_points: averagePoints,
-            top_performer: {
-              name: topPerformer.name,
-              points: topPerformer.total_points
-            },
+            top_performer: { name: topPerformer.name, points: topPerformer.total_points },
             your_rank: userRank
           });
         }
       } else {
-        // If no data from Supabase, show empty state
         setLeaderboard([]);
         setStats(null);
       }
@@ -106,6 +93,27 @@ const Leaderboard = () => {
       setIsLoading(false);
     }
   };
+
+  // Filter leaderboard by field of study and re-rank
+  const getFilteredLeaderboard = () => {
+    let filtered = leaderboard;
+    if (activeTab === "software-engineering") {
+      filtered = leaderboard.filter(e =>
+        e.field_of_study?.toLowerCase().includes("software") ||
+        e.field_of_study?.toLowerCase().includes("engineering") ||
+        e.field_of_study?.toLowerCase().includes("computer")
+      );
+    } else if (activeTab === "law") {
+      filtered = leaderboard.filter(e =>
+        e.field_of_study?.toLowerCase().includes("law") ||
+        e.field_of_study?.toLowerCase().includes("legal")
+      );
+    }
+    // Re-rank within the filtered list
+    return filtered.map((entry, index) => ({ ...entry, rank: index + 1 }));
+  };
+
+  const filteredLeaderboard = getFilteredLeaderboard();
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -230,17 +238,17 @@ const Leaderboard = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all-time" className="flex items-center gap-2">
+          <TabsTrigger value="all" className="flex items-center gap-2">
             <Trophy className="w-4 h-4" />
-            All Time
+            All
           </TabsTrigger>
-          <TabsTrigger value="monthly" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            This Month
+          <TabsTrigger value="software-engineering" className="flex items-center gap-2">
+            <Code2 className="w-4 h-4" />
+            Software Engineering
           </TabsTrigger>
-          <TabsTrigger value="weekly" className="flex items-center gap-2">
-            <Star className="w-4 h-4" />
-            This Week
+          <TabsTrigger value="law" className="flex items-center gap-2">
+            <Scale className="w-4 h-4" />
+            Law
           </TabsTrigger>
         </TabsList>
 
@@ -249,8 +257,8 @@ const Leaderboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="w-5 h-5" />
-                {activeTab === "all-time" ? "All Time Rankings" : 
-                 activeTab === "monthly" ? "Monthly Rankings" : "Weekly Rankings"}
+                {activeTab === "all" ? "All Rankings" :
+                 activeTab === "software-engineering" ? "Software Engineering Rankings" : "Law Rankings"}
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Showing active users who have completed assignments, attended sessions, or made payments
@@ -258,13 +266,13 @@ const Leaderboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {leaderboard.length === 0 ? (
+                {filteredLeaderboard.length === 0 ? (
                   <div className="text-center py-8">
                     <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">No rankings available yet.</p>
                   </div>
                 ) : (
-                  leaderboard.map((entry, index) => (
+                  filteredLeaderboard.map((entry, index) => (
                     <div
                       key={entry.user_id}
                       className={`flex items-center gap-2 md:gap-4 p-3 md:p-4 rounded-lg border transition-all hover:shadow-md ${

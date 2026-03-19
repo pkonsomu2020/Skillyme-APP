@@ -30,7 +30,6 @@ import {
   Heart,
   Wrench,
   ChevronRight,
-  Star,
   MapPin,
   Calendar
 } from "lucide-react";
@@ -1204,7 +1203,7 @@ const CareerPaths = () => {
                 <div className="space-y-1">
                   {currentCourse.topUniversities.map((uni, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
-                      <Star className="w-3 h-3 text-yellow-500" />
+                      <CheckCircle className="w-3 h-3 text-green-500" />
                       {uni}
                     </div>
                   ))}

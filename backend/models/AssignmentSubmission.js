@@ -99,6 +99,26 @@ class AssignmentSubmission {
     return data || [];
   }
 
+  static async getAll(filters = {}) {
+    let query = supabase
+      .from('assignment_submissions')
+      .select(`
+        *,
+        assignments(title, points_reward, difficulty_level, session_id),
+        users(name, email)
+      `);
+
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    query = query.order('submitted_at', { ascending: false });
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+
   static async review(id, reviewData) {
     const { status, points_earned, admin_feedback, reviewed_by } = reviewData;
 
