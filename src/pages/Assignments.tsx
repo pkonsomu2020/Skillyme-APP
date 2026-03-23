@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +11,6 @@ import {
   Clock, 
   Award, 
   FileText, 
-  Link as LinkIcon, 
   Upload, 
   CheckCircle, 
   XCircle, 
@@ -139,14 +137,9 @@ const Assignments = () => {
       
       // Create FormData for file uploads
       const formData = new FormData();
-      formData.append('submission_text', submissionData.submission_text.trim());
-      
-      // Add links
-      const validLinks = submissionData.submission_links.filter(link => link.trim());
-      formData.append('submission_links', JSON.stringify(validLinks));
       
       // Add files
-      submissionData.submission_files.forEach((file, index) => {
+      submissionData.submission_files.forEach((file) => {
         formData.append(`files`, file);
       });
 
@@ -370,112 +363,62 @@ const Assignments = () => {
                               
                               <div className="space-y-4">
                                 <div>
-                                  <Label htmlFor="submission_text">Your Response</Label>
-                                  <Textarea
-                                    id="submission_text"
-                                    placeholder="Write your response here..."
-                                    value={submissionData.submission_text}
-                                    onChange={(e) => setSubmissionData(prev => ({
-                                      ...prev,
-                                      submission_text: e.target.value
-                                    }))}
-                                    className="min-h-[120px]"
-                                  />
-                                </div>
-                                
-                                {(assignment.submission_type === 'link' || assignment.submission_type === 'mixed') && (
-                                  <div>
-                                    <Label>Links (Optional)</Label>
-                                    {submissionData.submission_links.map((link, index) => (
-                                      <div key={index} className="flex gap-2 mt-2">
-                                        <Input
-                                          placeholder="https://..."
-                                          value={link}
-                                          onChange={(e) => updateLink(index, e.target.value)}
-                                        />
-                                        {submissionData.submission_links.length > 1 && (
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => removeLink(index)}
-                                          >
-                                            Remove
-                                          </Button>
-                                        )}
-                                      </div>
-                                    ))}
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={addLinkField}
-                                      className="mt-2"
+                                  <Label>Upload Your Submission</Label>
+                                  <div className="mt-2">
+                                    <div
+                                      className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                                      onClick={() => document.getElementById(`file-upload-${assignment.id}`)?.click()}
+                                      onDragOver={(e) => e.preventDefault()}
+                                      onDrop={(e) => { e.preventDefault(); handleFileUpload(e.dataTransfer.files); }}
                                     >
-                                      <LinkIcon className="w-4 h-4 mr-2" />
-                                      Add Link
-                                    </Button>
-                                  </div>
-                                )}
-
-                                {(assignment.submission_type === 'file' || assignment.submission_type === 'mixed') && (
-                                  <div>
-                                    <Label>File Attachments (Optional)</Label>
-                                    <div className="mt-2">
-                                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                                        <p className="text-sm text-muted-foreground mb-2">
-                                          Drag and drop files here, or click to browse
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mb-4">
-                                          Maximum file size: 200MB per file. All file types accepted.
-                                        </p>
-                                        <Input
-                                          type="file"
-                                          multiple
-                                          onChange={(e) => handleFileUpload(e.target.files)}
-                                          className="hidden"
-                                          id="file-upload"
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          onClick={() => document.getElementById('file-upload')?.click()}
-                                        >
-                                          <Upload className="w-4 h-4 mr-2" />
-                                          Choose Files
-                                        </Button>
-                                      </div>
-                                      
-                                      {submissionData.submission_files.length > 0 && (
-                                        <div className="mt-4 space-y-2">
-                                          <Label className="text-sm font-medium">Selected Files:</Label>
-                                          {submissionData.submission_files.map((file, index) => (
-                                            <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-lg">
-                                              <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-muted-foreground" />
-                                                <div>
-                                                  <p className="text-sm font-medium">{file.name}</p>
-                                                  <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                                                </div>
-                                              </div>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeFile(index)}
-                                              >
-                                                <XCircle className="w-4 h-4" />
-                                              </Button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
+                                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                      <p className="text-sm text-muted-foreground mb-1">
+                                        Drag and drop files here, or click to browse
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mb-4">
+                                        Maximum file size: 200MB per file. All file types accepted.
+                                      </p>
+                                      <Input
+                                        type="file"
+                                        multiple
+                                        onChange={(e) => handleFileUpload(e.target.files)}
+                                        className="hidden"
+                                        id={`file-upload-${assignment.id}`}
+                                      />
+                                      <Button type="button" variant="outline" onClick={(e) => { e.stopPropagation(); document.getElementById(`file-upload-${assignment.id}`)?.click(); }}>
+                                        <Upload className="w-4 h-4 mr-2" />
+                                        Choose Files
+                                      </Button>
                                     </div>
+
+                                    {submissionData.submission_files.length > 0 && (
+                                      <div className="mt-4 space-y-2">
+                                        <Label className="text-sm font-medium">Selected Files:</Label>
+                                        {submissionData.submission_files.map((file, index) => (
+                                          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                              <FileText className="w-4 h-4 text-muted-foreground" />
+                                              <div>
+                                                <p className="text-sm font-medium">{file.name}</p>
+                                                <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                                              </div>
+                                            </div>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeFile(index)}
+                                            >
+                                              <XCircle className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </div>
-                              
+
                               <div className="flex justify-end gap-2 pt-4">
                                 <Button
                                   variant="outline"
@@ -485,7 +428,7 @@ const Assignments = () => {
                                 </Button>
                                 <Button
                                   onClick={handleSubmission}
-                                  disabled={isSubmitting || (!submissionData.submission_text.trim() && submissionData.submission_files.length === 0)}
+                                  disabled={isSubmitting || submissionData.submission_files.length === 0}
                                 >
                                   {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
                                 </Button>

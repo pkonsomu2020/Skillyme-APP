@@ -293,9 +293,13 @@ export function RealTimeAnalytics() {
           <Card key={stat.title} className="relative overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  {loading ? (
+                    <div className="h-8 w-24 bg-muted animate-pulse rounded mt-1 mb-1" />
+                  ) : (
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
                 </div>
                 <div className={`p-3 rounded-full ${stat.bgColor}`}>
@@ -373,20 +377,10 @@ export function RealTimeAnalytics() {
       </div>
 
       {/* Background refresh indicator — small, non-blocking */}
-      {backgroundRefreshing && (
+      {(backgroundRefreshing || loading) && (
         <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-background border rounded-lg shadow-md px-3 py-2 text-sm text-muted-foreground">
           <RefreshCw className="h-3 w-3 animate-spin" />
-          Updating...
-        </div>
-      )}
-
-      {/* Initial load overlay only */}
-      {loading && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
-            <p className="text-muted-foreground">Loading analytics...</p>
-          </div>
+          {loading ? 'Loading analytics...' : 'Updating...'}
         </div>
       )}
     </div>

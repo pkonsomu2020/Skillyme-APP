@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { CheckCircle, XCircle, AlertCircle, Award, User, Calendar, Link as LinkIcon } from "lucide-react"
+import { CheckCircle, XCircle, AlertCircle, Award, User, Calendar, FileText } from "lucide-react"
 import { adminApi } from "@/services/api"
 
 interface Submission {
@@ -17,6 +17,7 @@ interface Submission {
   user_id: number
   submission_text?: string
   submission_links?: string[]
+  submission_files?: string[]
   status: 'pending' | 'approved' | 'rejected' | 'needs_revision'
   points_earned: number
   submitted_at: string
@@ -177,36 +178,30 @@ export function ReviewSubmissionDialog({ submission, onReviewed, onCancel }: Rev
               <CardTitle className="text-lg">Student Submission</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {submission.submission_text && (
-                <div>
-                  <Label className="text-sm font-medium">Response:</Label>
-                  <div className="mt-2 p-4 bg-muted rounded-lg">
-                    <p className="whitespace-pre-wrap">{submission.submission_text}</p>
-                  </div>
-                </div>
-              )}
-
-              {submission.submission_links && submission.submission_links.length > 0 && (
+              {submission.submission_files && submission.submission_files.length > 0 ? (
                 <div>
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <LinkIcon className="w-4 h-4" />
-                    Submitted Links:
+                    <FileText className="w-4 h-4" />
+                    Submitted Files:
                   </Label>
                   <div className="mt-2 space-y-2">
-                    {submission.submission_links.map((link, index) => (
-                      <div key={index} className="p-3 bg-muted rounded-lg">
-                        <a 
-                          href={link} 
-                          target="_blank" 
+                    {submission.submission_files.map((file: string, index: number) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <a
+                          href={file}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline break-all"
+                          className="text-blue-600 hover:underline break-all text-sm"
                         >
-                          {link}
+                          {file.split('/').pop() || file}
                         </a>
                       </div>
                     ))}
                   </div>
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No files submitted.</p>
               )}
             </CardContent>
           </Card>

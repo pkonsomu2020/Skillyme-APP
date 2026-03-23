@@ -19,8 +19,7 @@ import {
   Eye,
   Edit,
   Trash2
-} from "lucide-react"
-import {
+} from "lucide-react"import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -58,6 +57,7 @@ interface Submission {
   user_id: number
   submission_text?: string
   submission_links?: string[]
+  submission_files?: string[]
   status: 'pending' | 'approved' | 'rejected' | 'needs_revision'
   points_earned: number
   submitted_at: string
@@ -421,35 +421,27 @@ export default function Assignments() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {submission.submission_text && (
+                      {submission.submission_files && submission.submission_files.length > 0 ? (
                         <div>
-                          <p className="font-medium text-sm mb-1">Response:</p>
-                          <p className="text-sm bg-muted p-3 rounded-lg">
-                            {submission.submission_text.length > 200 
-                              ? `${submission.submission_text.substring(0, 200)}...`
-                              : submission.submission_text
-                            }
-                          </p>
-                        </div>
-                      )}
-                      
-                      {submission.submission_links && submission.submission_links.length > 0 && (
-                        <div>
-                          <p className="font-medium text-sm mb-1">Links:</p>
+                          <p className="font-medium text-sm mb-1">Submitted Files:</p>
                           <div className="space-y-1">
-                            {submission.submission_links.map((link, index) => (
-                              <a 
-                                key={index}
-                                href={link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-sm block"
-                              >
-                                {link}
-                              </a>
+                            {submission.submission_files.map((file: string, index: number) => (
+                              <div key={index} className="flex items-center gap-2 text-sm bg-muted p-2 rounded-lg">
+                                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <a
+                                  href={file}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline truncate"
+                                >
+                                  {file.split('/').pop() || file}
+                                </a>
+                              </div>
                             ))}
                           </div>
                         </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No files attached.</p>
                       )}
                       
                       <div className="flex justify-end">
