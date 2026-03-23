@@ -47,6 +47,25 @@ interface Assignment {
   };
 }
 
+interface UserSubmission {
+  id: number;
+  assignment_id: number;
+  status: 'pending' | 'approved' | 'rejected' | 'needs_revision';
+  points_earned: number;
+  submitted_at: string;
+  admin_feedback?: string;
+  submission_files?: Array<{ filename: string; originalname: string; path: string; size: number }> | string[];
+  assignments: {
+    id?: number;
+    title: string;
+    description: string;
+    points_reward: number;
+    difficulty_level: 'easy' | 'medium' | 'hard';
+    due_date?: string;
+    instructions?: string;
+  };
+}
+
 interface UserStats {
   total_points: number;
   available_points: number;
@@ -59,10 +78,11 @@ interface UserStats {
 const Assignments = () => {
   const { user, isAuthenticated } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [userSubmissions, setUserSubmissions] = useState<UserSubmission[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [editingSubmission, setEditingSubmission] = useState<Assignment | null>(null);
+  const [editingSubmission, setEditingSubmission] = useState<UserSubmission | null>(null);
   const [submissionData, setSubmissionData] = useState({
     submission_text: "",
     submission_links: [""],
@@ -76,6 +96,7 @@ const Assignments = () => {
     fetchAssignments();
     if (isAuthenticated) {
       fetchUserStats();
+      fetchUserSubmissions();
     }
   }, [isAuthenticated]);
 
@@ -90,6 +111,17 @@ const Assignments = () => {
       toast.error('Failed to fetch assignments');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUserSubmissions = async () => {
+    try {
+      const response = await apiService.request('/assignments/user/submissions');
+      if (response.success) {
+        setUserSubmissions(response.data.submissions || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user submissions:', error);
     }
   };
 
@@ -166,6 +198,7 @@ const Assignments = () => {
         setSubmissionData({ submission_text: "", submission_links: [""], submission_files: [] });
         fetchAssignments();
         fetchUserStats();
+        fetchUserSubmissions();
       } else {
         // Surface the exact backend message
         toast.error(result.message || 'Submission failed. Please try again.');
@@ -186,16 +219,15 @@ const Assignments = () => {
   const handleResubmit = async () => {
     if (!editingSubmission || !isAuthenticated || editFiles.length === 0) return;
 
-    // Guard deadline on the frontend before hitting the server
-    if (isPastDeadline(editingSubmission.due_date)) {
+    const dueDate = editingSubmission.assignments?.due_date;
+    if (isPastDeadline(dueDate)) {
       toast.warning('The deadline has passed. You can no longer edit this submission.');
       setEditingSubmission(null);
       setEditFiles([]);
       return;
     }
 
-    // Guard approved status
-    if (editingSubmission.user_submission?.status === 'approved') {
+    if (editingSubmission.status === 'approved') {
       toast.info('This submission has already been approved and cannot be changed.');
       setEditingSubmission(null);
       setEditFiles([]);
@@ -207,7 +239,7 @@ const Assignments = () => {
       const formData = new FormData();
       editFiles.forEach((file) => formData.append('files', file));
 
-      const response = await fetch(`${apiService.baseURL}/assignments/${editingSubmission.id}/submit`, {
+      const response = await fetch(`${apiService.baseURL}/assignments/${editingSubmission.assignment_id}/submit`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiService.getAuthToken()}` },
         body: formData
@@ -220,8 +252,8 @@ const Assignments = () => {
         setEditFiles([]);
         fetchAssignments();
         fetchUserStats();
+        fetchUserSubmissions();
       } else {
-        // Surface the exact backend message
         toast.error(result.message || 'Failed to update submission. Please try again.');
       }
     } catch (error) {
@@ -300,7 +332,6 @@ const Assignments = () => {
   };
 
   const availableAssignments = assignments.filter(a => !a.user_submission);
-  const submittedAssignments = assignments.filter(a => a.user_submission);
 
   if (isLoading) {
     return (
@@ -539,30 +570,40 @@ const Assignments = () => {
 
         <TabsContent value="submitted" className="mt-6">
           <div className="grid gap-6">
-            {submittedAssignments.length === 0 ? (
+            {!isAuthenticated ? (
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Please log in to view your submissions.</p>
+              </div>
+            ) : userSubmissions.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">You haven't submitted any assignments yet.</p>
               </div>
             ) : (
-              submittedAssignments.map((assignment) => {
-                const sub = assignment.user_submission!;
-                const locked = isPastDeadline(assignment.due_date) || sub.status === 'approved';
-                const isEditing = editingSubmission?.id === assignment.id;
+              userSubmissions.map((sub) => {
+                const dueDate = sub.assignments?.due_date;
+                const locked = isPastDeadline(dueDate) || sub.status === 'approved';
+                const isEditing = editingSubmission?.id === sub.id;
+
+                // Normalise submission_files — backend stores as array of objects or strings
+                const files: string[] = (sub.submission_files || []).map((f: any) =>
+                  typeof f === 'string' ? f : f.path || f.filename || ''
+                ).filter(Boolean);
 
                 return (
-                  <Card key={assignment.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={sub.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-xl mb-1">{assignment.title}</CardTitle>
-                          <CardDescription>{assignment.description}</CardDescription>
-                          {assignment.due_date && (
-                            <p className={`text-xs mt-1 flex items-center gap-1 ${locked ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          <CardTitle className="text-xl mb-1">{sub.assignments?.title}</CardTitle>
+                          <CardDescription>{sub.assignments?.description}</CardDescription>
+                          {dueDate && (
+                            <p className={`text-xs mt-1 flex items-center gap-1 ${locked && sub.status !== 'approved' ? 'text-red-500' : 'text-muted-foreground'}`}>
                               <Calendar className="w-3 h-3" />
-                              {locked && !sub.status.includes('approved')
+                              {locked && sub.status !== 'approved'
                                 ? 'Deadline passed — editing closed'
-                                : `Due: ${new Date(assignment.due_date).toLocaleDateString()}`}
+                                : `Due: ${new Date(dueDate).toLocaleDateString()}`}
                             </p>
                           )}
                         </div>
@@ -582,21 +623,20 @@ const Assignments = () => {
                     </CardHeader>
 
                     <CardContent className="space-y-4">
-                      {/* Submitted date */}
                       <p className="text-sm text-muted-foreground">
                         Submitted: {new Date(sub.submitted_at).toLocaleString()}
                       </p>
 
-                      {/* Previously submitted files */}
-                      {sub.submission_files && sub.submission_files.length > 0 && (
+                      {/* Submitted files */}
+                      {files.length > 0 && (
                         <div>
                           <p className="text-sm font-medium mb-2">Current Submission:</p>
                           <div className="space-y-1">
-                            {sub.submission_files.map((file, i) => (
+                            {files.map((file, i) => (
                               <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
                                 <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                                 <a
-                                  href={file}
+                                  href={file.startsWith('http') ? file : `${apiService.baseURL.replace('/api', '')}${file}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline truncate"
@@ -611,30 +651,38 @@ const Assignments = () => {
 
                       {/* Admin feedback */}
                       {sub.admin_feedback && (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="font-semibold text-sm mb-1">Feedback:</p>
-                          <p className="text-sm">{sub.admin_feedback}</p>
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <p className="font-semibold text-sm mb-1 text-amber-800">Feedback from reviewer:</p>
+                          <p className="text-sm text-amber-900">{sub.admin_feedback}</p>
                         </div>
                       )}
 
-                      {/* Edit / resubmit section */}
+                      {/* Edit / resubmit */}
                       {!locked && (
                         <>
+                          {!isEditing && (
+                            <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
+                              <CheckCircle className="w-3 h-3 shrink-0" />
+                              {dueDate
+                                ? `Editable until ${new Date(dueDate).toLocaleString()}`
+                                : 'You can still replace your submission'}
+                            </div>
+                          )}
                           {!isEditing ? (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => { setEditingSubmission(assignment); setEditFiles([]); }}
+                              onClick={() => { setEditingSubmission(sub); setEditFiles([]); }}
                             >
                               <Upload className="w-4 h-4 mr-2" />
                               Replace Submission
                             </Button>
                           ) : (
                             <div className="space-y-3 border rounded-lg p-4">
-                              <p className="text-sm font-medium">Upload a new submission to replace the current one:</p>
+                              <p className="text-sm font-medium">Upload a new file to replace the current submission:</p>
                               <div
                                 className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-5 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                                onClick={() => document.getElementById(`edit-upload-${assignment.id}`)?.click()}
+                                onClick={() => document.getElementById(`edit-upload-${sub.id}`)?.click()}
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={(e) => { e.preventDefault(); handleEditFileUpload(e.dataTransfer.files); }}
                               >
@@ -645,14 +693,14 @@ const Assignments = () => {
                                   type="file"
                                   multiple
                                   className="hidden"
-                                  id={`edit-upload-${assignment.id}`}
+                                  id={`edit-upload-${sub.id}`}
                                   onChange={(e) => handleEditFileUpload(e.target.files)}
                                 />
                                 <Button
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={(e) => { e.stopPropagation(); document.getElementById(`edit-upload-${assignment.id}`)?.click(); }}
+                                  onClick={(e) => { e.stopPropagation(); document.getElementById(`edit-upload-${sub.id}`)?.click(); }}
                                 >
                                   <Upload className="w-4 h-4 mr-2" />
                                   Choose Files
