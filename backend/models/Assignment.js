@@ -9,7 +9,7 @@ class Assignment {
       session_id,
       difficulty_level = 'easy',
       points_reward,
-      submission_type = 'text',
+      submission_type = 'file',
       due_date,
       created_by
     } = assignmentData;

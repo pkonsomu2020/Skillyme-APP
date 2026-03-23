@@ -31,7 +31,7 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
     session_id: "none",
     difficulty_level: "easy" as "easy" | "medium" | "hard",
     points_reward: "",
-    submission_type: "text" as "text" | "link" | "file" | "mixed",
+    submission_type: "file" as "text" | "link" | "file" | "mixed",
     due_date: ""
   })
   const { toast } = useToast()

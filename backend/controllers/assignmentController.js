@@ -1,7 +1,6 @@
 const Assignment = require('../models/Assignment');
 const AssignmentSubmission = require('../models/AssignmentSubmission');
 const UserPoints = require('../models/UserPoints');
-const { body, validationResult } = require('express-validator');
 
 // Get all assignments (for users)
 const getAllAssignments = async (req, res) => {
@@ -16,11 +15,14 @@ const getAllAssignments = async (req, res) => {
       assignments = await Assignment.getAll({ is_active: true });
     }
 
-    // If user is authenticated, include their submission status
-    if (userId) {
-      for (let assignment of assignments) {
-        const submission = await AssignmentSubmission.findByUserAndAssignment(userId, assignment.id);
-        assignment.user_submission = submission;
+    // Batch-fetch all user submissions in one query instead of N+1
+    if (userId && assignments.length > 0) {
+      const assignmentIds = assignments.map(a => a.id);
+      const submissions = await AssignmentSubmission.findByUserAndAssignments(userId, assignmentIds);
+      const submissionMap = {};
+      submissions.forEach(s => { submissionMap[s.assignment_id] = s; });
+      for (const assignment of assignments) {
+        assignment.user_submission = submissionMap[assignment.id] || null;
       }
     }
 
@@ -75,59 +77,77 @@ const submitAssignment = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    
-    // Handle both JSON and FormData requests
-    let submission_text, submission_links = [], submission_files = [];
-    
-    if (req.body.submission_text) {
-      submission_text = req.body.submission_text;
+
+    // Validate assignment ID
+    const assignmentId = parseInt(id);
+    if (isNaN(assignmentId) || assignmentId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid assignment ID' });
     }
-    
-    if (req.body.submission_links) {
-      try {
-        submission_links = typeof req.body.submission_links === 'string' 
-          ? JSON.parse(req.body.submission_links) 
-          : req.body.submission_links;
-      } catch (e) {
-        submission_links = [];
-      }
+
+    // Require at least one file
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one file is required' });
     }
-    
-    // Handle uploaded files
-    if (req.files && req.files.length > 0) {
-      submission_files = req.files.map(file => ({
-        filename: file.filename,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        path: file.path
-      }));
-    }
+
+    const submission_files = req.files.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      path: `/uploads/assignments/${file.filename}`
+    }));
 
     // Check if assignment exists
-    const assignment = await Assignment.findById(id);
+    const assignment = await Assignment.findById(assignmentId);
     if (!assignment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Assignment not found'
-      });
+      return res.status(404).json({ success: false, message: 'Assignment not found' });
     }
 
-    // Check if user already submitted
-    const existingSubmission = await AssignmentSubmission.findByUserAndAssignment(userId, id);
+    // Check assignment is still active
+    if (!assignment.is_active) {
+      return res.status(400).json({ success: false, message: 'This assignment is no longer active' });
+    }
+
+    // Check if user already submitted — if so, update instead (resubmission allowed before deadline)
+    const existingSubmission = await AssignmentSubmission.findByUserAndAssignment(userId, assignmentId);
     if (existingSubmission) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already submitted this assignment'
+      // Block resubmission after deadline
+      if (assignment.due_date && new Date() > new Date(assignment.due_date)) {
+        return res.status(400).json({
+          success: false,
+          message: 'The deadline has passed. You can no longer edit this submission.'
+        });
+      }
+
+      // Block resubmission if already approved
+      if (existingSubmission.status === 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'This submission has already been approved and cannot be changed.'
+        });
+      }
+
+      // Update the existing submission
+      const updated = await AssignmentSubmission.update(existingSubmission.id, {
+        submission_files,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+        admin_feedback: null,
+        reviewed_by: null,
+        reviewed_at: null
+      });
+
+      return res.json({
+        success: true,
+        message: 'Submission updated successfully',
+        data: { submission: updated }
       });
     }
 
-    // Create submission
+    // Create new submission
     const submission = await AssignmentSubmission.create({
-      assignment_id: id,
+      assignment_id: assignmentId,
       user_id: userId,
-      submission_text,
-      submission_links,
       submission_files
     });
 

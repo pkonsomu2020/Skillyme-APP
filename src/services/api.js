@@ -183,14 +183,33 @@ class ApiService {
     return this.request(`/assignments/${id}`);
   }
 
-  async submitAssignment(assignmentId, submissionData) {
-    return this.request(`/assignments/${assignmentId}/submit`, {
+  // submitAssignment uses fetch directly with FormData (multipart) — not JSON
+  async submitAssignment(assignmentId, files) {
+    const token = this.getAuthToken();
+    const formData = new FormData();
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+
+    const response = await fetch(`${this.baseURL}/assignments/${assignmentId}/submit`, {
       method: 'POST',
-      body: JSON.stringify(submissionData),
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+        // Do NOT set Content-Type — browser sets it with boundary for multipart
+      },
+      body: formData,
     });
+
+    const data = await response.json();
+    if (!response.ok) {
+      const error = new Error(data.message || `Request failed with status ${response.status}`);
+      throw error;
+    }
+    return data;
   }
 
   async getUserSubmissions(status = null) {
+    // Note: /user/submissions must be registered before /:id in the router
     const endpoint = status ? `/assignments/user/submissions?status=${status}` : '/assignments/user/submissions';
     return this.request(endpoint);
   }

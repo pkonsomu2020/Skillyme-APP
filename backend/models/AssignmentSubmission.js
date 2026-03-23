@@ -63,6 +63,19 @@ class AssignmentSubmission {
     return data;
   }
 
+  // Batch fetch submissions for multiple assignments (avoids N+1)
+  static async findByUserAndAssignments(userId, assignmentIds) {
+    if (!assignmentIds || assignmentIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from('assignment_submissions')
+      .select('*')
+      .eq('user_id', userId)
+      .in('assignment_id', assignmentIds);
+
+    if (error) throw error;
+    return data || [];
+  }
+
   static async getByAssignmentId(assignmentId, filters = {}) {
     let query = supabase
       .from('assignment_submissions')
@@ -148,8 +161,9 @@ class AssignmentSubmission {
       .from('assignment_submissions')
       .select(`
         *,
-        assignments(title, description, points_reward, difficulty_level, due_date, session_id),
-        assignments.sessions(title, company, date)
+        assignments(title, description, points_reward, difficulty_level, due_date, session_id,
+          sessions(title, company, date)
+        )
       `)
       .eq('user_id', userId);
 
@@ -181,6 +195,16 @@ class AssignmentSubmission {
       .from('assignment_submissions')
       .delete()
       .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  }
+
+  static async deleteByAssignmentId(assignmentId) {
+    const { error } = await supabase
+      .from('assignment_submissions')
+      .delete()
+      .eq('assignment_id', assignmentId);
 
     if (error) throw error;
     return true;

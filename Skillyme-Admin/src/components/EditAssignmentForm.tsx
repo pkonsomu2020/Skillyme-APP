@@ -94,10 +94,12 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
       return false
     }
 
-    // Validate due date is not in the past (if set)
+    // Only validate due date if it was changed from the original
     if (formData.due_date) {
       const dueDate = new Date(formData.due_date)
-      if (dueDate < new Date()) {
+      const originalDueDate = assignment.due_date ? new Date(assignment.due_date).toISOString().slice(0, 16) : ""
+      const isChanged = formData.due_date !== originalDueDate
+      if (isChanged && dueDate < new Date()) {
         toast({
           title: "Validation Error",
           description: "Due date cannot be in the past",

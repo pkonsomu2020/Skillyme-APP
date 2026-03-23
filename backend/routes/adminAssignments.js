@@ -69,18 +69,16 @@ const idValidation = [
 // All routes require admin authentication
 router.use(authenticateAdmin);
 
+// Static-path routes MUST come before /:id to avoid param collision
+router.get('/submissions', getAllSubmissions);
+router.put('/submissions/:id/review', idValidation, reviewValidation, reviewSubmission);
+router.get('/platform/stats', getPlatformStats);
+
 // Assignment management routes
 router.get('/', getAllAssignments);
 router.post('/', assignmentValidation, createAssignment);
+router.get('/:id/stats', idValidation, getAssignmentStats);
 router.put('/:id', idValidation, updateAssignmentValidation, updateAssignment);
 router.delete('/:id', idValidation, deleteAssignment);
-router.get('/:id/stats', idValidation, getAssignmentStats);
-
-// Submission review routes
-router.get('/submissions', getAllSubmissions);
-router.put('/submissions/:id/review', idValidation, reviewValidation, reviewSubmission);
-
-// Platform statistics
-router.get('/platform/stats', getPlatformStats);
 
 module.exports = router;

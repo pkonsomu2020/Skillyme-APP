@@ -42,8 +42,28 @@ const createAssignment = async (req, res) => {
     }
 
     const adminId = req.admin.id;
+
+    // Whitelist only safe fields — never let client set created_by, id, etc.
+    const {
+      title,
+      description,
+      instructions,
+      session_id,
+      difficulty_level,
+      points_reward,
+      submission_type,
+      due_date
+    } = req.body;
+
     const assignmentData = {
-      ...req.body,
+      title,
+      description,
+      instructions,
+      session_id,
+      difficulty_level,
+      points_reward,
+      submission_type,
+      due_date,
       created_by: adminId
     };
 
@@ -76,7 +96,36 @@ const updateAssignment = async (req, res) => {
     }
 
     const { id } = req.params;
-    const assignment = await Assignment.update(id, req.body);
+    const assignmentId = parseInt(id);
+    if (isNaN(assignmentId) || assignmentId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid assignment ID' });
+    }
+
+    // Whitelist only safe updatable fields — never allow id, created_by, created_at to be overwritten
+    const {
+      title,
+      description,
+      instructions,
+      session_id,
+      difficulty_level,
+      points_reward,
+      submission_type,
+      due_date,
+      is_active
+    } = req.body;
+
+    const safeUpdate = {};
+    if (title !== undefined) safeUpdate.title = title;
+    if (description !== undefined) safeUpdate.description = description;
+    if (instructions !== undefined) safeUpdate.instructions = instructions;
+    if (session_id !== undefined) safeUpdate.session_id = session_id;
+    if (difficulty_level !== undefined) safeUpdate.difficulty_level = difficulty_level;
+    if (points_reward !== undefined) safeUpdate.points_reward = parseInt(points_reward);
+    if (submission_type !== undefined) safeUpdate.submission_type = submission_type;
+    if (due_date !== undefined) safeUpdate.due_date = due_date;
+    if (is_active !== undefined) safeUpdate.is_active = is_active;
+
+    const assignment = await Assignment.update(assignmentId, safeUpdate);
 
     res.json({
       success: true,
@@ -91,12 +140,27 @@ const updateAssignment = async (req, res) => {
     });
   }
 };
+    });
+  }
+};
 
 // Delete assignment
 const deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    await Assignment.delete(id);
+    const assignmentId = parseInt(id);
+    if (isNaN(assignmentId) || assignmentId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid assignment ID' });
+    }
+
+    const assignment = await Assignment.findById(assignmentId);
+    if (!assignment) {
+      return res.status(404).json({ success: false, message: 'Assignment not found' });
+    }
+
+    // Delete all submissions for this assignment first
+    await AssignmentSubmission.deleteByAssignmentId(assignmentId);
+    await Assignment.delete(assignmentId);
 
     res.json({
       success: true,
@@ -166,18 +230,20 @@ const getAllSubmissions = async (req, res) => {
       });
     }
 
-    // Only allow reviewing pending submissions
-    if (submission.status !== 'pending') {
+    // Only allow reviewing pending or needs_revision submissions; block re-reviewing approved/rejected
+    if (submission.status === 'approved' || submission.status === 'rejected') {
       return res.status(400).json({
         success: false,
-        message: 'Submission has already been reviewed'
+        message: `Submission has already been ${submission.status} and cannot be re-reviewed`
       });
     }
 
     // Calculate points based on status and assignment difficulty
     let finalPoints = 0;
     if (status === 'approved') {
-      finalPoints = points_earned !== undefined ? parseInt(points_earned) : submission.assignments.points_reward;
+      const requestedPoints = points_earned !== undefined ? parseInt(points_earned) : submission.assignments.points_reward;
+      // Cap points at the assignment's defined reward — never allow over-awarding
+      finalPoints = Math.min(Math.max(0, requestedPoints), submission.assignments.points_reward);
     }
 
     const reviewData = {
