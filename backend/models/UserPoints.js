@@ -36,10 +36,24 @@ class UserPoints {
   }
 
   static async addPoints(userId, points, source_type, source_id, description) {
-    // Get current points
+    // Use Supabase RPC for atomic increment to prevent race conditions
+    // Falls back to read-then-write if RPC not available
+    try {
+      const { data, error } = await supabase.rpc('increment_user_points', {
+        p_user_id: userId,
+        p_points: points
+      });
+      if (!error && data) {
+        await this.recordTransaction(userId, 'earned', points, source_type, source_id, description);
+        return await this.getUserPoints(userId);
+      }
+    } catch (_) {
+      // RPC not available — fall through to safe read-then-write
+    }
+
+    // Safe fallback: get current points then update
     let userPoints = await this.getUserPoints(userId);
 
-    // Update points
     const newTotalPoints = userPoints.total_points + points;
     const newAvailablePoints = userPoints.available_points + points;
     const newLevel = this.calculateLevel(newTotalPoints);
@@ -58,7 +72,6 @@ class UserPoints {
 
     if (error) throw error;
 
-    // Record transaction
     await this.recordTransaction(userId, 'earned', points, source_type, source_id, description);
 
     return data;

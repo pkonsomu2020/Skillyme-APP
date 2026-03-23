@@ -208,12 +208,15 @@ const getUserPoints = async (req, res) => {
 // Get points leaderboard with filters
 const getLeaderboard = async (req, res) => {
   try {
-    const { 
-      limit = 10, 
-      period = 'all', // 'weekly', 'monthly', 'all'
-      target_group = 'all', // 'form4', 'undergraduate', 'all'
-      metric = 'points' // 'points', 'assignments'
-    } = req.query;
+    const allowedPeriods = ['weekly', 'monthly', 'all'];
+    const allowedGroups = ['form4', 'undergraduate', 'all'];
+    const allowedMetrics = ['points', 'assignments'];
+
+    const rawLimit = parseInt(req.query.limit);
+    const limit = (!isNaN(rawLimit) && rawLimit > 0 && rawLimit <= 100) ? rawLimit : 10;
+    const period = allowedPeriods.includes(req.query.period) ? req.query.period : 'all';
+    const target_group = allowedGroups.includes(req.query.target_group) ? req.query.target_group : 'all';
+    const metric = allowedMetrics.includes(req.query.metric) ? req.query.metric : 'points';
 
     const userId = req.user?.id;
 

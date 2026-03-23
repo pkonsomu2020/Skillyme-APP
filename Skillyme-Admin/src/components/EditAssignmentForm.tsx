@@ -137,11 +137,9 @@ export function EditAssignmentForm({ assignment, onAssignmentUpdated, onCancel }
         difficulty_level: formData.difficulty_level,
         points_reward: formData.points_reward ? parseInt(formData.points_reward) : getDefaultPoints(formData.difficulty_level),
         submission_type: formData.submission_type,
-        due_date: formData.due_date || undefined,
+        due_date: formData.due_date ? new Date(formData.due_date).toISOString() : undefined,
         is_active: formData.is_active
       }
-
-      console.log('🚀 Updating assignment with data:', updateData)
 
       const response = await adminApi.assignments.updateAssignment(assignment.id, updateData)
 

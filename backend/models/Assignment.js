@@ -130,23 +130,6 @@ class Assignment {
     return true;
   }
 
-  static async getAssignmentsForUser(userId) {
-    const { data, error } = await supabase
-      .from('assignments')
-      .select(`
-        *,
-        sessions(title, company, recruiter, date),
-        assignment_submissions!left(
-          id, status, points_earned, submitted_at, admin_feedback
-        )
-      `)
-      .eq('is_active', true)
-      .eq('assignment_submissions.user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  }
 }
 
 module.exports = Assignment;

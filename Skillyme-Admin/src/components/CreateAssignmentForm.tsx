@@ -119,7 +119,8 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
         difficulty_level: formData.difficulty_level,
         points_reward: formData.points_reward ? parseInt(formData.points_reward) : getDefaultPoints(formData.difficulty_level),
         submission_type: formData.submission_type,
-        due_date: formData.due_date || undefined
+        // Convert datetime-local value to full ISO8601 string the backend validator accepts
+        due_date: formData.due_date ? new Date(formData.due_date).toISOString() : undefined
       }
 
       console.log('🚀 Creating assignment with data:', assignmentData)
@@ -135,8 +136,7 @@ export function CreateAssignmentForm({ onAssignmentCreated, onCancel }: CreateAs
         })
         onAssignmentCreated(response.data.assignment)
       } else {
-        console.error('❌ Assignment creation failed:', response)
-        throw new Error(response.error || response.message || 'Failed to create assignment')
+        throw new Error(response.error || (response as any).message || 'Failed to create assignment')
       }
     } catch (error) {
       console.error('❌ Assignment creation error:', error)

@@ -8,10 +8,19 @@ const { body, validationResult } = require('express-validator');
 const getAllAssignments = async (req, res) => {
   try {
     const { session_id, difficulty_level, is_active } = req.query;
-    
+
     const filters = {};
-    if (session_id) filters.session_id = session_id;
-    if (difficulty_level) filters.difficulty_level = difficulty_level;
+
+    if (session_id !== undefined) {
+      const sid = parseInt(session_id);
+      if (!isNaN(sid) && sid > 0) filters.session_id = sid;
+    }
+
+    const allowedDifficulties = ['easy', 'medium', 'hard'];
+    if (difficulty_level && allowedDifficulties.includes(difficulty_level)) {
+      filters.difficulty_level = difficulty_level;
+    }
+
     if (is_active !== undefined) filters.is_active = is_active === 'true';
 
     const assignments = await Assignment.getAll(filters);
@@ -175,17 +184,29 @@ const deleteAssignment = async (req, res) => {
 // Get all submissions for review
 const getAllSubmissions = async (req, res) => {
   try {
-    const { assignment_id, status = 'pending' } = req.query;
+    const { assignment_id, status } = req.query;
+
+    // Validate status if provided
+    const allowedStatuses = ['pending', 'approved', 'rejected', 'needs_revision'];
+    const safeStatus = allowedStatuses.includes(status) ? status : 'pending';
+
+    // Validate assignment_id if provided
+    let safeAssignmentId = null;
+    if (assignment_id !== undefined) {
+      safeAssignmentId = parseInt(assignment_id);
+      if (isNaN(safeAssignmentId) || safeAssignmentId <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid assignment ID' });
+      }
+    }
 
     let submissions;
-    if (assignment_id) {
-      submissions = await AssignmentSubmission.getByAssignmentId(assignment_id, { status });
+    if (safeAssignmentId) {
+      submissions = await AssignmentSubmission.getByAssignmentId(safeAssignmentId, { status: safeStatus });
     } else {
-      if (status === 'pending') {
+      if (safeStatus === 'pending') {
         submissions = await AssignmentSubmission.getAllPending();
       } else {
-        // Get all submissions with specific status
-        submissions = await AssignmentSubmission.getAll({ status });
+        submissions = await AssignmentSubmission.getAll({ status: safeStatus });
       }
     }
 
@@ -227,11 +248,12 @@ const getAllSubmissions = async (req, res) => {
       });
     }
 
-    // Only allow reviewing pending or needs_revision submissions; block re-reviewing approved/rejected
+    // Block re-reviewing already finalised submissions (approved or rejected)
+    // needs_revision can be re-reviewed (student revised and resubmitted)
     if (submission.status === 'approved' || submission.status === 'rejected') {
       return res.status(400).json({
         success: false,
-        message: `Submission has already been ${submission.status} and cannot be re-reviewed`
+        message: `This submission has already been ${submission.status}. Reset it to pending before re-reviewing.`
       });
     }
 
@@ -288,8 +310,12 @@ const getAllSubmissions = async (req, res) => {
 const getAssignmentStats = async (req, res) => {
   try {
     const { id } = req.params;
+    const assignmentId = parseInt(id);
+    if (isNaN(assignmentId) || assignmentId <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid assignment ID' });
+    }
 
-    const submissions = await AssignmentSubmission.getByAssignmentId(id);
+    const submissions = await AssignmentSubmission.getByAssignmentId(assignmentId);
     
     const stats = {
       total_submissions: submissions.length,
@@ -318,10 +344,9 @@ const getAssignmentStats = async (req, res) => {
 // Get overall platform stats
 const getPlatformStats = async (req, res) => {
   try {
-    // This would require more complex queries, but here's a basic implementation
     const assignments = await Assignment.getAll();
     const pendingSubmissions = await AssignmentSubmission.getAllPending();
-    const leaderboard = await UserPoints.getLeaderboard(5);
+    const leaderboard = await UserPoints.getLeaderboard({ limit: 5 }); // pass options object
 
     const stats = {
       total_assignments: assignments.length,

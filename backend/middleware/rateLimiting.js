@@ -84,9 +84,30 @@ const adminLimiter = rateLimit({
   }
 });
 
+// Submission upload rate limiting — prevent spam uploads
+const submissionLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // max 10 submission attempts per minute per IP
+  message: {
+    success: false,
+    message: 'Too many submission attempts, please slow down.',
+    retryAfter: '1 minute'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: 'Too many submission attempts, please slow down.',
+      retryAfter: '1 minute'
+    });
+  }
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
   paymentLimiter,
-  adminLimiter
+  adminLimiter,
+  submissionLimiter
 };

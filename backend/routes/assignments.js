@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { upload, handleMulterError } = require('../middleware/fileUpload');
+const { submissionLimiter } = require('../middleware/rateLimiting');
 const {
   getAllAssignments,
   getAssignmentById,
@@ -22,6 +23,6 @@ router.get('/user/points', authenticateToken, getUserPoints);
 
 // Dynamic param routes
 router.get('/:id', getAssignmentById);
-router.post('/:id/submit', authenticateToken, upload.array('files', 10), handleMulterError, submitAssignment);
+router.post('/:id/submit', authenticateToken, submissionLimiter, upload.array('files', 10), handleMulterError, submitAssignment);
 
 module.exports = router;

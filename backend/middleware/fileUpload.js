@@ -60,7 +60,15 @@ const handleMulterError = (error, req, res, next) => {
       message: `File upload error: ${error.message}`
     });
   }
-  next(error);
+  // Non-multer errors — don't expose internals
+  if (error) {
+    console.error('Unexpected upload error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An unexpected error occurred during file upload.'
+    });
+  }
+  next();
 };
 
 module.exports = {
