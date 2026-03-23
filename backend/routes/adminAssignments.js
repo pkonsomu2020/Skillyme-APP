@@ -20,36 +20,41 @@ const assignmentValidation = [
     .withMessage('Title must be 3-255 characters'),
   body('description').notEmpty().trim().isLength({ min: 10, max: 2000 })
     .withMessage('Description must be 10-2000 characters'),
-  body('instructions').optional().trim().isLength({ max: 3000 })
+  body('instructions').optional({ nullable: true }).trim().isLength({ max: 3000 })
     .withMessage('Instructions must be less than 3000 characters'),
-  body('session_id').optional().isInt({ min: 1 })
+  body('session_id').optional({ nullable: true })
+    .custom(val => val === null || val === undefined || (Number.isInteger(Number(val)) && Number(val) > 0))
     .withMessage('Session ID must be a positive integer'),
-  body('difficulty_level').optional().isIn(['easy', 'medium', 'hard'])
+  body('difficulty_level').optional({ nullable: true }).isIn(['easy', 'medium', 'hard'])
     .withMessage('Difficulty level must be easy, medium, or hard'),
-  body('points_reward').optional().isInt({ min: 1, max: 1000 })
+  body('points_reward').optional({ nullable: true })
+    .custom(val => val === null || val === undefined || (Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 1000))
     .withMessage('Points reward must be between 1-1000'),
-  body('submission_type').optional().isIn(['text', 'link', 'file', 'mixed'])
+  body('submission_type').optional({ nullable: true }).isIn(['text', 'link', 'file', 'mixed'])
     .withMessage('Submission type must be text, link, file, or mixed'),
-  body('due_date').optional().isISO8601()
+  body('due_date').optional({ nullable: true })
+    .custom(val => val === null || val === undefined || val === '' || !isNaN(Date.parse(val)))
     .withMessage('Due date must be a valid date')
 ];
 
 const updateAssignmentValidation = [
-  body('title').optional().trim().isLength({ min: 3, max: 255 })
+  body('title').optional({ nullable: true }).trim().isLength({ min: 3, max: 255 })
     .withMessage('Title must be 3-255 characters'),
-  body('description').optional().trim().isLength({ min: 10, max: 2000 })
+  body('description').optional({ nullable: true }).trim().isLength({ min: 10, max: 2000 })
     .withMessage('Description must be 10-2000 characters'),
-  body('instructions').optional().trim().isLength({ max: 3000 })
+  body('instructions').optional({ nullable: true }).trim().isLength({ max: 3000 })
     .withMessage('Instructions must be less than 3000 characters'),
-  body('difficulty_level').optional().isIn(['easy', 'medium', 'hard'])
+  body('difficulty_level').optional({ nullable: true }).isIn(['easy', 'medium', 'hard'])
     .withMessage('Difficulty level must be easy, medium, or hard'),
-  body('points_reward').optional().isInt({ min: 1, max: 1000 })
+  body('points_reward').optional({ nullable: true })
+    .custom(val => val === null || val === undefined || (Number.isInteger(Number(val)) && Number(val) >= 1 && Number(val) <= 1000))
     .withMessage('Points reward must be between 1-1000'),
-  body('submission_type').optional().isIn(['text', 'link', 'file', 'mixed'])
+  body('submission_type').optional({ nullable: true }).isIn(['text', 'link', 'file', 'mixed'])
     .withMessage('Submission type must be text, link, file, or mixed'),
-  body('due_date').optional().isISO8601()
+  body('due_date').optional({ nullable: true })
+    .custom(val => val === null || val === undefined || val === '' || !isNaN(Date.parse(val)))
     .withMessage('Due date must be a valid date'),
-  body('is_active').optional().isBoolean()
+  body('is_active').optional({ nullable: true }).isBoolean()
     .withMessage('is_active must be a boolean')
 ];
 

@@ -187,7 +187,11 @@ const apiRequest = async <T>(
         tokenLength: token?.length || 0
       });
 
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      // Surface validation field errors if present, otherwise use message
+      const errorMessage = data.errors?.map((e: any) => e.msg).join(', ')
+        || data.message
+        || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return data;
