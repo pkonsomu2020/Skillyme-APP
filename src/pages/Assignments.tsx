@@ -43,6 +43,7 @@ interface Assignment {
     points_earned: number;
     submitted_at: string;
     admin_feedback?: string;
+    submission_files?: string[];
   };
 }
 
@@ -61,12 +62,15 @@ const Assignments = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [editingSubmission, setEditingSubmission] = useState<Assignment | null>(null);
   const [submissionData, setSubmissionData] = useState({
     submission_text: "",
     submission_links: [""],
     submission_files: [] as File[]
   });
+  const [editFiles, setEditFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResubmitting, setIsResubmitting] = useState(false);
 
   useEffect(() => {
     fetchAssignments();
@@ -168,6 +172,59 @@ const Assignments = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const isPastDeadline = (due_date?: string) => {
+    if (!due_date) return false;
+    return new Date() > new Date(due_date);
+  };
+
+  const handleResubmit = async () => {
+    if (!editingSubmission || !isAuthenticated || editFiles.length === 0) return;
+    if (isPastDeadline(editingSubmission.due_date)) {
+      toast.error('The deadline has passed. You can no longer edit this submission.');
+      return;
+    }
+
+    try {
+      setIsResubmitting(true);
+      const formData = new FormData();
+      editFiles.forEach((file) => formData.append('files', file));
+
+      const response = await fetch(`${apiService.baseURL}/assignments/${editingSubmission.id}/submit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiService.getAuthToken()}` },
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Submission updated successfully!');
+        setEditingSubmission(null);
+        setEditFiles([]);
+        fetchAssignments();
+        fetchUserStats();
+      } else {
+        throw new Error(result.message || 'Resubmission failed');
+      }
+    } catch (error) {
+      console.error('Resubmission error:', error);
+      toast.error('Failed to update submission');
+    } finally {
+      setIsResubmitting(false);
+    }
+  };
+
+  const handleEditFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    const fileArray = Array.from(files);
+    const maxSize = 200 * 1024 * 1024;
+    const oversized = fileArray.filter(f => f.size > maxSize);
+    if (oversized.length > 0) {
+      toast.error(`Files exceed 200MB limit: ${oversized.map(f => f.name).join(', ')}`);
+      return;
+    }
+    setEditFiles(prev => [...prev, ...fileArray]);
   };
 
   const addLinkField = () => {
@@ -455,43 +512,176 @@ const Assignments = () => {
                 <p className="text-muted-foreground">You haven't submitted any assignments yet.</p>
               </div>
             ) : (
-              submittedAssignments.map((assignment) => (
-                <Card key={assignment.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-xl mb-2">{assignment.title}</CardTitle>
-                        <CardDescription>{assignment.description}</CardDescription>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Badge className={getStatusColor(assignment.user_submission!.status)}>
-                          {getStatusIcon(assignment.user_submission!.status)}
-                          {assignment.user_submission!.status.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                        {assignment.user_submission!.status === 'approved' && (
-                          <Badge variant="outline" className="text-green-600">
-                            <Award className="w-3 h-3 mr-1" />
-                            +{assignment.user_submission!.points_earned} pts
+              submittedAssignments.map((assignment) => {
+                const sub = assignment.user_submission!;
+                const locked = isPastDeadline(assignment.due_date) || sub.status === 'approved';
+                const isEditing = editingSubmission?.id === assignment.id;
+
+                return (
+                  <Card key={assignment.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl mb-1">{assignment.title}</CardTitle>
+                          <CardDescription>{assignment.description}</CardDescription>
+                          {assignment.due_date && (
+                            <p className={`text-xs mt-1 flex items-center gap-1 ${locked ? 'text-red-500' : 'text-muted-foreground'}`}>
+                              <Calendar className="w-3 h-3" />
+                              {locked && !sub.status.includes('approved')
+                                ? 'Deadline passed — editing closed'
+                                : `Due: ${new Date(assignment.due_date).toLocaleDateString()}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 items-end">
+                          <Badge className={getStatusColor(sub.status)}>
+                            {getStatusIcon(sub.status)}
+                            <span className="ml-1">{sub.status.replace('_', ' ').toUpperCase()}</span>
                           </Badge>
-                        )}
+                          {sub.status === 'approved' && (
+                            <Badge variant="outline" className="text-green-600">
+                              <Award className="w-3 h-3 mr-1" />
+                              +{sub.points_earned} pts
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">
-                        Submitted: {new Date(assignment.user_submission!.submitted_at).toLocaleDateString()}
-                      </div>
-                      {assignment.user_submission!.admin_feedback && (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <div className="font-semibold text-sm mb-1">Feedback:</div>
-                          <div className="text-sm">{assignment.user_submission!.admin_feedback}</div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {/* Submitted date */}
+                      <p className="text-sm text-muted-foreground">
+                        Submitted: {new Date(sub.submitted_at).toLocaleString()}
+                      </p>
+
+                      {/* Previously submitted files */}
+                      {sub.submission_files && sub.submission_files.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Current Submission:</p>
+                          <div className="space-y-1">
+                            {sub.submission_files.map((file, i) => (
+                              <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
+                                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <a
+                                  href={file}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline truncate"
+                                >
+                                  {file.split('/').pop() || file}
+                                </a>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+
+                      {/* Admin feedback */}
+                      {sub.admin_feedback && (
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="font-semibold text-sm mb-1">Feedback:</p>
+                          <p className="text-sm">{sub.admin_feedback}</p>
+                        </div>
+                      )}
+
+                      {/* Edit / resubmit section */}
+                      {!locked && (
+                        <>
+                          {!isEditing ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setEditingSubmission(assignment); setEditFiles([]); }}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Replace Submission
+                            </Button>
+                          ) : (
+                            <div className="space-y-3 border rounded-lg p-4">
+                              <p className="text-sm font-medium">Upload a new submission to replace the current one:</p>
+                              <div
+                                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-5 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                                onClick={() => document.getElementById(`edit-upload-${assignment.id}`)?.click()}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => { e.preventDefault(); handleEditFileUpload(e.dataTransfer.files); }}
+                              >
+                                <Upload className="w-7 h-7 mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground mb-1">Drag and drop or click to browse</p>
+                                <p className="text-xs text-muted-foreground mb-3">Max 200MB per file</p>
+                                <Input
+                                  type="file"
+                                  multiple
+                                  className="hidden"
+                                  id={`edit-upload-${assignment.id}`}
+                                  onChange={(e) => handleEditFileUpload(e.target.files)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); document.getElementById(`edit-upload-${assignment.id}`)?.click(); }}
+                                >
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Choose Files
+                                </Button>
+                              </div>
+
+                              {editFiles.length > 0 && (
+                                <div className="space-y-1">
+                                  <p className="text-xs font-medium text-muted-foreground">New files to upload:</p>
+                                  {editFiles.map((file, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="text-sm font-medium">{file.name}</p>
+                                          <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setEditFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => { setEditingSubmission(null); setEditFiles([]); }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={handleResubmit}
+                                  disabled={isResubmitting || editFiles.length === 0}
+                                >
+                                  {isResubmitting ? 'Updating...' : 'Update Submission'}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {locked && sub.status !== 'approved' && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <XCircle className="w-3 h-3" />
+                          Editing is closed — the deadline has passed.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         </TabsContent>
