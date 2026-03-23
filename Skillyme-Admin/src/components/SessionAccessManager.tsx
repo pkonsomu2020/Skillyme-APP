@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { formatDate } from "@/lib/dateUtils"
 import { Search, CheckCircle, XCircle, Users, ArrowLeft, AlertCircle, Loader2 } from "lucide-react"
 import { adminApi, User } from "@/services/api"
 
@@ -595,7 +596,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                       <td className="p-3">
                         <div className="space-y-1">
                           <div className="text-xs font-mono">
-                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                            {user.created_at ? formatDate(user.created_at) : 'N/A'}
                           </div>
                           {user.signup_source && (
                             <div className="text-xs text-muted-foreground">
@@ -620,7 +621,7 @@ export function SessionAccessManager({ sessionId, sessionTitle, onBack }: Sessio
                           </Badge>
                           {user.granted_at && (
                             <div className="text-xs text-muted-foreground">
-                              Updated: {new Date(user.granted_at).toLocaleDateString()}
+                              Updated: {formatDate(user.granted_at)}
                             </div>
                           )}
                         </div>

@@ -7,6 +7,7 @@ import { Calendar, Clock, Video, GraduationCap, BookOpen, Users, Lock } from "lu
 import { toast } from "sonner";
 import apiService from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatDate } from "@/lib/dateUtils";
 
 interface Session {
   id: number;
@@ -225,12 +226,7 @@ const Sessions = () => {
           <div className="space-y-1.5 flex-shrink-0">
             <div className="flex items-center gap-2 text-xs">
               <Calendar className="w-3 h-3 text-primary flex-shrink-0" />
-              <span className="truncate">{new Date(session.date).toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-              })}</span>
+              <span className="truncate">{formatDate(session.date)}</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <Clock className="w-3 h-3 text-primary flex-shrink-0" />

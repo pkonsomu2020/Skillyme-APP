@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { formatDate } from "@/lib/dateUtils"
 import { 
   Trophy, 
   Gift, 
@@ -651,7 +652,7 @@ export default function Discounts() {
                         <div className="text-right">
                           <div className="font-bold text-lg">{discount.discount_percentage}%</div>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(discount.awarded_at).toLocaleDateString()}
+                            {formatDate(discount.awarded_at)}
                           </div>
                         </div>
                         

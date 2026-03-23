@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { formatDateTime as eatFormatDateTime, formatTime } from "@/lib/dateUtils"
 import { Send, Bell, Users, Mail, CheckCircle, XCircle, Clock, RefreshCw, AlertCircle } from "lucide-react"
 import {
   Select,
@@ -294,7 +295,7 @@ The Skillyme Team`
             <div className={`w-2 h-2 rounded-full ${syncing ? 'bg-blue-500 animate-spin' : 'bg-green-500 animate-pulse'}`}></div>
             {syncing ? 'Syncing...' : 'Auto-sync active'}
             {lastUpdated && (
-              <span>• Last updated: {lastUpdated.toLocaleTimeString()}</span>
+              <span>• Last updated: {formatTime(lastUpdated)}</span>
             )}
           </div>
         </div>
@@ -617,7 +618,7 @@ The Skillyme Team`
                         </div>
                         <div className="text-right text-xs text-muted-foreground ml-4">
                           <Clock className="h-3 w-3 inline mr-1" />
-                          {new Date(notification.created_at).toLocaleString()}
+                          {eatFormatDateTime(notification.created_at)}
                         </div>
                       </div>
                       

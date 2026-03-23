@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 import { useToast } from "@/hooks/use-toast"
+import { formatDate as eatFormatDate } from "@/lib/dateUtils"
 import { Search } from "lucide-react"
 import { adminApi, User } from "@/services/api"
 
@@ -126,11 +127,7 @@ export default function Users() {
 
 
   const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString()
-    } catch {
-      return 'N/A'
-    }
+    try { return eatFormatDate(dateString) } catch { return 'N/A' }
   }
 
   if (loading) {
@@ -179,7 +176,7 @@ export default function Users() {
             {lastUpdated && (
               <span className="flex items-center gap-1">
                 <div className={`w-1.5 h-1.5 rounded-full ${syncing ? 'bg-blue-500 animate-spin' : 'bg-green-500'}`}></div>
-                {syncing ? 'Syncing...' : `Last synced: ${lastUpdated.toLocaleTimeString()}`}
+                {syncing ? 'Syncing...' : `Last synced: ${eatFormatDate(lastUpdated)}`}
               </span>
             )}
           </div>

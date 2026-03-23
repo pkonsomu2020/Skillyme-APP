@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { formatDate as eatFormatDate, formatDateTime as eatFormatDateTime } from "@/lib/dateUtils"
 import { Plus, Calendar, Users, MoreVertical, Search, ArrowLeft, Video, Image, CheckCircle, XCircle, Shield } from "lucide-react"
 import {
   DropdownMenu,
@@ -198,19 +199,11 @@ export default function Sessions() {
   }
 
   const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString()
-    } catch {
-      return dateString
-    }
+    try { return eatFormatDate(dateString) } catch { return dateString }
   }
 
   const formatDateTime = (dateTimeString: string) => {
-    try {
-      return new Date(dateTimeString).toLocaleString()
-    } catch {
-      return dateTimeString
-    }
+    try { return eatFormatDateTime(dateTimeString) } catch { return dateTimeString }
   }
 
   if (loading) {

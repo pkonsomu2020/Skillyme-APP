@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts"
 import { adminApi } from "@/services/api"
+import { formatDate, formatTime } from "@/lib/dateUtils"
 
 interface DashboardStats {
   totalUsers: number
@@ -130,7 +131,7 @@ export function RealTimeAnalytics() {
             id: `session-created-${session.id}`,
             type: 'session_created',
             title: 'New session created',
-            description: `${session.title} scheduled for ${new Date(session.date).toLocaleDateString()}`,
+            description: `${session.title} scheduled for ${formatDate(session.date)}`,
             timestamp: session.created_at,
             icon: Video,
             color: 'text-purple-600'
@@ -261,7 +262,7 @@ export function RealTimeAnalytics() {
             Live data from your platform
             {lastUpdated && (
               <span className="ml-2">
-                • Last updated: {lastUpdated.toLocaleTimeString()}
+                • Last updated: {formatTime(lastUpdated)}
               </span>
             )}
           </p>

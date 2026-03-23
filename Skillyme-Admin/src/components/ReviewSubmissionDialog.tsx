@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { formatDateTime } from "@/lib/dateUtils"
 import { CheckCircle, XCircle, AlertCircle, Award, User, Calendar, FileText } from "lucide-react"
 import { adminApi } from "@/services/api"
 
@@ -161,7 +162,7 @@ export function ReviewSubmissionDialog({ submission, onReviewed, onCancel }: Rev
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
+                  <span>Submitted: {formatDateTime(submission.submitted_at)}</span>
                 </div>
               </div>
 

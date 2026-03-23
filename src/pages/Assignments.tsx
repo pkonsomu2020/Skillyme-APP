@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import apiService from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatDate, formatDateTime } from "@/lib/dateUtils";
 
 interface Assignment {
   id: number;
@@ -433,7 +434,7 @@ const Assignments = () => {
                         {assignment.due_date && (
                           <div className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            Due: {new Date(assignment.due_date).toLocaleDateString()}
+                            Due: {formatDate(assignment.due_date)}
                           </div>
                         )}
                       </div>
@@ -477,8 +478,8 @@ const Assignments = () => {
                                     ? <XCircle className="w-4 h-4 shrink-0" />
                                     : <AlertCircle className="w-4 h-4 shrink-0" />}
                                   {isPastDeadline(assignment.due_date)
-                                    ? `Deadline passed on ${new Date(assignment.due_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })} — submissions are closed.`
-                                    : `Due: ${new Date(assignment.due_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                                    ? `Deadline passed on ${formatDateTime(assignment.due_date)} — submissions are closed.`
+                                    : `Due: ${formatDateTime(assignment.due_date)}`}
                                 </div>
                               )}
                               
@@ -611,7 +612,7 @@ const Assignments = () => {
                               <Calendar className="w-3 h-3" />
                               {locked && sub.status !== 'approved'
                                 ? 'Deadline passed — editing closed'
-                                : `Due: ${new Date(dueDate).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                                : `Due: ${formatDateTime(dueDate)}`}
                             </p>
                           )}
                         </div>
@@ -632,7 +633,7 @@ const Assignments = () => {
 
                     <CardContent className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Submitted: {new Date(sub.submitted_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                        Submitted: {formatDateTime(sub.submitted_at)}
                       </p>
 
                       {/* Submitted files */}
@@ -649,8 +650,7 @@ const Assignments = () => {
                                   <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                                   <a
                                     href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    download={file.name}
                                     className="text-blue-600 hover:underline truncate flex-1"
                                   >
                                     {file.name}
@@ -677,7 +677,7 @@ const Assignments = () => {
                             <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
                               <CheckCircle className="w-3 h-3 shrink-0" />
                               {dueDate
-                                ? `Editable until ${new Date(dueDate).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`
+                                ? `Editable until ${formatDateTime(dueDate)}`
                                 : 'You can still replace your submission'}
                             </div>
                           )}

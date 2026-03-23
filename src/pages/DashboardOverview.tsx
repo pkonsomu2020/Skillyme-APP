@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import apiService from "@/services/api";
+import { formatDate } from "@/lib/dateUtils";
 import React, { useState, useEffect } from "react";
 import TopLeaderboard from "@/components/TopLeaderboard";
 import { isMobile } from "@/utils/mobileOptimizations";
@@ -495,7 +496,7 @@ const DashboardOverview = () => {
                       <p className="text-xs text-muted-foreground capitalize">{(discount.type || 'next_phase').replace('_', ' ')}</p>
                       {discount.validUntil && !discount.isExpired && (
                         <p className="text-xs text-muted-foreground">
-                          Expires {new Date(discount.validUntil).toLocaleDateString()}
+                          Expires {formatDate(discount.validUntil)}
                         </p>
                       )}
                     </div>

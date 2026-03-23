@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { formatDate, formatDateTime } from "@/lib/dateUtils"
 import { 
   Plus, 
   FileText, 
@@ -354,10 +355,10 @@ export default function Assignments() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
-                        Created: {new Date(assignment.created_at).toLocaleDateString()}
+                        Created: {formatDate(assignment.created_at)}
                         {assignment.due_date && (
                           <span className="ml-4">
-                            Due: {new Date(assignment.due_date).toLocaleDateString()}
+                            Due: {formatDate(assignment.due_date)}
                           </span>
                         )}
                       </div>
@@ -404,7 +405,7 @@ export default function Assignments() {
                           Submitted by: {submission.users.name} ({submission.users.email})
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Submitted: {new Date(submission.submitted_at).toLocaleDateString()}
+                          Submitted: {formatDate(submission.submitted_at)}
                         </p>
                       </div>
                       <div className="flex flex-col gap-2">

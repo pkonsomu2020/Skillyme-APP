@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatDateTime } from "@/lib/dateUtils"
 import { 
   FileText, 
   Award, 
@@ -158,13 +159,7 @@ export function ViewAssignmentDialog({ assignment, onClose }: ViewAssignmentDial
                 <div>
                   <span className="text-sm font-medium">Created:</span>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(assignment.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatDateTime(assignment.created_at)}
                   </p>
                 </div>
 
@@ -172,13 +167,7 @@ export function ViewAssignmentDialog({ assignment, onClose }: ViewAssignmentDial
                   <div>
                     <span className="text-sm font-medium">Due Date:</span>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(assignment.due_date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatDateTime(assignment.due_date)}
                     </p>
                   </div>
                 )}
