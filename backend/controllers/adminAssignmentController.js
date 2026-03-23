@@ -140,9 +140,6 @@ const updateAssignment = async (req, res) => {
     });
   }
 };
-    });
-  }
-};
 
 // Delete assignment
 const deleteAssignment = async (req, res) => {
