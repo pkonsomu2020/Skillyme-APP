@@ -136,15 +136,18 @@ const Assignments = () => {
   const handleSubmission = async () => {
     if (!selectedAssignment || !isAuthenticated) return;
 
+    // Guard deadline on the frontend before even hitting the server
+    if (isPastDeadline(selectedAssignment.due_date)) {
+      toast.error('The deadline for this assignment has passed. Submissions are closed.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       
-      // Create FormData for file uploads
       const formData = new FormData();
-      
-      // Add files
       submissionData.submission_files.forEach((file) => {
-        formData.append(`files`, file);
+        formData.append('files', file);
       });
 
       const response = await fetch(`${apiService.baseURL}/assignments/${selectedAssignment.id}/submit`, {
@@ -164,11 +167,12 @@ const Assignments = () => {
         fetchAssignments();
         fetchUserStats();
       } else {
-        throw new Error(result.message || 'Submission failed');
+        // Surface the exact backend message
+        toast.error(result.message || 'Submission failed. Please try again.');
       }
     } catch (error) {
       console.error('Submission error:', error);
-      toast.error('Failed to submit assignment');
+      toast.error(error instanceof Error ? error.message : 'Failed to submit assignment. Please check your connection.');
     } finally {
       setIsSubmitting(false);
     }
@@ -181,8 +185,20 @@ const Assignments = () => {
 
   const handleResubmit = async () => {
     if (!editingSubmission || !isAuthenticated || editFiles.length === 0) return;
+
+    // Guard deadline on the frontend before hitting the server
     if (isPastDeadline(editingSubmission.due_date)) {
-      toast.error('The deadline has passed. You can no longer edit this submission.');
+      toast.warning('The deadline has passed. You can no longer edit this submission.');
+      setEditingSubmission(null);
+      setEditFiles([]);
+      return;
+    }
+
+    // Guard approved status
+    if (editingSubmission.user_submission?.status === 'approved') {
+      toast.info('This submission has already been approved and cannot be changed.');
+      setEditingSubmission(null);
+      setEditFiles([]);
       return;
     }
 
@@ -205,11 +221,12 @@ const Assignments = () => {
         fetchAssignments();
         fetchUserStats();
       } else {
-        throw new Error(result.message || 'Resubmission failed');
+        // Surface the exact backend message
+        toast.error(result.message || 'Failed to update submission. Please try again.');
       }
     } catch (error) {
       console.error('Resubmission error:', error);
-      toast.error('Failed to update submission');
+      toast.error(error instanceof Error ? error.message : 'Failed to update submission. Please check your connection.');
     } finally {
       setIsResubmitting(false);
     }
@@ -417,6 +434,22 @@ const Assignments = () => {
                                   </p>
                                 </div>
                               )}
+
+                              {/* Deadline warning inside dialog */}
+                              {assignment.due_date && (
+                                <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                                  isPastDeadline(assignment.due_date)
+                                    ? 'bg-red-50 text-red-700 border border-red-200'
+                                    : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                                }`}>
+                                  {isPastDeadline(assignment.due_date)
+                                    ? <XCircle className="w-4 h-4 shrink-0" />
+                                    : <AlertCircle className="w-4 h-4 shrink-0" />}
+                                  {isPastDeadline(assignment.due_date)
+                                    ? `Deadline passed on ${new Date(assignment.due_date).toLocaleString()} — submissions are closed.`
+                                    : `Due: ${new Date(assignment.due_date).toLocaleString()}`}
+                                </div>
+                              )}
                               
                               <div className="space-y-4">
                                 <div>
@@ -485,9 +518,9 @@ const Assignments = () => {
                                 </Button>
                                 <Button
                                   onClick={handleSubmission}
-                                  disabled={isSubmitting || submissionData.submission_files.length === 0}
+                                  disabled={isSubmitting || submissionData.submission_files.length === 0 || isPastDeadline(assignment.due_date)}
                                 >
-                                  {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
+                                  {isSubmitting ? 'Submitting...' : isPastDeadline(assignment.due_date) ? 'Deadline Passed' : 'Submit Assignment'}
                                 </Button>
                               </div>
                             </div>
