@@ -11,6 +11,16 @@ import { useToast } from "@/hooks/use-toast"
 import { formatDateTime } from "@/lib/dateUtils"
 import { CheckCircle, XCircle, AlertCircle, Award, User, Calendar, FileText } from "lucide-react"
 import { adminApi } from "@/services/api"
+import environment from "../../config/environment"
+
+const FILE_BASE_URL = environment.backendUrl.replace('/api', '')
+
+interface SubmissionFile {
+  filename: string
+  originalname: string
+  path: string
+  size: number
+}
 
 interface Submission {
   id: number
@@ -18,7 +28,7 @@ interface Submission {
   user_id: number
   submission_text?: string
   submission_links?: string[]
-  submission_files?: string[]
+  submission_files?: SubmissionFile[] | string[]
   status: 'pending' | 'approved' | 'rejected' | 'needs_revision'
   points_earned: number
   submitted_at: string
@@ -186,19 +196,37 @@ export function ReviewSubmissionDialog({ submission, onReviewed, onCancel }: Rev
                     Submitted Files:
                   </Label>
                   <div className="mt-2 space-y-2">
-                    {submission.submission_files.map((file: string, index: number) => (
-                      <div key={index} className="p-3 bg-muted rounded-lg flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                        <a
-                          href={file}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline break-all text-sm"
-                        >
-                          {file.split('/').pop() || file}
-                        </a>
-                      </div>
-                    ))}
+                    {submission.submission_files.map((file: any, index: number) => {
+                      const isObj = typeof file === 'object' && file !== null
+                      const path: string = isObj ? file.path : file
+                      const name: string = isObj ? (file.originalname || file.filename) : (file.split('/').pop() || file)
+                      const href = path.startsWith('http') ? path : `${FILE_BASE_URL}${path}`
+                      return (
+                        <div key={index} className="p-3 bg-muted rounded-lg flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <span className="text-sm truncate">{name}</span>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline border border-blue-200 rounded px-2 py-1"
+                            >
+                              View
+                            </a>
+                            <a
+                              href={href}
+                              download={name}
+                              className="text-xs text-green-600 hover:underline border border-green-200 rounded px-2 py-1"
+                            >
+                              Download
+                            </a>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               ) : (
