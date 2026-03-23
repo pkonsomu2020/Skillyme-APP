@@ -477,8 +477,8 @@ const Assignments = () => {
                                     ? <XCircle className="w-4 h-4 shrink-0" />
                                     : <AlertCircle className="w-4 h-4 shrink-0" />}
                                   {isPastDeadline(assignment.due_date)
-                                    ? `Deadline passed on ${new Date(assignment.due_date).toLocaleString()} — submissions are closed.`
-                                    : `Due: ${new Date(assignment.due_date).toLocaleString()}`}
+                                    ? `Deadline passed on ${new Date(assignment.due_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })} — submissions are closed.`
+                                    : `Due: ${new Date(assignment.due_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`}
                                 </div>
                               )}
                               
@@ -586,10 +586,18 @@ const Assignments = () => {
                 const locked = isPastDeadline(dueDate) || sub.status === 'approved';
                 const isEditing = editingSubmission?.id === sub.id;
 
-                // Normalise submission_files — backend stores as array of objects or strings
-                const files: string[] = (sub.submission_files || []).map((f: any) =>
-                  typeof f === 'string' ? f : f.path || f.filename || ''
-                ).filter(Boolean);
+                // Normalise submission_files — backend stores as array of objects { filename, originalname, path, size }
+                const files: { url: string; name: string }[] = (sub.submission_files || []).map((f: any) => {
+                  if (typeof f === 'string') {
+                    // Legacy plain string path
+                    const clean = f.replace(/["{}]+/g, '').trim();
+                    return { url: clean, name: clean.split('/').pop() || clean };
+                  }
+                  return {
+                    url: f.path || '',
+                    name: f.originalname || f.filename || f.path?.split('/').pop() || 'file'
+                  };
+                }).filter(f => f.url);
 
                 return (
                   <Card key={sub.id} className="hover:shadow-lg transition-shadow">
@@ -603,7 +611,7 @@ const Assignments = () => {
                               <Calendar className="w-3 h-3" />
                               {locked && sub.status !== 'approved'
                                 ? 'Deadline passed — editing closed'
-                                : `Due: ${new Date(dueDate).toLocaleDateString()}`}
+                                : `Due: ${new Date(dueDate).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`}
                             </p>
                           )}
                         </div>
@@ -624,7 +632,7 @@ const Assignments = () => {
 
                     <CardContent className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Submitted: {new Date(sub.submitted_at).toLocaleString()}
+                        Submitted: {new Date(sub.submitted_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
                       </p>
 
                       {/* Submitted files */}
@@ -632,19 +640,24 @@ const Assignments = () => {
                         <div>
                           <p className="text-sm font-medium mb-2">Current Submission:</p>
                           <div className="space-y-1">
-                            {files.map((file, i) => (
-                              <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
-                                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                                <a
-                                  href={file.startsWith('http') ? file : `${apiService.baseURL.replace('/api', '')}${file}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline truncate"
-                                >
-                                  {file.split('/').pop() || file}
-                                </a>
-                              </div>
-                            ))}
+                            {files.map((file, i) => {
+                              const href = file.url.startsWith('http')
+                                ? file.url
+                                : `${apiService.baseURL.replace('/api', '')}${file.url}`;
+                              return (
+                                <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
+                                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline truncate flex-1"
+                                  >
+                                    {file.name}
+                                  </a>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -664,7 +677,7 @@ const Assignments = () => {
                             <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
                               <CheckCircle className="w-3 h-3 shrink-0" />
                               {dueDate
-                                ? `Editable until ${new Date(dueDate).toLocaleString()}`
+                                ? `Editable until ${new Date(dueDate).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`
                                 : 'You can still replace your submission'}
                             </div>
                           )}
