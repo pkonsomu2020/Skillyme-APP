@@ -86,6 +86,7 @@ app.use((req, res, next) => {
     req.path.startsWith('/api/admin/discounts') ||
     req.path.startsWith('/api/admin/session-access') ||
     req.path.startsWith('/api/assignments') ||
+    req.path.startsWith('/api/sessions') ||
     req.path.startsWith('/api/session-access') ||
     req.path.startsWith('/api/dashboard')
   ) {
