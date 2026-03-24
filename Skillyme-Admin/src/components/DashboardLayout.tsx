@@ -9,7 +9,8 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { username } = useAuth()
+  const { admin } = useAuth()
+  const displayName = admin?.name || "Admin"
 
   return (
     <SidebarProvider>
@@ -23,11 +24,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {username?.charAt(0).toUpperCase() || "A"}
+                    {displayName.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden text-sm font-medium sm:inline-block">
-                  {username || "Admin"}
+                  {displayName}
                 </span>
               </div>
             </div>
