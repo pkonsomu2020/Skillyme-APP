@@ -81,26 +81,25 @@ export default function Users() {
     if (!searchTerm.trim()) {
       setFilteredUsers(users)
     } else {
-      const filtered = users.filter(user => {
-        const searchLower = searchTerm.toLowerCase()
-        return (
-          user.id.toString().includes(searchLower) ||
-          user.name.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower) ||
-          (user.phone && user.phone.toLowerCase().includes(searchLower)) ||
-          user.country.toLowerCase().includes(searchLower) ||
-          (user.county && user.county.toLowerCase().includes(searchLower)) ||
-          user.field_of_study.toLowerCase().includes(searchLower) ||
-          user.institution.toLowerCase().includes(searchLower) ||
-          user.level_of_study.toLowerCase().includes(searchLower) ||
-          (user.preferred_name && user.preferred_name.toLowerCase().includes(searchLower)) ||
-          (user.course_of_study && user.course_of_study.toLowerCase().includes(searchLower)) ||
-          (user.degree && user.degree.toLowerCase().includes(searchLower)) ||
-          (user.year_of_study && user.year_of_study.toLowerCase().includes(searchLower)) ||
-          (user.primary_field_interest && user.primary_field_interest.toLowerCase().includes(searchLower)) ||
-          (user.signup_source && user.signup_source.toLowerCase().includes(searchLower))
-        )
-      })
+      const s = searchTerm.toLowerCase()
+      const safe = (v: any) => (v ? String(v).toLowerCase() : '')
+      const filtered = users.filter(user =>
+        safe(user.id).includes(s) ||
+        safe(user.name).includes(s) ||
+        safe(user.email).includes(s) ||
+        safe(user.phone).includes(s) ||
+        safe(user.country).includes(s) ||
+        safe(user.county).includes(s) ||
+        safe(user.field_of_study).includes(s) ||
+        safe(user.institution).includes(s) ||
+        safe(user.level_of_study).includes(s) ||
+        safe(user.preferred_name).includes(s) ||
+        safe(user.course_of_study).includes(s) ||
+        safe(user.degree).includes(s) ||
+        safe(user.year_of_study).includes(s) ||
+        safe(user.primary_field_interest).includes(s) ||
+        safe(user.signup_source).includes(s)
+      )
       setFilteredUsers(filtered)
     }
   }, [searchTerm, users])
@@ -252,14 +251,14 @@ export default function Users() {
                         }`}
                       >
                         <td className="p-3 font-mono text-sm font-medium">{user.id}</td>
-                        <td className="p-3 font-medium">{user.name}</td>
-                        <td className="p-3 font-mono text-xs">{user.email}</td>
-                        <td className="p-3 font-mono text-xs">{user.phone}</td>
-                        <td className="p-3">{user.country}</td>
+                        <td className="p-3 font-medium">{user.name || '—'}</td>
+                        <td className="p-3 font-mono text-xs">{user.email || '—'}</td>
+                        <td className="p-3 font-mono text-xs">{user.phone || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.country || <span className="text-muted-foreground italic">null</span>}</td>
                         <td className="p-3">{user.county || <span className="text-muted-foreground italic">null</span>}</td>
-                        <td className="p-3">{user.field_of_study}</td>
-                        <td className="p-3">{user.institution}</td>
-                        <td className="p-3">{user.level_of_study}</td>
+                        <td className="p-3">{user.field_of_study || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.institution || <span className="text-muted-foreground italic">null</span>}</td>
+                        <td className="p-3">{user.level_of_study || <span className="text-muted-foreground italic">null</span>}</td>
                         <td className="p-3 font-mono text-xs">{formatDate(user.created_at)}</td>
                         <td className="p-3 font-mono text-xs">{formatDate(user.updated_at)}</td>
                         <td className="p-3 font-mono text-xs max-w-32 truncate" title={user.password}>
