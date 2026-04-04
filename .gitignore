@@ -22,8 +22,20 @@ dist-ssr
 *.sln
 *.sw?
 
-./backend/node_modules
-./backend/.env
+# Environment variables
 .env
-# Admin Dashboard (Separate Application) - REMOVED FROM GITIGNORE
-# Skillyme_Admin/ - This needs to be in the repository for Vercel deployment
+.env.*
+!.env.example
+./backend/.env
+./backend/.env.*
+!./backend/.env.example
+
+# Backend sensitive folders (also covered in backend/.gitignore)
+backend/scripts/
+backend/logs/
+backend/uploads/
+backend/database_migrations/
+backend/diagnostic_email.js
+
+# Debug files
+debug-frontend-login.html

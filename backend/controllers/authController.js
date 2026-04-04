@@ -94,10 +94,17 @@ const register = async (req, res) => {
 
     const user = await User.create(userData);
     
-    // Initialize user points for leaderboard
+    // Initialize user points and award signup bonus
     try {
       const UserPoints = require('../models/UserPoints');
       await UserPoints.initializeUserPoints(user.id);
+      await UserPoints.addPoints(
+        user.id,
+        10,
+        'signup',
+        user.id,
+        'Welcome bonus — thanks for joining Skillyme!'
+      );
     } catch (pointsError) {
       console.warn('Failed to initialize user points:', pointsError);
       // Don't fail registration if points initialization fails

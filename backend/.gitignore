@@ -1,1 +1,20 @@
+# Environment variables
 .env
+.env.*
+!.env.example
+
+# Scripts — contain sensitive backfill/migration logic
+scripts/
+
+# Logs — contain user transaction and error data
+logs/
+*.log
+
+# Uploads — contain user-submitted files
+uploads/
+
+# Database migration scripts — contain DB credentials and setup logic
+database_migrations/
+
+# Diagnostic files
+diagnostic_email.js
