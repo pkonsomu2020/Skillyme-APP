@@ -14,7 +14,6 @@ import {
   BookOpen, 
   Users, 
   ArrowRight, 
-  Sparkles, 
   Gift,
   Clock,
   Flame,
@@ -184,10 +183,10 @@ const DashboardOverview = () => {
           // Map Supabase data to expected format
           const supabaseData = response.data;
           setStats({
-            pointsEarned: supabaseData.pointsEarned || supabaseData.totalSpent || 0,
+            pointsEarned: supabaseData.pointsEarned || 0,
             assignmentsCompleted: supabaseData.assignmentsCompleted || supabaseData.totalPayments || 0,
             upcomingSessions: supabaseData.upcomingSessions || supabaseData.sessionsAttended || 0,
-            currentLevel: 'Beginner' // Will be calculated by getCurrentLevel()
+            currentLevel: supabaseData.levelName || 'Beginner'
           });
         } else {
           setError('Failed to fetch dashboard statistics');
@@ -251,7 +250,7 @@ const DashboardOverview = () => {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
+              <Crown className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-xl md:text-3xl font-bold">

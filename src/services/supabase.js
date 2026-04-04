@@ -481,17 +481,23 @@ class SupabaseService {
 
       if (userId) {
         // Get stats for specific user
-        const userSessionsResponse = await this.getUserSessions(userId);
-        const userPaymentsResponse = await this.client
-          .from('payments')
-          .select('*')
-          .eq('user_id', userId);
+        const [userSessionsResponse, userPaymentsResponse, userPointsResponse, userAssignmentsResponse] = await Promise.all([
+          this.getUserSessions(userId),
+          this.client.from('payments').select('*').eq('user_id', userId),
+          this.client.from('user_points').select('total_points, available_points, level_name').eq('user_id', userId).single(),
+          this.client.from('assignment_submissions').select('id').eq('user_id', userId).eq('status', 'approved')
+        ]);
+
+        const pointsData = userPointsResponse.data;
 
         stats = {
           sessionsAttended: userSessionsResponse.data?.length || 0,
           totalPayments: userPaymentsResponse.data?.length || 0,
           totalSpent: userPaymentsResponse.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0,
-          pointsEarned: (userSessionsResponse.data?.length || 0) * 50 + (userPaymentsResponse.data?.length || 0) * 25
+          pointsEarned: pointsData?.total_points || 0,
+          availablePoints: pointsData?.available_points || 0,
+          levelName: pointsData?.level_name || 'Beginner',
+          assignmentsCompleted: userAssignmentsResponse.data?.length || 0
         };
       } else {
         // Get overall platform stats
