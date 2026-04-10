@@ -63,7 +63,7 @@ export default function Dashboard() {
             },
             {
               label: "Completion Rate",
-              value: `${Math.round((sessionResponse.data.overview.completedSessions / sessionResponse.data.overview.totalSessions) * 100) || 0}%`,
+              value: `${Math.round(((sessionResponse.data.overview.completedSessions ?? 0) / (sessionResponse.data.overview.totalSessions || 1)) * 100) || 0}%`,
               change: "of all sessions",
               trend: 'up'
             }

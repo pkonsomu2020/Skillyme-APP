@@ -112,7 +112,7 @@ The Skillyme Team`
 
       const response = await adminApi.notifications.getNotificationHistory()
       if (response.success && response.data) {
-        setRecentNotifications(response.data.notifications)
+        setRecentNotifications(Array.isArray(response.data.notifications) ? response.data.notifications : [])
         setLastUpdated(new Date())
       } else {
         if (recentNotifications.length === 0) {

@@ -89,7 +89,7 @@ export default function Discounts() {
       })
       
       if (response.success) {
-        setLeaderboard(response.data.leaderboard)
+        setLeaderboard(Array.isArray(response.data?.leaderboard) ? response.data.leaderboard : [])
       } else {
         toast({
           title: "Error",
@@ -118,7 +118,7 @@ export default function Discounts() {
       })
       
       if (response.success) {
-        setDiscounts(response.data.discounts)
+        setDiscounts(Array.isArray(response.data?.discounts) ? response.data.discounts : [])
       }
     } catch (error) {
       console.error("Error fetching discounts:", error)
@@ -170,7 +170,7 @@ export default function Discounts() {
   const bulkAwardDiscounts = async () => {
     try {
       setBulkAwarding(true)
-      const eligibleUsers = leaderboard.filter(user => user.discount_eligibility.is_eligible)
+      const eligibleUsers = leaderboard.filter(user => user.discount_eligibility?.is_eligible)
       
       if (eligibleUsers.length === 0) {
         toast({
@@ -191,7 +191,7 @@ export default function Discounts() {
       if (response.success) {
         toast({
           title: "Bulk Award Complete!",
-          description: `Awarded discounts to ${response.data.summary.successful} users. Emails sent automatically.`,
+          description: `Awarded discounts to ${response.data?.summary?.successful ?? 0} users. Emails sent automatically.`,
         })
         await fetchLeaderboard()
         await fetchDiscounts()
@@ -258,7 +258,7 @@ export default function Discounts() {
     )
   }
 
-  const eligibleCount = leaderboard.filter(user => user.discount_eligibility.is_eligible).length
+  const eligibleCount = leaderboard.filter(user => user.discount_eligibility?.is_eligible).length
 
   const filteredLeaderboard = leaderboard.filter(user => {
     if (fieldFilter === 'all') return true
@@ -539,16 +539,16 @@ export default function Discounts() {
               <CardContent>
                 <div className="space-y-4">
                   {filteredLeaderboard.map((user, index) => {
-                    const activeDiscount = user.existing_discounts.find((d: any) => d.status === 'active')
-                    const suggestedPct = user.discount_eligibility.suggested_discount || discountPercentage
-                    const canUpgrade = user.discount_eligibility.can_upgrade
+                    const activeDiscount = (user.existing_discounts ?? []).find((d: any) => d.status === 'active')
+                    const suggestedPct = user.discount_eligibility?.suggested_discount || discountPercentage
+                    const canUpgrade = user.discount_eligibility?.can_upgrade
                     const hasDiscount = !!activeDiscount
 
                     return (
                     <div
                       key={user.user_id}
                       className={`p-4 border rounded-lg ${
-                        user.discount_eligibility.is_eligible
+                        user.discount_eligibility?.is_eligible
                           ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
                           : 'border-border'
                       }`}
@@ -579,13 +579,13 @@ export default function Discounts() {
                           </div>
 
                           {/* Tier badge */}
-                          {user.discount_eligibility.is_eligible ? (
+                          {user.discount_eligibility?.is_eligible ? (
                             <Badge className="bg-blue-100 text-blue-800">
-                              {user.discount_eligibility.tier_label} — {suggestedPct}% tier
+                              {user.discount_eligibility?.tier_label} — {suggestedPct}% tier
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-muted-foreground">
-                              {user.discount_eligibility.eligibility_reason}
+                              {user.discount_eligibility?.eligibility_reason}
                             </Badge>
                           )}
 
@@ -598,7 +598,7 @@ export default function Discounts() {
                           )}
 
                           {/* Action button */}
-                          {user.discount_eligibility.is_eligible && (
+                          {user.discount_eligibility?.is_eligible && (
                             <Button
                               size="sm"
                               onClick={() => awardDiscount(user.user_id, user.total_points)}

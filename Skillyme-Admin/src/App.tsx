@@ -65,9 +65,7 @@ const App = () => (
                   path="/users"
                   element={
                     <ProtectedRoute>
-                      <ErrorBoundary>
-                        <Users />
-                      </ErrorBoundary>
+                      <Users />
                     </ProtectedRoute>
                   }
                 />
