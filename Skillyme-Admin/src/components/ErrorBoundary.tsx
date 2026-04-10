@@ -48,10 +48,10 @@ class ErrorBoundary extends Component<Props, State> {
                 An unexpected error occurred. This might be due to a network issue or a temporary problem.
               </p>
               
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-xs bg-muted p-2 rounded">
+              {this.state.error && (
+                <details className="text-xs bg-muted p-2 rounded" open>
                   <summary className="cursor-pointer font-medium">Error Details</summary>
-                  <pre className="mt-2 whitespace-pre-wrap">
+                  <pre className="mt-2 whitespace-pre-wrap break-all">
                     {this.state.error.toString()}
                     {this.state.errorInfo?.componentStack}
                   </pre>

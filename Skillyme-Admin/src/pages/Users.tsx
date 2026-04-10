@@ -4,19 +4,72 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { formatDate as eatFormatDate } from "@/lib/dateUtils"
-import { Search, AlertTriangle } from "lucide-react"
-import { adminApi, User } from "@/services/api"
+import { Search, AlertTriangle, X } from "lucide-react"
+import { adminApi } from "@/services/api"
 
-// Safely convert any value to lowercase string for searching
+interface SafeUser {
+  id: number | string
+  name: string
+  email: string
+  phone: string
+  country: string
+  county: string
+  field_of_study: string
+  institution: string
+  level_of_study: string
+  created_at: string
+  preferred_name?: string
+  course_of_study?: string
+  degree?: string
+  year_of_study?: string
+  primary_field_interest?: string
+  signup_source?: string
+}
+
 const safe = (v: unknown): string => {
   if (v == null) return ''
   if (typeof v === 'object') return ''
   return String(v).toLowerCase()
 }
 
+const fmt = (v: unknown): string => {
+  if (!v) return 'N/A'
+  try {
+    const d = new Date(String(v))
+    if (isNaN(d.getTime())) return String(v)
+    return d.toLocaleDateString('en-US', {
+      timeZone: 'Africa/Nairobi',
+      year: 'numeric', month: 'short', day: 'numeric'
+    })
+  } catch {
+    return String(v)
+  }
+}
+
+const normalize = (raw: unknown): SafeUser => {
+  const u = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return {
+    id: (u.id as number) ?? 0,
+    name: String(u.name ?? ''),
+    email: String(u.email ?? ''),
+    phone: String(u.phone ?? ''),
+    country: String(u.country ?? ''),
+    county: String(u.county ?? ''),
+    field_of_study: String(u.field_of_study ?? ''),
+    institution: String(u.institution ?? ''),
+    level_of_study: String(u.level_of_study ?? ''),
+    created_at: String(u.created_at ?? ''),
+    preferred_name: u.preferred_name ? String(u.preferred_name) : undefined,
+    course_of_study: u.course_of_study ? String(u.course_of_study) : undefined,
+    degree: u.degree ? String(u.degree) : undefined,
+    year_of_study: u.year_of_study ? String(u.year_of_study) : undefined,
+    primary_field_interest: u.primary_field_interest ? String(u.primary_field_interest) : undefined,
+    signup_source: u.signup_source ? String(u.signup_source) : undefined,
+  }
+}
+
 export default function Users() {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<SafeUser[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -30,14 +83,10 @@ export default function Users() {
     try {
       if (!isBackground) setSyncing(true)
       setFetchError(null)
-
       const response = await adminApi.users.getAllUsers({ limit: 1000, page: 1 })
-
       if (response.success) {
-        // Guard: ensure we always set an array
         const rawUsers = response.data?.users
-        const safeUsers = Array.isArray(rawUsers) ? rawUsers : []
-        setUsers(safeUsers)
+        setUsers(Array.isArray(rawUsers) ? rawUsers.map(normalize) : [])
         setLastUpdated(new Date())
       } else {
         const msg = response.error || "Failed to load users"
@@ -47,7 +96,6 @@ export default function Users() {
         }
       }
     } catch (error) {
-      console.error("Error fetching users:", error)
       const msg = error instanceof Error ? error.message : "Failed to load users"
       if (!isBackground) {
         setFetchError(msg)
@@ -59,7 +107,6 @@ export default function Users() {
     }
   }
 
-  // Initial load — fires once
   useEffect(() => {
     if (!initialLoadDone.current) {
       initialLoadDone.current = true
@@ -67,40 +114,31 @@ export default function Users() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Background auto-sync every 30 seconds
   useEffect(() => {
     intervalRef.current = setInterval(() => fetchUsers(true), 30000)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Compute filtered list — always safe because users is always an array
   const term = searchTerm.trim().toLowerCase()
   const filteredUsers = term
-    ? users.filter(user =>
-        safe(user.id).includes(term) ||
-        safe(user.name).includes(term) ||
-        safe(user.email).includes(term) ||
-        safe(user.phone).includes(term) ||
-        safe(user.country).includes(term) ||
-        safe(user.county).includes(term) ||
-        safe(user.field_of_study).includes(term) ||
-        safe(user.institution).includes(term) ||
-        safe(user.level_of_study).includes(term) ||
-        safe(user.preferred_name).includes(term) ||
-        safe(user.course_of_study).includes(term) ||
-        safe(user.degree).includes(term) ||
-        safe(user.year_of_study).includes(term) ||
-        safe(user.primary_field_interest).includes(term) ||
-        safe(user.signup_source).includes(term)
+    ? users.filter(u =>
+        safe(u.id).includes(term) ||
+        safe(u.name).includes(term) ||
+        safe(u.email).includes(term) ||
+        safe(u.phone).includes(term) ||
+        safe(u.country).includes(term) ||
+        safe(u.county).includes(term) ||
+        safe(u.field_of_study).includes(term) ||
+        safe(u.institution).includes(term) ||
+        safe(u.level_of_study).includes(term) ||
+        safe(u.preferred_name).includes(term) ||
+        safe(u.course_of_study).includes(term) ||
+        safe(u.degree).includes(term) ||
+        safe(u.year_of_study).includes(term) ||
+        safe(u.primary_field_interest).includes(term) ||
+        safe(u.signup_source).includes(term)
       )
     : users
-
-  const fmt = (v: string | null | undefined): string => {
-    if (!v) return 'N/A'
-    try { return eatFormatDate(v) } catch { return String(v) }
-  }
 
   if (loading) {
     return (
@@ -133,7 +171,6 @@ export default function Users() {
   return (
     <DashboardLayout>
       <div className="p-8 space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Users</h1>
@@ -141,7 +178,6 @@ export default function Users() {
           </div>
         </div>
 
-        {/* Search and Stats */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -149,8 +185,16 @@ export default function Users() {
               placeholder="Search by name, email, phone, institution..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 pr-10"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
           <div className="flex gap-4 text-sm text-muted-foreground">
             <span>Total: {users.length}</span>
@@ -164,7 +208,6 @@ export default function Users() {
           </div>
         </div>
 
-        {/* Table */}
         <Card>
           <CardHeader className="border-b">
             <div className="flex justify-between items-center">
@@ -186,14 +229,10 @@ export default function Users() {
                   {searchTerm ? 'No users found' : 'No users yet'}
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  {searchTerm
-                    ? 'Try different search terms'
-                    : 'Users will appear here once they register'}
+                  {searchTerm ? 'Try different search terms' : 'Users will appear here once they register'}
                 </p>
                 {searchTerm && (
-                  <Button variant="outline" onClick={() => setSearchTerm("")}>
-                    Clear Search
-                  </Button>
+                  <Button variant="outline" onClick={() => setSearchTerm("")}>Clear Search</Button>
                 )}
               </div>
             ) : (
@@ -202,31 +241,28 @@ export default function Users() {
                   <thead>
                     <tr className="border-b bg-muted/50">
                       {['ID','Name','Email','Phone','Country','County','Field of Study','Institution','Level','Joined'].map(h => (
-                        <th
-                          key={h}
-                          className="text-left p-3 font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
-                        >
+                        <th key={h} className="text-left p-3 font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user, index) => (
+                    {filteredUsers.map((u, index) => (
                       <tr
-                        key={user.id ?? index}
+                        key={`${u.id}-${index}`}
                         className={`border-b hover:bg-muted/30 transition-colors ${index % 2 === 0 ? '' : 'bg-muted/5'}`}
                       >
-                        <td className="p-3 font-mono text-xs">{user.id ?? '—'}</td>
-                        <td className="p-3 font-medium whitespace-nowrap">{user.name || '—'}</td>
-                        <td className="p-3 font-mono text-xs">{user.email || '—'}</td>
-                        <td className="p-3 font-mono text-xs">{user.phone || '—'}</td>
-                        <td className="p-3">{user.country || '—'}</td>
-                        <td className="p-3">{user.county || '—'}</td>
-                        <td className="p-3">{user.field_of_study || '—'}</td>
-                        <td className="p-3">{user.institution || '—'}</td>
-                        <td className="p-3">{user.level_of_study || '—'}</td>
-                        <td className="p-3 font-mono text-xs whitespace-nowrap">{fmt(user.created_at)}</td>
+                        <td className="p-3 font-mono text-xs">{u.id || '—'}</td>
+                        <td className="p-3 font-medium whitespace-nowrap">{u.name || '—'}</td>
+                        <td className="p-3 font-mono text-xs">{u.email || '—'}</td>
+                        <td className="p-3 font-mono text-xs">{u.phone || '—'}</td>
+                        <td className="p-3">{u.country || '—'}</td>
+                        <td className="p-3">{u.county || '—'}</td>
+                        <td className="p-3">{u.field_of_study || '—'}</td>
+                        <td className="p-3">{u.institution || '—'}</td>
+                        <td className="p-3">{u.level_of_study || '—'}</td>
+                        <td className="p-3 font-mono text-xs whitespace-nowrap">{fmt(u.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
