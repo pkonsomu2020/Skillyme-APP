@@ -56,7 +56,7 @@ const Leaderboard = () => {
     try {
       setIsLoading(true);
       
-      const response = await apiService.getLeaderboard(100);
+      const response = await apiService.getLeaderboard(500);
       
       if (response.success && response.data.leaderboard) {
         setLeaderboard(response.data.leaderboard);

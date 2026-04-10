@@ -213,7 +213,7 @@ const getLeaderboard = async (req, res) => {
     const allowedMetrics = ['points', 'assignments'];
 
     const rawLimit = parseInt(req.query.limit);
-    const limit = (!isNaN(rawLimit) && rawLimit > 0 && rawLimit <= 100) ? rawLimit : 10;
+    const limit = (!isNaN(rawLimit) && rawLimit > 0 && rawLimit <= 500) ? rawLimit : 10;
     const period = allowedPeriods.includes(req.query.period) ? req.query.period : 'all';
     const target_group = allowedGroups.includes(req.query.target_group) ? req.query.target_group : 'all';
     const metric = allowedMetrics.includes(req.query.metric) ? req.query.metric : 'points';

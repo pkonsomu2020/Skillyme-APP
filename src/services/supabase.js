@@ -204,7 +204,6 @@ class SupabaseService {
           level_name,
           users(id, name, email, country, field_of_study, level_of_study)
         `)
-        .gt('total_points', 0)
         .order('total_points', { ascending: false })
         .limit(limit);
 
