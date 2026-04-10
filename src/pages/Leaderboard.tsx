@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { 
   Trophy, 
   Medal, 
@@ -12,11 +13,14 @@ import {
   Users,
   Target,
   Code2,
-  Scale
+  Scale,
+  Search,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import apiService from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { createClient } from "@supabase/supabase-js";
 
 interface LeaderboardEntry {
   user_id: number;
@@ -41,20 +45,20 @@ interface LeaderboardStats {
   your_rank?: number;
 }
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 const Leaderboard = () => {
   const { user, isAuthenticated } = useAuth();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [stats, setStats] = useState<LeaderboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, []);
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       
       const response = await apiService.getLeaderboard(500);
       
@@ -90,25 +94,68 @@ const Leaderboard = () => {
       setLeaderboard([]);
       setStats(null);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
-  };
+  }, [isAuthenticated, user]);
 
-  // Filter leaderboard by field of study and re-rank
+  useEffect(() => {
+    fetchLeaderboard();
+
+    // Real-time subscription — re-fetch silently whenever user_points changes
+    // This covers: new signups, assignment approvals, session joins, any point update
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const channel = supabase
+      .channel('leaderboard-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_points' },
+        () => {
+          // Any insert or update to user_points → silently refresh leaderboard
+          fetchLeaderboard(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'users' },
+        () => {
+          // New user signed up → refresh after short delay to let points initialize
+          setTimeout(() => fetchLeaderboard(true), 2000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchLeaderboard]);
+
+  // Filter leaderboard by field of study, search query, and re-rank
   const getFilteredLeaderboard = () => {
     let filtered = leaderboard;
+
+    // Tab filter
     if (activeTab === "software-engineering") {
-      filtered = leaderboard.filter(e =>
+      filtered = filtered.filter(e =>
         e.field_of_study?.toLowerCase().includes("software") ||
         e.field_of_study?.toLowerCase().includes("engineering") ||
         e.field_of_study?.toLowerCase().includes("computer")
       );
     } else if (activeTab === "law") {
-      filtered = leaderboard.filter(e =>
+      filtered = filtered.filter(e =>
         e.field_of_study?.toLowerCase().includes("law") ||
         e.field_of_study?.toLowerCase().includes("legal")
       );
     }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(e => e.name.toLowerCase().includes(q));
+    }
+
     // Re-rank within the filtered list
     return filtered.map((entry, index) => ({ ...entry, rank: index + 1 }));
   };
@@ -236,6 +283,25 @@ const Leaderboard = () => {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="pl-9 pr-9"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="all" className="flex items-center gap-2">
@@ -269,7 +335,9 @@ const Leaderboard = () => {
                 {filteredLeaderboard.length === 0 ? (
                   <div className="text-center py-8">
                     <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No rankings available yet.</p>
+                    <p className="text-muted-foreground">
+                      {searchQuery ? `No results for "${searchQuery}"` : "No rankings available yet."}
+                    </p>
                   </div>
                 ) : (
                   filteredLeaderboard.map((entry, index) => (
