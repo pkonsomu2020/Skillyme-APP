@@ -162,9 +162,14 @@ const getSignupTrends = async (req, res) => {
       const source = user.signup_source || 'Unknown';
       sourceStats[source] = (sourceStats[source] || 0) + 1;
 
-      // Field stats
-      const field = user.field_of_study || 'Unknown';
-      fieldStats[field] = (fieldStats[field] || 0) + 1;
+      // Field stats — normalise case
+      const rawField = (user.field_of_study || '').trim();
+      if (rawField) {
+        const field = rawField.charAt(0).toUpperCase() + rawField.slice(1).toLowerCase();
+        if (field !== 'Not specified' && field !== 'N/a' && field !== 'None') {
+          fieldStats[field] = (fieldStats[field] || 0) + 1;
+        }
+      }
     });
 
     const sourceData = Object.entries(sourceStats).map(([source, count]) => ({
@@ -313,11 +318,15 @@ const getUserAnalytics = async (req, res) => {
       throw fieldError;
     }
 
-    // Count by field of study
+    // Count by field of study — normalise case to merge duplicates
     const fieldStats = {};
     fieldData.forEach(user => {
-      const field = user.field_of_study;
-      fieldStats[field] = (fieldStats[field] || 0) + 1;
+      const raw = (user.field_of_study || '').trim();
+      if (!raw) return;
+      const field = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+      if (field && field !== 'Not specified' && field !== 'N/a' && field !== 'None') {
+        fieldStats[field] = (fieldStats[field] || 0) + 1;
+      }
     });
 
     // Get users by institution
@@ -529,18 +538,29 @@ const getUserDemographics = async (req, res) => {
     };
 
     users.forEach(user => {
-      // Group by field of study
-      const field = user.field_of_study || 'Not specified';
-      demographics.byField[field] = (demographics.byField[field] || 0) + 1;
+      // Normalise field of study — trim, lowercase for comparison, then title-case for display
+      // This merges "Computer Science", "computer science", "COMPUTER SCIENCE" etc.
+      const rawField = (user.field_of_study || '').trim()
+      const field = rawField
+        ? rawField.charAt(0).toUpperCase() + rawField.slice(1).toLowerCase()
+        : null
 
-      // Group by level of study
-      const level = user.level_of_study || 'Not specified';
-      demographics.byExperience[level] = (demographics.byExperience[level] || 0) + 1;
+      // Skip blank / unspecified fields entirely — don't pollute the chart
+      if (field && field !== 'Not specified' && field !== 'N/a' && field !== 'None') {
+        demographics.byField[field] = (demographics.byField[field] || 0) + 1
+      }
+
+      // Group by level of study — same normalisation
+      const rawLevel = (user.level_of_study || '').trim()
+      const level = rawLevel
+        ? rawLevel.charAt(0).toUpperCase() + rawLevel.slice(1).toLowerCase()
+        : 'Not specified'
+      demographics.byExperience[level] = (demographics.byExperience[level] || 0) + 1
 
       // Group by month
-      const month = new Date(user.created_at).toISOString().substring(0, 7);
-      demographics.byMonth[month] = (demographics.byMonth[month] || 0) + 1;
-    });
+      const month = new Date(user.created_at).toISOString().substring(0, 7)
+      demographics.byMonth[month] = (demographics.byMonth[month] || 0) + 1
+    })
 
     res.json({
       success: true,

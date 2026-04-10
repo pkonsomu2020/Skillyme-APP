@@ -1,310 +1,298 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { 
-  Users, 
-  Video, 
-  DollarSign, 
-  TrendingUp, 
-  Activity, 
-  Clock, 
-  UserPlus, 
-  CreditCard,
-  Calendar,
-  RefreshCw
+import {
+  Users, Video, DollarSign, TrendingUp, Activity, Clock,
+  UserPlus, CreditCard, Calendar, RefreshCw, FileText,
+  Trophy, Gift, CheckCircle, AlertCircle, BarChart3
 } from "lucide-react"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts"
+import {
+  Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend
+} from "recharts"
 import { adminApi } from "@/services/api"
 import { formatDate, formatTime } from "@/lib/dateUtils"
 
-interface DashboardStats {
+const REFRESH_INTERVAL = 30_000 // 30 seconds
+const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16']
+
+interface Stats {
   totalUsers: number
   activeSessions: number
   completedSessions: number
   totalRevenue: number
   recentSignups: number
   growthRate: number
+  totalAssignments: number
+  pendingSubmissions: number
+  approvedSubmissions: number
+  activeDiscounts: number
+  topLeaderPoints: number
+  totalPayments: number
 }
 
-interface RecentActivity {
+interface SignupTrend { name: string; signups: number }
+interface DemoItem { name: string; value: number }
+interface Activity {
   id: string
-  type: 'user_signup' | 'session_completed' | 'payment_received' | 'session_created'
   title: string
   description: string
   timestamp: string
-  icon: any
+  icon: React.ComponentType<{ className?: string }>
   color: string
 }
 
-interface SignupTrend {
-  name: string
-  signups: number
-  date?: string
+const fmt = (v: unknown): string => {
+  if (!v) return 'N/A'
+  try {
+    const d = new Date(String(v))
+    return isNaN(d.getTime()) ? String(v) : formatDate(d)
+  } catch { return String(v) }
+}
+
+const timeAgo = (ts: string) => {
+  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 60000)
+  if (diff < 1) return 'Just now'
+  if (diff < 60) return `${diff}m ago`
+  if (diff < 1440) return `${Math.floor(diff / 60)}h ago`
+  return `${Math.floor(diff / 1440)}d ago`
 }
 
 export function RealTimeAnalytics() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    activeSessions: 0,
-    completedSessions: 0,
-    totalRevenue: 0,
-    recentSignups: 0,
-    growthRate: 0
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0, activeSessions: 0, completedSessions: 0,
+    totalRevenue: 0, recentSignups: 0, growthRate: 0,
+    totalAssignments: 0, pendingSubmissions: 0, approvedSubmissions: 0,
+    activeDiscounts: 0, topLeaderPoints: 0, totalPayments: 0
   })
-  
   const [signupTrends, setSignupTrends] = useState<SignupTrend[]>([])
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
+  const [demographics, setDemographics] = useState<DemoItem[]>([])
+  const [revenueBySession, setRevenueBySession] = useState<any[]>([])
+  const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
-  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Fetch dashboard analytics
-  const fetchDashboardStats = useCallback(async () => {
+  const fetchAll = useCallback(async (background = false) => {
+    if (background) setRefreshing(true)
+    else setLoading(true)
+
     try {
-      const response = await adminApi.analytics.getDashboardStats()
-      if (response.success && response.data?.overview) {
-        setStats(response.data.overview)
+      const [dashRes, trendsRes, demoRes, sessionRes, assignRes, discountRes, leaderRes] =
+        await Promise.allSettled([
+          adminApi.analytics.getDashboardStats(),
+          adminApi.analytics.getSignupTrends(),
+          adminApi.analytics.getUserDemographics(),
+          adminApi.analytics.getSessionAnalytics(),
+          adminApi.assignments.getAllAssignments(),
+          adminApi.discounts.getAll({ limit: 500, page: 1 }),
+          adminApi.discounts.getLeaderboard({ limit: 1 }),
+        ])
+
+      // ── Core stats ──────────────────────────────────────────────
+      const dash = dashRes.status === 'fulfilled' && dashRes.value.success
+        ? dashRes.value.data?.overview : null
+
+      // ── Signup trends ────────────────────────────────────────────
+      if (trendsRes.status === 'fulfilled' && trendsRes.value.success) {
+        setSignupTrends(trendsRes.value.data?.dailySignups ?? [])
       }
-    } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error)
-    }
-  }, [])
 
-  // Fetch signup trends
-  const fetchSignupTrends = useCallback(async () => {
-    try {
-      const response = await adminApi.analytics.getSignupTrends()
-      if (response.success && response.data?.dailySignups) {
-        setSignupTrends(response.data.dailySignups)
+      // ── Demographics ─────────────────────────────────────────────
+      if (demoRes.status === 'fulfilled' && demoRes.value.success) {
+        const raw = demoRes.value.data?.byField ?? {}
+        const items: DemoItem[] = Object.entries(raw)
+          .map(([name, value]) => ({ name, value: value as number }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 6)
+        setDemographics(items)
       }
-    } catch (error) {
-      console.error('Failed to fetch signup trends:', error)
-    }
-  }, [])
 
-  // Generate recent activity from real data
-  const generateRecentActivity = useCallback(async () => {
-    try {
-      const activities: RecentActivity[] = []
-      
-      // Get recent users
-      const usersResponse = await adminApi.users.getAllUsers({ limit: 5 })
-      if (usersResponse.success && usersResponse.data?.users) {
-        usersResponse.data.users.slice(0, 3).forEach((user: any, index: number) => {
-          activities.push({
-            id: `user-${user.id}`,
-            type: 'user_signup',
-            title: 'New user registered',
-            description: `${user.name} joined the platform`,
-            timestamp: user.created_at,
-            icon: UserPlus,
-            color: 'text-green-600'
+      // ── Session analytics + revenue chart ────────────────────────
+      let sessionOverview: any = null
+      if (sessionRes.status === 'fulfilled' && sessionRes.value.success) {
+        sessionOverview = sessionRes.value.data?.overview
+        const topRev: any[] = sessionRes.value.data?.topRevenueSessions ?? []
+        setRevenueBySession(
+          topRev.slice(0, 5).map(s => ({
+            name: s.title?.length > 18 ? s.title.slice(0, 18) + '…' : s.title,
+            revenue: s.revenue ?? 0,
+            attendees: s.attendees ?? 0
+          }))
+        )
+      }
+
+      // ── Assignments ───────────────────────────────────────────────
+      let totalAssignments = 0, pendingSubmissions = 0, approvedSubmissions = 0
+      if (assignRes.status === 'fulfilled' && assignRes.value.success) {
+        totalAssignments = (assignRes.value.data?.assignments ?? []).length
+      }
+      // Get submission counts from assignments API
+      try {
+        const subRes = await adminApi.assignments.getAllSubmissions?.({ limit: 1000 })
+        if (subRes?.success) {
+          const subs = subRes.data?.submissions ?? []
+          pendingSubmissions = subs.filter((s: any) => s.status === 'pending').length
+          approvedSubmissions = subs.filter((s: any) => s.status === 'approved').length
+        }
+      } catch { /* submissions endpoint optional */ }
+
+      // ── Discounts ─────────────────────────────────────────────────
+      let activeDiscounts = 0
+      if (discountRes.status === 'fulfilled' && discountRes.value.success) {
+        const all = discountRes.value.data?.discounts ?? []
+        activeDiscounts = all.filter((d: any) => d.status === 'active').length
+      }
+
+      // ── Leaderboard top points ────────────────────────────────────
+      let topLeaderPoints = 0
+      if (leaderRes.status === 'fulfilled' && leaderRes.value.success) {
+        topLeaderPoints = leaderRes.value.data?.leaderboard?.[0]?.total_points ?? 0
+      }
+
+      setStats({
+        totalUsers: dash?.totalUsers ?? 0,
+        activeSessions: dash?.activeSessions ?? sessionOverview?.activeSessions ?? 0,
+        completedSessions: dash?.completedSessions ?? sessionOverview?.completedSessions ?? 0,
+        totalRevenue: dash?.totalRevenue ?? 0,
+        recentSignups: dash?.recentSignups ?? 0,
+        growthRate: dash?.growthRate ?? 0,
+        totalAssignments,
+        pendingSubmissions,
+        approvedSubmissions,
+        activeDiscounts,
+        topLeaderPoints,
+        totalPayments: dash?.totalPayments ?? 0,
+      })
+
+      // ── Recent activity feed ──────────────────────────────────────
+      const feed: Activity[] = []
+      try {
+        const usersRes = await adminApi.users.getAllUsers({ limit: 5 })
+        if (usersRes.success) {
+          ;(usersRes.data?.users ?? []).slice(0, 3).forEach((u: any) => {
+            feed.push({
+              id: `u-${u.id}`,
+              title: 'New user registered',
+              description: `${u.name} joined the platform`,
+              timestamp: u.created_at,
+              icon: UserPlus,
+              color: 'text-green-600'
+            })
           })
-        })
-      }
+        }
+      } catch { /* ignore */ }
 
-      // Get recent sessions
-      const sessionsResponse = await adminApi.sessions.getAllSessions({ limit: 5 })
-      if (sessionsResponse.success && sessionsResponse.data?.sessions) {
-        const completedSessions = sessionsResponse.data.sessions.filter((s: any) => s.is_completed)
-        completedSessions.slice(0, 2).forEach((session: any) => {
-          activities.push({
-            id: `session-${session.id}`,
-            type: 'session_completed',
-            title: 'Session completed',
-            description: `${session.title} by ${session.recruiter}`,
-            timestamp: session.updated_at || session.created_at,
-            icon: Calendar,
-            color: 'text-blue-600'
+      try {
+        const sessRes = await adminApi.sessions.getAllSessions({ limit: 10 })
+        if (sessRes.success) {
+          const sessions = sessRes.data?.sessions ?? []
+          sessions.filter((s: any) => s.is_completed).slice(0, 2).forEach((s: any) => {
+            feed.push({
+              id: `sc-${s.id}`,
+              title: 'Session completed',
+              description: `${s.title} by ${s.recruiter}`,
+              timestamp: s.updated_at ?? s.created_at,
+              icon: CheckCircle,
+              color: 'text-blue-600'
+            })
           })
-        })
-
-        // Recent session creations
-        const recentSessions = sessionsResponse.data.sessions
-          .filter((s: any) => !s.is_completed)
-          .slice(0, 2)
-        
-        recentSessions.forEach((session: any) => {
-          activities.push({
-            id: `session-created-${session.id}`,
-            type: 'session_created',
-            title: 'New session created',
-            description: `${session.title} scheduled for ${formatDate(session.date)}`,
-            timestamp: session.created_at,
-            icon: Video,
-            color: 'text-purple-600'
+          sessions.filter((s: any) => !s.is_completed).slice(0, 2).forEach((s: any) => {
+            feed.push({
+              id: `sn-${s.id}`,
+              title: 'Session scheduled',
+              description: `${s.title} on ${fmt(s.date)}`,
+              timestamp: s.created_at,
+              icon: Calendar,
+              color: 'text-purple-600'
+            })
           })
-        })
-      }
+        }
+      } catch { /* ignore */ }
 
-      // Add some mock payment activities (since we don't have direct payment API)
-      if (stats.totalRevenue > 0) {
-        activities.push({
-          id: 'payment-recent',
-          type: 'payment_received',
-          title: 'Payment received',
-          description: `KES ${Math.floor(Math.random() * 1000 + 200)} from recent booking`,
-          timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(),
-          icon: CreditCard,
-          color: 'text-emerald-600'
-        })
-      }
+      setActivities(
+        feed
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 8)
+      )
 
-      // Sort by timestamp (most recent first) and limit to 6 items
-      const sortedActivities = activities
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 6)
-
-      setRecentActivity(sortedActivities)
-    } catch (error) {
-      console.error('Failed to generate recent activity:', error)
-    }
-  }, [stats.totalRevenue])
-
-  // Refresh all data
-  const refreshData = useCallback(async (isBackground = false) => {
-    if (isBackground) {
-      setBackgroundRefreshing(true)
-    } else {
-      setLoading(true)
-    }
-    try {
-      await Promise.all([
-        fetchDashboardStats(),
-        fetchSignupTrends(),
-        generateRecentActivity()
-      ])
       setLastUpdated(new Date())
-    } catch (error) {
-      console.error('Failed to refresh data:', error)
+    } catch (err) {
+      console.error('Dashboard fetch error:', err)
     } finally {
       setLoading(false)
-      setBackgroundRefreshing(false)
+      setRefreshing(false)
     }
-  }, [fetchDashboardStats, fetchSignupTrends, generateRecentActivity])
+  }, [])
 
-  // Initial data load
+  // Initial load
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  // Auto-refresh
   useEffect(() => {
-    refreshData()
-  }, [refreshData])
+    if (!autoRefresh) { if (intervalRef.current) clearInterval(intervalRef.current); return }
+    intervalRef.current = setInterval(() => fetchAll(true), REFRESH_INTERVAL)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [autoRefresh, fetchAll])
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    if (!autoRefresh) return
-
-    const interval = setInterval(() => {
-      refreshData(true)
-    }, 30000) // 30 seconds
-
-    return () => clearInterval(interval)
-  }, [autoRefresh, refreshData])
-
-  // Format time ago
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date()
-    const time = new Date(timestamp)
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
-    
-    if (diffInMinutes < 1) return 'Just now'
-    if (diffInMinutes < 60) return `${diffInMinutes} min ago`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hour${Math.floor(diffInMinutes / 60) > 1 ? 's' : ''} ago`
-    return `${Math.floor(diffInMinutes / 1440)} day${Math.floor(diffInMinutes / 1440) > 1 ? 's' : ''} ago`
-  }
-
-  // Stat cards data
+  // ── Stat card definitions ──────────────────────────────────────────
   const statCards = [
-    {
-      title: "Total Users",
-      value: stats.totalUsers.toLocaleString(),
-      icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      change: `+${stats.recentSignups} this week`
-    },
-    {
-      title: "Active Sessions",
-      value: stats.activeSessions.toString(),
-      icon: Video,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      change: `${stats.completedSessions} completed`
-    },
-    {
-      title: "Total Revenue",
-      value: `KES ${stats.totalRevenue.toLocaleString()}`,
-      icon: DollarSign,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-      change: "From session bookings"
-    },
-    {
-      title: "Growth Rate",
-      value: `${stats.growthRate > 0 ? '+' : ''}${stats.growthRate.toFixed(1)}%`,
-      icon: TrendingUp,
-      color: stats.growthRate >= 0 ? "text-green-600" : "text-red-600",
-      bgColor: stats.growthRate >= 0 ? "bg-green-50" : "bg-red-50",
-      change: "Week over week"
-    }
+    { title: 'Total Users',       value: stats.totalUsers.toLocaleString(),                icon: Users,       bg: 'bg-blue-50 dark:bg-blue-950',    color: 'text-blue-600',    sub: `+${stats.recentSignups} this week` },
+    { title: 'Active Sessions',   value: stats.activeSessions.toString(),                  icon: Video,       bg: 'bg-green-50 dark:bg-green-950',  color: 'text-green-600',   sub: `${stats.completedSessions} completed` },
+    { title: 'Total Revenue',     value: `KES ${stats.totalRevenue.toLocaleString()}`,     icon: DollarSign,  bg: 'bg-emerald-50 dark:bg-emerald-950', color: 'text-emerald-600', sub: 'From session bookings' },
+    { title: 'Growth Rate',       value: `${stats.growthRate >= 0 ? '+' : ''}${stats.growthRate.toFixed(1)}%`, icon: TrendingUp, bg: stats.growthRate >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950', color: stats.growthRate >= 0 ? 'text-green-600' : 'text-red-600', sub: 'Week over week' },
+    { title: 'Assignments',       value: stats.totalAssignments.toString(),                icon: FileText,    bg: 'bg-orange-50 dark:bg-orange-950', color: 'text-orange-600',  sub: `${stats.pendingSubmissions} pending review` },
+    { title: 'Approved Submissions', value: stats.approvedSubmissions.toString(),          icon: CheckCircle, bg: 'bg-teal-50 dark:bg-teal-950',    color: 'text-teal-600',    sub: 'Points awarded' },
+    { title: 'Active Discounts',  value: stats.activeDiscounts.toString(),                 icon: Gift,        bg: 'bg-pink-50 dark:bg-pink-950',    color: 'text-pink-600',    sub: 'Awarded to users' },
+    { title: 'Top Leaderboard',   value: `${stats.topLeaderPoints} pts`,                   icon: Trophy,      bg: 'bg-yellow-50 dark:bg-yellow-950', color: 'text-yellow-600',  sub: 'Highest points earned' },
   ]
-
-  // Chart colors
-  const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
   return (
     <div className="space-y-6">
-      {/* Header with refresh controls */}
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-bold">Real-Time Analytics</h2>
-          <p className="text-muted-foreground">
-            Live data from your platform
-            {lastUpdated && (
-              <span className="ml-2">
-                • Last updated: {formatTime(lastUpdated)}
-              </span>
-            )}
+          <p className="text-muted-foreground text-sm">
+            Live platform data
+            {lastUpdated && <span className="ml-2">• Updated {formatTime(lastUpdated)}</span>}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-          >
-            <Activity className={`h-4 w-4 mr-2 ${autoRefresh ? 'text-green-600' : 'text-gray-400'}`} />
+          <Badge variant="outline" className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+            {autoRefresh ? 'Live' : 'Paused'}
+          </Badge>
+          <Button variant="outline" size="sm" onClick={() => setAutoRefresh(v => !v)}>
+            <Activity className={`h-4 w-4 mr-1.5 ${autoRefresh ? 'text-green-600' : 'text-gray-400'}`} />
             Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refreshData(true)}
-            disabled={loading || backgroundRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${(loading || backgroundRefreshing) ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => fetchAll(true)} disabled={loading || refreshing}>
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <Card key={stat.title} className="relative overflow-hidden">
-            <CardContent className="p-6">
+      {/* 8 Stat Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map(s => (
+          <Card key={s.title} className="overflow-hidden">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  {loading ? (
-                    <div className="h-8 w-24 bg-muted animate-pulse rounded mt-1 mb-1" />
-                  ) : (
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{s.title}</p>
+                  {loading
+                    ? <div className="h-7 w-20 bg-muted animate-pulse rounded mt-1 mb-1" />
+                    : <p className="text-2xl font-bold mt-0.5">{s.value}</p>
+                  }
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{s.sub}</p>
                 </div>
-                <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                <div className={`p-2.5 rounded-xl ${s.bg} ml-3 shrink-0`}>
+                  <s.icon className={`h-5 w-5 ${s.color}`} />
                 </div>
               </div>
             </CardContent>
@@ -312,76 +300,135 @@ export function RealTimeAnalytics() {
         ))}
       </div>
 
-      {/* Charts and Activity */}
+      {/* Charts row 1: Signups + Revenue */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Weekly Signups Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Weekly Signups
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4" /> Weekly Signups
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={signupTrends}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [value, 'Signups']}
-                  labelFormatter={(label) => `${label}`}
-                />
-                <Bar 
-                  dataKey="signups" 
-                  fill="hsl(var(--primary))" 
-                  radius={[4, 4, 0, 0]}
-                />
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={signupTrends} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v) => [v, 'Signups']} />
+                <Bar dataKey="signups" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Recent Activity
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <DollarSign className="h-4 w-4" /> Revenue by Session
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 max-h-[300px] overflow-y-auto">
-              {recentActivity.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No recent activity</p>
+            {revenueBySession.length === 0 ? (
+              <div className="flex items-center justify-center h-[240px] text-muted-foreground text-sm">
+                <div className="text-center">
+                  <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                  No revenue data yet
                 </div>
-              ) : (
-                recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <div className={`p-2 rounded-full bg-background ${activity.color}`}>
-                      <activity.icon className="h-4 w-4" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={revenueBySession} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v, n) => [n === 'revenue' ? `KES ${v}` : v, n === 'revenue' ? 'Revenue' : 'Attendees']} />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="attendees" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts row 2: Demographics + Activity */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4" /> User Demographics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {demographics.length === 0 ? (
+              <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">
+                <div className="text-center">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                  No demographics data
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={demographics} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
+                      {demographics.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v) => [v, 'Users']} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {demographics.map((item, i) => (
+                    <div key={item.name} className="flex items-center gap-2 text-xs">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span className="truncate text-muted-foreground">{item.name}</span>
+                      <span className="font-semibold ml-auto">{item.value}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{activity.title}</p>
-                      <p className="text-sm text-muted-foreground truncate">{activity.description}</p>
-                    </div>
-                    <div className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatTimeAgo(activity.timestamp)}
-                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="h-4 w-4" /> Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+              {activities.length === 0 ? (
+                <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                  <div className="text-center">
+                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    No recent activity
                   </div>
-                ))
-              )}
+                </div>
+              ) : activities.map(a => (
+                <div key={a.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className={`p-1.5 rounded-full bg-background shrink-0 ${a.color}`}>
+                    <a.icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-xs">{a.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{a.description}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(a.timestamp)}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Background refresh indicator — small, non-blocking */}
-      {(backgroundRefreshing || loading) && (
-        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-background border rounded-lg shadow-md px-3 py-2 text-sm text-muted-foreground">
+      {/* Refresh indicator */}
+      {(loading || refreshing) && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-background border rounded-lg shadow-md px-3 py-2 text-xs text-muted-foreground">
           <RefreshCw className="h-3 w-3 animate-spin" />
-          {loading ? 'Loading analytics...' : 'Updating...'}
+          {loading ? 'Loading…' : 'Updating…'}
         </div>
       )}
     </div>
