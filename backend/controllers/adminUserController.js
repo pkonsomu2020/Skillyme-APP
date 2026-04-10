@@ -6,41 +6,33 @@ const ErrorHandler = require('../middleware/errorHandler');
 const getAllUsers = async (req, res) => {
   try {
     const { 
-      page = 1, 
-      limit = 1000, // Default to high limit to show all users
       search,
       field_of_study,
       institution,
       county,
-      status = 'active',
-      sort_by = 'id', // Sort by ID to show users from 1 onwards
-      sort_order = 'asc' // Ascending order to show oldest first
+      sort_by = 'id',
+      sort_order = 'asc'
     } = req.query;
 
+    // Parse numeric params safely
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(2000, Math.max(1, parseInt(req.query.limit) || 1000));
     const offset = (page - 1) * limit;
+
+    // Validate sort_by to prevent injection
+    const allowedSortFields = ['id', 'name', 'email', 'created_at', 'country', 'field_of_study'];
+    const safeSortBy = allowedSortFields.includes(sort_by) ? sort_by : 'id';
 
     let query = supabase
       .from('users')
       .select(`
         id, name, email, phone, country, county, field_of_study, institution, level_of_study,
-        created_at, updated_at, password, preferred_name, date_of_birth, course_of_study, 
+        created_at, updated_at, preferred_name, date_of_birth, course_of_study, 
         degree, year_of_study, primary_field_interest, signup_source
       `)
-      .order(sort_by, { ascending: sort_order === 'asc' });
-
-    // Only apply pagination if limit is reasonable (less than 1000)
-    if (limit < 1000) {
-      query = query.range(offset, offset + limit - 1);
-    }
+      .order(safeSortBy, { ascending: sort_order === 'asc' });
 
     // Apply filters
-    if (status === 'active') {
-      // Only active users (no specific status field, so we get all)
-    } else if (status === 'inactive') {
-      // For now, we'll assume all users are active since we don't have a status field
-      // This would need to be implemented with a status field in the users table
-    }
-
     if (field_of_study) {
       query = query.eq('field_of_study', field_of_study);
     }
@@ -53,48 +45,42 @@ const getAllUsers = async (req, res) => {
       query = query.eq('county', county);
     }
 
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+    if (search && search.trim()) {
+      const s = search.trim();
+      query = query.or(`name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+    }
+
+    // Apply pagination only when not fetching all
+    if (limit < 2000) {
+      query = query.range(offset, offset + limit - 1);
     }
 
     const { data: users, error } = await query;
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    // Get total count for pagination
+    // Count query (mirrors filters above)
     let countQuery = supabase.from('users').select('*', { count: 'exact', head: true });
-    
-    if (field_of_study) {
-      countQuery = countQuery.eq('field_of_study', field_of_study);
-    }
 
-    if (institution) {
-      countQuery = countQuery.ilike('institution', `%${institution}%`);
-    }
-
-    if (county) {
-      countQuery = countQuery.eq('county', county);
-    }
-
-    if (search) {
-      countQuery = countQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+    if (field_of_study) countQuery = countQuery.eq('field_of_study', field_of_study);
+    if (institution) countQuery = countQuery.ilike('institution', `%${institution}%`);
+    if (county) countQuery = countQuery.eq('county', county);
+    if (search && search.trim()) {
+      const s = search.trim();
+      countQuery = countQuery.or(`name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
     }
 
     const { count, error: countError } = await countQuery;
-
-    if (countError) {
-      throw countError;
-    }
+    if (countError) throw countError;
 
     res.json({
       success: true,
       data: {
-        users,
+        users: users || [],
+        count: count || 0,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page,
+          limit,
           total: count || 0,
           pages: Math.ceil((count || 0) / limit)
         }
@@ -494,10 +480,10 @@ const getAllUsersDebug = async (req, res) => {
       .from('users')
       .select(`
         id, name, email, phone, country, county, field_of_study, institution, level_of_study,
-        created_at, updated_at, password, preferred_name, date_of_birth, course_of_study, 
+        created_at, updated_at, preferred_name, date_of_birth, course_of_study, 
         degree, year_of_study, primary_field_interest, signup_source
       `)
-      .order('id', { ascending: true }); // Order by ID ascending
+      .order('id', { ascending: true });
 
     if (error) {
       throw error;
