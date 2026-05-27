@@ -8,8 +8,17 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+dist
 dist-ssr
+.output
+.vinxi
+.tanstack/**
+.nitro
 *.local
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
 
 # Editor directories and files
 .vscode/*
@@ -21,21 +30,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Environment variables
-.env
-.env.*
-!.env.example
-./backend/.env
-./backend/.env.*
-!./backend/.env.example
-
-# Backend sensitive folders (also covered in backend/.gitignore)
-backend/scripts/
-backend/logs/
-backend/uploads/
-backend/database_migrations/
-backend/diagnostic_email.js
-
-# Debug files
-debug-frontend-login.html
