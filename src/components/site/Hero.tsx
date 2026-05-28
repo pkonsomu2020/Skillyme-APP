@@ -47,14 +47,14 @@ export function Hero() {
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
             <a
-              href="#apply"
+              href="https://portal.skillyme.africa/apply"
               className="group inline-flex items-center gap-2 rounded-xl bg-[var(--ink)] px-6 py-3.5 text-sm font-semibold text-white transition-all hover:shadow-2xl hover:shadow-black/20"
             >
               Apply now
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </a>
             <a
-              href="#programs"
+              href="https://programs.skillyme.africa/"
               className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white/70 px-6 py-3.5 text-sm font-semibold text-[var(--ink)] backdrop-blur transition-colors hover:bg-white"
             >
               Explore programs

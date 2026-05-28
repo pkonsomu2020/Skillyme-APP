@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 
 const links = [
-  { label: "Programs", href: "#programs" },
+  { label: "Programs", href: "https://programs.skillyme.africa/" },
   { label: "What We Do", href: "#what" },
   { label: "Impact", href: "#impact" },
   { label: "Community", href: "#community" },

@@ -44,7 +44,7 @@ export function Programs() {
             </h2>
           </div>
           <a
-            href="#apply"
+            href="https://programs.skillyme.africa/"
             className="inline-flex w-fit items-center gap-2 rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-black/[0.03]"
           >
             View all programs <ArrowUpRight className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function Programs() {
           {programs.map((p, i) => (
             <motion.a
               key={p.name}
-              href="#apply"
+              href="https://programs.skillyme.africa/"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
